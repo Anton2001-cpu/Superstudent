@@ -1051,6 +1051,12 @@ function activateTeacher(btn) {
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
+async function apiFetch(url, opts) {
+  const res = await fetch(url, opts);
+  if (res.status === 401) { window.location.href = '/login'; return null; }
+  return res;
+}
+
 function esc(s) {
   return String(s)
     .replace(/&/g, '&amp;')
@@ -1094,8 +1100,8 @@ let sortAlpha = false;
 
 async function loadBooks() {
   try {
-    const r = await fetch('/api/courses');
-    allCourses = await r.json();
+    const r = await apiFetch('/api/courses');
+    allCourses = r ? await r.json() : [];
   } catch { allCourses = []; }
   renderBookList();
 }
@@ -1185,7 +1191,7 @@ async function askQuestion() {
   input.disabled = true;
 
   try {
-    const res = await fetch('/api/chat', {
+    const res = await apiFetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ question: q, books }),
@@ -1267,8 +1273,8 @@ let activeCourse = null;
 
 async function loadTeacherCourses() {
   try {
-    const r = await fetch('/api/courses');
-    teacherCourses = await r.json();
+    const r = await apiFetch('/api/courses');
+    teacherCourses = r ? await r.json() : [];
   } catch { teacherCourses = []; }
   renderTeacherList();
   if (activeCourse) {
@@ -1328,7 +1334,7 @@ function initDragDrop() {
 
 async function saveOrder(order) {
   teacherCourses.sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name));
-  await fetch('/api/courses/reorder', {
+  await apiFetch('/api/courses/reorder', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ order }),
@@ -1389,7 +1395,7 @@ async function createCourse() {
   const name = document.getElementById('new-course-name').value.trim();
   if (!name) return;
   try {
-    const res = await fetch('/api/courses', {
+    const res = await apiFetch('/api/courses', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name }),
@@ -1448,7 +1454,7 @@ async function uploadFiles(files) {
     fd.append('file', file);
     fd.append('course', activeCourse);
     try {
-      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      const res = await apiFetch('/api/upload', { method: 'POST', body: fd });
       const data = await res.json();
       if (data.error) {
         status.className = 'upload-status err';
@@ -1475,7 +1481,7 @@ async function searchContent() {
   const el = document.getElementById('search-results');
   el.innerHTML = '<div style="font-size:12px; color:var(--text-3);">Searching...</div>';
   try {
-    const res = await fetch('/api/search', {
+    const res = await apiFetch('/api/search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query, course: activeCourse }),

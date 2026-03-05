@@ -13,15 +13,20 @@ load_dotenv()
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50 MB
 app.secret_key = os.getenv("SECRET_KEY", "supersecret-change-me")
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_HTTPONLY"] = True
 
 SITE_PASSWORD = os.getenv("SITE_PASSWORD", "student")
 
 
 @app.before_request
 def require_login():
-    if request.endpoint in ("login", "static"):
+    if request.endpoint in ("login", "logout", "static"):
         return
     if not session.get("authenticated"):
+        # Return JSON error for API calls instead of redirecting
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Not authenticated"}), 401
         return redirect(url_for("login"))
 
 
