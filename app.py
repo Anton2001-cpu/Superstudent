@@ -41,10 +41,13 @@ def logout():
     session.clear()
     return redirect(url_for("login"))
 
+DATA_FOLDER = Path("vectordb")
+DATA_FOLDER.mkdir(exist_ok=True)
+
 UPLOAD_FOLDER = Path("uploads")
 UPLOAD_FOLDER.mkdir(exist_ok=True)
 
-COURSES_FILE = Path("courses.json")
+COURSES_FILE = DATA_FOLDER / "courses.json"
 ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt"}
 
 _rag = None
