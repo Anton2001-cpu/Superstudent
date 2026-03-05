@@ -1,0 +1,13 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# App data (stays local, not in GitHub)
+vectordb/
+uploads/
+courses.json
+
+# Secrets
+.env

@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SuperStudent</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Tokens ── */
+    :root {
+      --bg:          #f5f5f7;
+      --card:        #ffffff;
+      --sidebar:     #ffffff;
+      --border:      rgba(0,0,0,0.09);
+      --border-2:    rgba(0,0,0,0.15);
+      --text:        #1d1d1f;
+      --text-2:      #6e6e73;
+      --text-3:      #aeaeb2;
+      --blue:        #0071e3;
+      --blue-h:      #0077ed;
+      --blue-dim:    rgba(0,113,227,0.1);
+      --red:         #ff3b30;
+      --green:       #34c759;
+      --header:      rgba(255,255,255,0.8);
+    }
+
+    [data-theme="dark"] {
+      --bg:          #1c1c1e;
+      --card:        #2c2c2e;
+      --sidebar:     #242426;
+      --border:      rgba(255,255,255,0.1);
+      --border-2:    rgba(255,255,255,0.18);
+      --text:        #f5f5f7;
+      --text-2:      #aeaeb2;
+      --text-3:      #6e6e73;
+      --blue:        #0a84ff;
+      --blue-h:      #1a8eff;
+      --blue-dim:    rgba(10,132,255,0.15);
+      --red:         #ff453a;
+      --green:       #30d158;
+      --header:      rgba(28,28,30,0.85);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
+    }
+    body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+    /* ── Header ── */
+    .header {
+      height: 52px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--header);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    .logo em { font-style: normal; color: var(--blue); }
+
+    .header-right { display: flex; align-items: center; gap: 10px; }
+
+    .tab-group {
+      display: flex;
+      background: rgba(128,128,128,0.12);
+      border-radius: 8px;
+      padding: 2px;
+    }
+    .tab {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: transparent;
+      color: var(--text-2);
+      transition: all 0.15s ease;
+    }
+    .tab.active {
+      background: var(--card);
+      color: var(--text);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    }
+
+    /* Dark mode toggle */
+    .dark-btn {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-2);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .dark-btn:hover { background: var(--bg); color: var(--text); }
+
+    /* ── Views ── */
+    .view { display: none; flex: 1; overflow: hidden; }
+    .view.active { display: flex; }
+
+    /* ── Shared sidebar ── */
+    .sidebar {
+      width: 380px;
+      flex-shrink: 0;
+      background: var(--sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .sidebar-head {
+      padding: 13px 14px 10px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .sidebar-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-3);
+    }
+    .sidebar-search {
+      padding: 8px 10px 6px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+    .sidebar-search-input {
+      flex: 1;
+      font-family: inherit;
+      font-size: 12px;
+      padding: 5px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border-2);
+      background: var(--bg);
+      color: var(--text);
+      outline: none;
+    }
+    .sidebar-search-input:focus { border-color: var(--blue); }
+    .btn-sort {
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 5px 7px;
+      border-radius: 6px;
+      border: 1px solid var(--border-2);
+      background: var(--bg);
+      color: var(--text-3);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.12s;
+    }
+    .btn-sort:hover, .btn-sort.active { border-color: var(--blue); color: var(--blue); }
+    .sidebar-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+    .sidebar-body::-webkit-scrollbar { width: 3px; }
+    .sidebar-body::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.2); border-radius: 3px; }
+
+    .sidebar-empty {
+      padding: 20px 16px;
+      font-size: 12px;
+      color: var(--text-3);
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    /* ── Student: Book selector ── */
+    .course-group { padding: 6px 0; }
+    .course-group-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 14px;
+    }
+    .course-group-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-2);
+      letter-spacing: 0.01em;
+    }
+    .btn-toggle-all {
+      font-family: inherit;
+      font-size: 10px;
+      color: var(--blue);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+    }
+    .book-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 5px 14px 5px 18px;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .book-item:hover { background: var(--bg); }
+    .book-item input[type="checkbox"] { display: none; }
+
+    /* Toggle switch */
+    .toggle {
+      width: 26px;
+      height: 15px;
+      background: var(--border-2);
+      border-radius: 8px;
+      position: relative;
+      flex-shrink: 0;
+      transition: background 0.18s;
+      margin-top: 2px;
+    }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 11px; height: 11px;
+      background: white;
+      border-radius: 50%;
+      top: 2px; left: 2px;
+      transition: transform 0.18s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    .book-item input:checked ~ .toggle { background: var(--blue); }
+    .book-item input:checked ~ .toggle::after { transform: translateX(11px); }
+    .book-label {
+      font-size: 12px;
+      color: var(--text);
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .sb-collapse-btn {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-2);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all 0.12s;
+      flex-shrink: 0;
+    }
+    .sb-collapse-btn:hover { background: var(--bg); color: var(--text); }
+
+    /* Sidebar slides in/out without reflowing Q&A text */
+    #view-student { position: relative; overflow: hidden; }
+    #book-sidebar {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      z-index: 20;
+      width: 380px;
+      transform: translateX(0);
+      transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 1px 0 0 var(--border), 4px 0 18px rgba(0,0,0,0.07);
+    }
+    #book-sidebar.collapsed {
+      transform: translateX(-100%);
+      box-shadow: none;
+    }
+    .sb-expand-btn {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      left: 10px; top: 12px;
+      z-index: 10;
+      width: 28px; height: 28px;
+      border: 1px solid var(--border-2);
+      border-radius: 6px;
+      background: var(--card);
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .sb-expand-btn:hover { color: var(--text); }
+    .sb-expand-btn.visible { display: flex; }
+
+    /* ── Student: Q&A panel ── */
+    .qa-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .qa-history {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 28px 12px 400px; /* 320px sidebar + 20px gap */
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      transition: padding-left 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .qa-history::-webkit-scrollbar { width: 4px; }
+    .qa-history::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.2); border-radius: 4px; }
+
+    /* Empty state */
+    .qa-empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 8px;
+      padding: 40px;
+    }
+    .qa-empty-title { font-size: 15px; font-weight: 500; color: var(--text); }
+    .qa-empty-sub { font-size: 13px; color: var(--text-2); max-width: 300px; line-height: 1.55; }
+
+    /* Result block */
+    .result-block {
+      padding: 22px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .result-block:last-child { border-bottom: none; padding-bottom: 0; }
+    .result-block:first-child { padding-top: 0; }
+
+    .result-question {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.4;
+      margin-bottom: 16px;
+    }
+
+    .result-answer-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-3);
+      margin-bottom: 8px;
+    }
+    .result-answer {
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.65;
+      margin-bottom: 20px;
+    }
+    .result-answer p { margin-bottom: 8px; }
+    .result-answer p:last-child { margin-bottom: 0; }
+    .result-answer ul { padding-left: 20px; margin: 6px 0; }
+    .result-answer li { margin-bottom: 4px; }
+
+    /* Sources */
+    .sources-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      user-select: none;
+      margin-top: 16px;
+      margin-bottom: 0;
+      width: fit-content;
+    }
+    .sources-toggle-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-3);
+    }
+    .sources-toggle-chevron {
+      color: var(--text-3);
+      transition: transform 0.18s;
+      line-height: 1;
+    }
+    .sources-toggle.open .sources-toggle-chevron { transform: rotate(90deg); }
+    .sources-list {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .sources-list.open { display: flex; }
+    .source-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .source-meta {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .source-file {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      title: attr(data-full);
+    }
+    .source-loc {
+      font-size: 11px;
+      color: var(--blue);
+      font-weight: 600;
+      background: color-mix(in srgb, var(--blue) 12%, transparent);
+      padding: 2px 7px;
+      border-radius: 5px;
+      white-space: nowrap;
+    }
+    .source-preview {
+      font-size: 12px;
+      color: var(--text-2);
+      line-height: 1.7;
+      border-left: 2px solid var(--border-2);
+      padding-left: 10px;
+      font-style: italic;
+    }
+
+    /* Loading */
+    .loading-block { padding: 22px 0; }
+    .loading-q { font-size: 16px; font-weight: 500; color: var(--text); margin-bottom: 12px; }
+    .loading-note { font-size: 12px; color: var(--text-3); margin-bottom: 8px; }
+    .dots { display: flex; gap: 5px; }
+    .dot {
+      width: 6px; height: 6px;
+      background: var(--text-3);
+      border-radius: 50%;
+      animation: bounce 1.2s ease-in-out infinite;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-5px); opacity: 1; }
+    }
+
+    /* Input bar — slides with sidebar */
+    .qa-input-bar {
+      padding: 13px 20px 13px 400px; /* 320px sidebar + 20px gap */
+      border-top: 1px solid var(--border);
+      background: var(--card);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0;
+      transition: padding-left 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #view-student.sb-closed .qa-input-bar { padding-left: 20px; }
+    #view-student.sb-closed .qa-history { padding-left: 20px; }
+    .qa-input {
+      flex: 1;
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 14px;
+      outline: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .qa-input:focus { border-color: var(--blue); background: var(--card); }
+    .qa-input:disabled { opacity: 0.45; }
+    .btn-ask {
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 9px 20px;
+      background: var(--blue);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .btn-ask:hover { background: var(--blue-h); }
+    .btn-ask:disabled { opacity: 0.4; cursor: default; }
+
+    /* ── Teacher: top course tabs ── */
+    .t-topbar {
+      padding: 12px 20px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+    .t-course-tabs { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+    .course-tab {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border-2);
+      background: var(--bg);
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .course-tab:hover { border-color: var(--blue); color: var(--text); }
+    .course-tab.active { background: var(--blue); color: white; border-color: var(--blue); }
+    .course-tab.dragging { opacity: 0.4; }
+    .course-tab.drag-target { border-color: var(--blue); border-style: dashed; }
+    .drag-handle {
+      display: inline-block;
+      cursor: grab;
+      color: var(--text-3);
+      font-size: 10px;
+      margin-right: 5px;
+      user-select: none;
+      opacity: 0.5;
+    }
+    .drag-handle:active { cursor: grabbing; }
+    .course-tab.active .drag-handle { color: rgba(255,255,255,0.7); }
+
+    /* Create form */
+    .create-form {
+      display: none;
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--card);
+      gap: 8px;
+      align-items: center;
+    }
+    .create-form.open { display: flex; }
+    .create-input {
+      flex: 1;
+      max-width: 280px;
+      font-family: inherit;
+      font-size: 13px;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      outline: none;
+      background: var(--bg);
+      color: var(--text);
+      transition: border-color 0.15s;
+    }
+    .create-input:focus { border-color: var(--blue); background: var(--card); }
+    .btn-add {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 14px;
+      background: var(--blue);
+      color: white;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+    }
+    .btn-cancel-sm {
+      font-family: inherit;
+      font-size: 12px;
+      padding: 6px 12px;
+      background: transparent;
+      border: 1px solid var(--border-2);
+      border-radius: 7px;
+      color: var(--text-2);
+      cursor: pointer;
+    }
+    .btn-new-course {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px 13px;
+      background: transparent;
+      border: 1px solid var(--border-2);
+      border-radius: 8px;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all 0.12s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .btn-new-course:hover { border-color: var(--blue); color: var(--blue); }
+
+    /* ── Teacher: detail area ── */
+    .detail-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      overflow: hidden;
+    }
+    .panel-placeholder {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: var(--text-3);
+    }
+    #course-detail { display: none; }
+    #course-detail.active {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .detail-head {
+      padding: 14px 20px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .detail-course-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .detail-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .detail-body::-webkit-scrollbar { width: 4px; }
+    .detail-body::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.2); border-radius: 4px; }
+
+    /* Cards */
+    .t-card {
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      overflow: hidden;
+    }
+    .t-card-head {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .t-card-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .t-card-body { padding: 14px 16px; }
+
+    /* Search */
+    .search-row { display: flex; gap: 8px; }
+    .search-field {
+      flex: 1;
+      font-family: inherit;
+      font-size: 13px;
+      padding: 7px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      outline: none;
+      background: var(--bg);
+      color: var(--text);
+      transition: border-color 0.15s;
+    }
+    .search-field:focus { border-color: var(--blue); background: var(--card); }
+    .btn-search {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 7px 16px;
+      background: var(--blue);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .btn-search:hover { background: var(--blue-h); }
+    .search-results { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .sr-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .sr-file { font-size: 11px; font-weight: 600; color: var(--text); margin-bottom: 1px; }
+    .sr-loc { font-size: 11px; color: var(--blue); margin-bottom: 6px; }
+    .sr-text {
+      font-size: 12px;
+      color: var(--text-2);
+      line-height: 1.55;
+      border-left: 2px solid var(--border-2);
+      padding-left: 8px;
+    }
+
+    /* Drop zone */
+    .drop-zone {
+      border: 1.5px dashed var(--border-2);
+      border-radius: 10px;
+      padding: 22px;
+      text-align: center;
+      cursor: pointer;
+      background: var(--bg);
+      transition: border-color 0.15s, background 0.15s;
+      user-select: none;
+    }
+    .drop-zone:hover, .drop-zone.over { border-color: var(--blue); background: var(--blue-dim); }
+    .drop-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+    .drop-sub { font-size: 11px; color: var(--text-2); }
+    .upload-status { font-size: 12px; color: var(--text-2); margin-top: 8px; min-height: 18px; }
+    .upload-status.ok { color: var(--green); }
+    .upload-status.err { color: var(--red); }
+
+    /* File list */
+    .file-list { margin-top: 10px; }
+    .f-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .f-item:last-child { border-bottom: none; }
+    .f-name { font-size: 12px; color: var(--text-2); }
+    .btn-del {
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 9px;
+      background: transparent;
+      color: var(--red);
+      border: 1px solid rgba(255,59,48,0.3);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.12s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .btn-del:hover { background: rgba(255,59,48,0.08); }
+
+    /* ── Password modal ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+    .modal-box {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 24px;
+      width: 300px;
+      box-shadow: 0 10px 50px rgba(0,0,0,0.25);
+    }
+    .modal-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 14px; }
+    .modal-field {
+      width: 100%;
+      font-family: inherit;
+      font-size: 14px;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      outline: none;
+      background: var(--bg);
+      color: var(--text);
+      transition: border-color 0.15s;
+      margin-bottom: 8px;
+    }
+    .modal-field:focus { border-color: var(--blue); }
+    .pw-error { font-size: 12px; color: var(--red); min-height: 18px; margin-bottom: 12px; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+    .btn-cancel {
+      font-family: inherit;
+      font-size: 13px;
+      padding: 8px 16px;
+      background: var(--bg);
+      border: 1px solid var(--border-2);
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--text);
+    }
+    .btn-confirm {
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 16px;
+      background: var(--blue);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .btn-confirm:hover { background: var(--blue-h); }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(60px);
+      background: rgba(29,29,31,0.92);
+      backdrop-filter: blur(10px);
+      color: white;
+      font-size: 13px;
+      padding: 8px 18px;
+      border-radius: 20px;
+      z-index: 999;
+      transition: transform 0.22s cubic-bezier(.34,1.56,.64,1);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="logo">Super<em>Student</em></div>
+  <div class="header-right">
+    <button class="dark-btn" onclick="toggleDark()" id="dark-btn" title="Toggle dark mode">
+      <!-- Moon: shown in light mode -->
+      <svg id="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <!-- Sun: shown in dark mode -->
+      <svg id="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.93" y1="4.93" x2="7.05" y2="7.05"/><line x1="16.95" y1="16.95" x2="19.07" y2="19.07"/><line x1="4.93" y1="19.07" x2="7.05" y2="16.95"/><line x1="16.95" y1="7.05" x2="19.07" y2="4.93"/></svg>
+    </button>
+    <div class="tab-group">
+      <button class="tab active" id="tab-student" onclick="switchView('student', this)">Student</button>
+      <button class="tab" id="tab-teacher" onclick="requirePassword(this)">Teacher</button>
+    </div>
+  </div>
+</div>
+
+<!-- Password modal -->
+<div class="modal-overlay" id="pw-modal" style="display:none">
+  <div class="modal-box">
+    <div class="modal-title">Teacher access</div>
+    <input class="modal-field" type="password" id="pw-input" placeholder="Password"
+           onkeydown="if(event.key==='Enter') checkPw()">
+    <div class="pw-error" id="pw-error"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closePwModal()">Cancel</button>
+      <button class="btn-confirm" onclick="checkPw()">Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Student view ── -->
+<div class="view active" id="view-student">
+
+  <!-- Book selector sidebar -->
+  <div class="sidebar" id="book-sidebar">
+    <div class="sidebar-head">
+      <span class="sidebar-label">Study materials</span>
+      <button class="sb-collapse-btn" onclick="toggleSidebar()" title="Hide panel">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15,18 9,12 15,6"/></svg>
+      </button>
+    </div>
+    <div class="sidebar-search">
+      <input class="sidebar-search-input" type="text" id="book-search"
+             placeholder="Search books..."
+             oninput="renderBookList()">
+      <button class="btn-sort" id="btn-sort" onclick="toggleSort()" title="Sort alphabetically">A-Z</button>
+    </div>
+    <div class="sidebar-body" id="book-list">
+      <div class="sidebar-empty">No materials available.<br>Ask your teacher to upload course content.</div>
+    </div>
+  </div>
+
+  <!-- Q&A panel -->
+  <div class="qa-panel">
+    <!-- Expand sidebar button, visible when sidebar is collapsed -->
+    <button class="sb-expand-btn" id="sb-expand-btn" onclick="toggleSidebar()" title="Show materials">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9,18 15,12 9,6"/></svg>
+    </button>
+
+    <div class="qa-history" id="qa-history">
+      <div class="qa-empty" id="qa-empty">
+        <div class="qa-empty-title">Ask a question about your courses</div>
+        <div class="qa-empty-sub">Select books from the left panel, then type your question below. Only the uploaded course materials will be used — no internet, no guessing.</div>
+      </div>
+    </div>
+    <div class="qa-input-bar">
+      <input class="qa-input" type="text" id="q-input"
+             placeholder="Type your question here..."
+             onkeydown="if(event.key==='Enter') askQuestion()">
+      <button class="btn-ask" id="ask-btn" onclick="askQuestion()">Ask</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Teacher view ── -->
+<div class="view" id="view-teacher">
+  <div style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+
+    <!-- Course tabs top bar -->
+    <div class="t-topbar">
+      <div class="t-course-tabs" id="t-course-tabs">
+        <span style="font-size:12px; color:var(--text-3);">No courses yet.</span>
+      </div>
+      <button class="btn-new-course" onclick="toggleCreateForm()">+ New course</button>
+      <button class="btn-del" id="btn-delete-course" style="display:none" onclick="deleteActiveCourse()">Delete course</button>
+    </div>
+
+    <!-- Create course inline form -->
+    <div class="create-form" id="create-form">
+      <input class="create-input" type="text" id="new-course-name" placeholder="Course name"
+             onkeydown="if(event.key==='Enter') createCourse(); if(event.key==='Escape') toggleCreateForm()">
+      <button class="btn-add" onclick="createCourse()">Add</button>
+      <button class="btn-cancel-sm" onclick="toggleCreateForm()">Cancel</button>
+    </div>
+
+    <!-- Detail area -->
+    <div class="detail-area">
+      <div class="panel-placeholder" id="no-course-msg">
+        Create or select a course above to manage it.
+      </div>
+
+      <div id="course-detail">
+        <div class="detail-body">
+
+          <!-- Upload card -->
+          <div class="t-card">
+            <div class="t-card-head">
+              <div class="t-card-title">Upload books</div>
+            </div>
+            <div class="t-card-body">
+              <div class="drop-zone" id="drop-zone"
+                   onclick="document.getElementById('file-input').click()">
+                <div class="drop-title">Drop files here or click to browse</div>
+                <div class="drop-sub">PDF, Word (.docx), or plain text (.txt) — up to 50 MB each</div>
+              </div>
+              <input type="file" id="file-input" multiple accept=".pdf,.docx,.doc,.txt" style="display:none">
+              <div class="upload-status" id="upload-status"></div>
+              <div class="file-list" id="file-list"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Dark mode ──────────────────────────────────────────────────────────────
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('icon-moon').style.display = theme === 'dark' ? 'none' : '';
+  document.getElementById('icon-sun').style.display  = theme === 'dark' ? '' : 'none';
+}
+function toggleDark() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const next = isDark ? 'light' : 'dark';
+  applyTheme(next);
+  localStorage.setItem('theme', next);
+}
+applyTheme(localStorage.getItem('theme') || 'light');
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function toast(msg, ms = 3000) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), ms);
+}
+
+// ── View switching ──────────────────────────────────────────────────────────
+function switchView(name, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── Password gate ──────────────────────────────────────────────────────────
+const TEACHER_PW = 'teacher';
+let pendingBtn = null;
+
+function requirePassword(btn) {
+  if (sessionStorage.getItem('tAuth') === '1') {
+    activateTeacher(btn);
+    return;
+  }
+  pendingBtn = btn;
+  document.getElementById('pw-modal').style.display = 'flex';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('pw-error').textContent = '';
+  setTimeout(() => document.getElementById('pw-input').focus(), 50);
+}
+
+function closePwModal() {
+  document.getElementById('pw-modal').style.display = 'none';
+}
+
+function checkPw() {
+  if (document.getElementById('pw-input').value === TEACHER_PW) {
+    sessionStorage.setItem('tAuth', '1');
+    closePwModal();
+    if (pendingBtn) activateTeacher(pendingBtn);
+  } else {
+    document.getElementById('pw-error').textContent = 'Incorrect password.';
+    document.getElementById('pw-input').select();
+  }
+}
+
+function activateTeacher(btn) {
+  switchView('teacher', btn);
+  loadTeacherCourses();
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function md(text) {
+  const lines = text.split('\n');
+  let html = '', inList = false;
+  for (const raw of lines) {
+    const line = raw
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>');
+    if (/^[-*]\s/.test(raw)) {
+      if (!inList) { html += '<ul>'; inList = true; }
+      html += `<li>${line.replace(/^[-*]\s/, '')}</li>`;
+    } else {
+      if (inList) { html += '</ul>'; inList = false; }
+      if (line.trim()) html += `<p>${line}</p>`;
+    }
+  }
+  if (inList) html += '</ul>';
+  return html;
+}
+
+// ── Sidebar toggle ─────────────────────────────────────────────────────────
+function toggleSidebar() {
+  const sb   = document.getElementById('book-sidebar');
+  const btn  = document.getElementById('sb-expand-btn');
+  const view = document.getElementById('view-student');
+  const collapsed = sb.classList.toggle('collapsed');
+  btn.classList.toggle('visible', collapsed);
+  view.classList.toggle('sb-closed', collapsed);
+}
+
+// ── Books / student sidebar ────────────────────────────────────────────────
+let allCourses = [];
+let sortAlpha = false;
+
+async function loadBooks() {
+  try {
+    const r = await fetch('/api/courses');
+    allCourses = await r.json();
+  } catch { allCourses = []; }
+  renderBookList();
+}
+
+function toggleSort() {
+  sortAlpha = !sortAlpha;
+  document.getElementById('btn-sort').classList.toggle('active', sortAlpha);
+  renderBookList();
+}
+
+function renderBookList() {
+  const el = document.getElementById('book-list');
+  const filter = (document.getElementById('book-search')?.value || '').toLowerCase();
+  let withFiles = allCourses.filter(c => c.files.length > 0);
+
+  // Filter files by search term, keep course if it has matching files
+  if (filter) {
+    withFiles = withFiles.map(c => ({
+      ...c,
+      files: c.files.filter(f => f.toLowerCase().includes(filter))
+    })).filter(c => c.files.length > 0);
+  }
+
+  if (!withFiles.length) {
+    el.innerHTML = '<div class="sidebar-empty">No materials available.<br>Ask your teacher to upload course content.</div>';
+    return;
+  }
+
+  // Sort files within each course alphabetically if enabled
+  const displayed = withFiles.map(c => ({
+    ...c,
+    files: sortAlpha ? [...c.files].sort((a, b) => a.localeCompare(b)) : c.files
+  }));
+
+  el.innerHTML = displayed.map((c, ci) => `
+    <div class="course-group">
+      <div class="course-group-header">
+        <span class="course-group-name">${esc(c.name)}</span>
+        <button class="btn-toggle-all" onclick="toggleCourse(${ci})">select all</button>
+      </div>
+      ${c.files.map(f => `
+        <label class="book-item">
+          <input type="checkbox" class="book-cb" data-ci="${ci}" data-filename="${esc(f)}" checked>
+          <div class="toggle"></div>
+          <span class="book-label">${esc(f)}</span>
+        </label>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+function selectAllBooks(checked) {
+  document.querySelectorAll('.book-cb').forEach(cb => cb.checked = checked);
+}
+
+function toggleCourse(ci) {
+  const cbs = [...document.querySelectorAll(`.book-cb[data-ci="${ci}"]`)];
+  const anyUnchecked = cbs.some(cb => !cb.checked);
+  cbs.forEach(cb => cb.checked = anyUnchecked);
+}
+
+function getSelectedBooks() {
+  return [...document.querySelectorAll('.book-cb:checked')].map(cb => cb.dataset.filename);
+}
+
+// ── Student Q&A ────────────────────────────────────────────────────────────
+let busy = false;
+
+async function askQuestion() {
+  if (busy) return;
+  const input = document.getElementById('q-input');
+  const q = input.value.trim();
+  if (!q) return;
+
+  const books = getSelectedBooks();
+  if (!books.length) {
+    toast('Select at least one book from the left panel.');
+    return;
+  }
+
+  input.value = '';
+  document.getElementById('qa-empty')?.remove();
+
+  const loading = appendLoading(q);
+  busy = true;
+  document.getElementById('ask-btn').disabled = true;
+  input.disabled = true;
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: q, books }),
+    });
+    const data = await res.json();
+    loading.remove();
+    appendResult(q, data.error ? data.error : data.answer, data.error ? [] : (data.sources || []));
+  } catch {
+    loading.remove();
+    appendResult(q, 'Could not connect to the server. Make sure the app is running.', []);
+  }
+
+  busy = false;
+  document.getElementById('ask-btn').disabled = false;
+  input.disabled = false;
+  input.focus();
+}
+
+function appendLoading(q) {
+  const h = document.getElementById('qa-history');
+  const el = document.createElement('div');
+  el.className = 'loading-block';
+  el.innerHTML = `
+    <div class="loading-q">${esc(q)}</div>
+    <div class="loading-note">Looking through your materials...</div>
+    <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+  h.appendChild(el);
+  h.scrollTop = h.scrollHeight;
+  return el;
+}
+
+function toggleSources(uid) {
+  const list = document.getElementById('src-' + uid);
+  const btn  = list?.previousElementSibling;
+  if (!list) return;
+  const open = list.classList.toggle('open');
+  btn?.classList.toggle('open', open);
+}
+
+function appendResult(question, answer, sources) {
+  const h = document.getElementById('qa-history');
+  const el = document.createElement('div');
+  el.className = 'result-block';
+
+  const uid = Math.random().toString(36).slice(2);
+  let srcHtml = '';
+  if (sources.length) {
+    srcHtml = `
+      <div class="sources-toggle" onclick="toggleSources('${uid}')">
+        <svg class="sources-toggle-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9,18 15,12 9,6"/></svg>
+        <span class="sources-toggle-label">${sources.length} source${sources.length > 1 ? 's' : ''} used</span>
+      </div>
+      <div class="sources-list" id="src-${uid}">
+        ${sources.map(s => `
+          <div class="source-card">
+            <div class="source-meta">
+              <span class="source-file" title="${esc(s.filename)}">${esc(s.filename)}</span>
+              ${s.location ? `<span class="source-loc">${esc(s.location)}</span>` : ''}
+            </div>
+            <div class="source-preview">${esc(s.preview.slice(0, 900))}${s.preview.length > 900 ? '...' : ''}</div>
+          </div>
+        `).join('')}
+      </div>`;
+  }
+
+  el.innerHTML = `
+    <div class="result-question">${esc(question)}</div>
+    <div class="result-answer-label">Answer</div>
+    <div class="result-answer">${md(answer)}</div>
+    ${srcHtml}`;
+
+  h.appendChild(el);
+  h.scrollTop = h.scrollHeight;
+}
+
+// ── Teacher: courses ───────────────────────────────────────────────────────
+let teacherCourses = [];
+let activeCourse = null;
+
+async function loadTeacherCourses() {
+  try {
+    const r = await fetch('/api/courses');
+    teacherCourses = await r.json();
+  } catch { teacherCourses = []; }
+  renderTeacherList();
+  if (activeCourse) {
+    const still = teacherCourses.find(c => c.name === activeCourse);
+    if (still) selectCourse(activeCourse); else hideCourseDetail();
+  }
+}
+
+function renderTeacherList() {
+  const el = document.getElementById('t-course-tabs');
+  if (!teacherCourses.length) {
+    el.innerHTML = '<span style="font-size:12px; color:var(--text-3);">No courses yet.</span>';
+    return;
+  }
+  el.innerHTML = teacherCourses.map(c => `
+    <button class="course-tab ${activeCourse === c.name ? 'active' : ''}"
+            data-course="${esc(c.name)}"
+            onclick="selectCourse(this.dataset.course)">
+      <span class="drag-handle" title="Drag to reorder">⠿</span>${esc(c.name)}
+    </button>
+  `).join('');
+  initDragDrop();
+}
+
+let _dragSrc = null;
+function initDragDrop() {
+  document.querySelectorAll('.course-tab').forEach(tab => {
+    const handle = tab.querySelector('.drag-handle');
+    if (!handle) return;
+    handle.draggable = true;
+    handle.addEventListener('dragstart', e => {
+      _dragSrc = tab;
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => tab.classList.add('dragging'), 0);
+    });
+    tab.addEventListener('dragend', () => {
+      tab.classList.remove('dragging');
+      document.querySelectorAll('.course-tab').forEach(t => t.classList.remove('drag-target'));
+    });
+    tab.addEventListener('dragover', e => { e.preventDefault(); tab.classList.add('drag-target'); });
+    tab.addEventListener('dragleave', () => tab.classList.remove('drag-target'));
+    tab.addEventListener('drop', e => {
+      e.preventDefault();
+      tab.classList.remove('drag-target');
+      if (!_dragSrc || _dragSrc === tab) return;
+      const container = document.getElementById('t-course-tabs');
+      const tabs = [...container.querySelectorAll('.course-tab')];
+      const srcIdx = tabs.indexOf(_dragSrc);
+      const dstIdx = tabs.indexOf(tab);
+      if (srcIdx < dstIdx) container.insertBefore(_dragSrc, tab.nextSibling);
+      else container.insertBefore(_dragSrc, tab);
+      const newOrder = [...container.querySelectorAll('.course-tab')].map(t => t.dataset.course);
+      saveOrder(newOrder);
+    });
+  });
+}
+
+async function saveOrder(order) {
+  teacherCourses.sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name));
+  await fetch('/api/courses/reorder', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ order }),
+  });
+}
+
+function selectCourse(name) {
+  activeCourse = name;
+
+  // Update active tab without rebuilding the whole list
+  document.querySelectorAll('.course-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.course === name);
+  });
+
+  const course = teacherCourses.find(c => c.name === name);
+  if (!course) return;
+
+  document.getElementById('no-course-msg').style.display = 'none';
+  document.getElementById('course-detail').classList.add('active');
+  document.getElementById('btn-delete-course').style.display = '';
+  document.getElementById('upload-status').textContent = '';
+  renderFileList(course.files);
+}
+
+function hideCourseDetail() {
+  activeCourse = null;
+  document.getElementById('no-course-msg').style.display = '';
+  document.getElementById('course-detail').classList.remove('active');
+  document.getElementById('btn-delete-course').style.display = 'none';
+  renderTeacherList();
+}
+
+function renderFileList(files) {
+  const el = document.getElementById('file-list');
+  if (!files.length) {
+    el.innerHTML = '<div style="font-size:12px; color:var(--text-3); padding:8px 0;">No books uploaded yet.</div>';
+    return;
+  }
+  el.innerHTML = files.map(f => `
+    <div class="f-item" data-file="${esc(f)}">
+      <span class="f-name">${esc(f)}</span>
+      <button class="btn-del" onclick="deleteFile(activeCourse, this.closest('.f-item').dataset.file)">Remove</button>
+    </div>
+  `).join('');
+}
+
+// ── Teacher: create course ─────────────────────────────────────────────────
+function toggleCreateForm() {
+  const form = document.getElementById('create-form');
+  const open = form.classList.toggle('open');
+  if (open) {
+    document.getElementById('new-course-name').value = '';
+    setTimeout(() => document.getElementById('new-course-name').focus(), 50);
+  }
+}
+
+async function createCourse() {
+  const name = document.getElementById('new-course-name').value.trim();
+  if (!name) return;
+  try {
+    const res = await fetch('/api/courses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    const data = await res.json();
+    if (data.error) { toast(data.error); return; }
+    document.getElementById('create-form').classList.remove('open');
+    await loadTeacherCourses();
+    selectCourse(name);
+    toast(`Course created: ${name}`);
+  } catch { toast('Failed to create course.'); }
+}
+
+async function deleteActiveCourse() {
+  if (!activeCourse) return;
+  if (!confirm(`Delete course "${activeCourse}" and all its materials?`)) return;
+  await fetch(`/api/courses/${encodeURIComponent(activeCourse)}`, { method: 'DELETE' });
+  toast('Course deleted.');
+  hideCourseDetail();
+  loadTeacherCourses();
+  loadBooks();
+}
+
+async function deleteFile(course, filename) {
+  if (!confirm(`Remove "${filename}" from ${course}?`)) return;
+  await fetch(`/api/courses/${encodeURIComponent(course)}/files/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+  toast(`Removed: ${filename}`);
+  await loadTeacherCourses();
+  selectCourse(course);
+  loadBooks();
+}
+
+// ── Teacher: upload ────────────────────────────────────────────────────────
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('over');
+  uploadFiles([...e.dataTransfer.files]);
+});
+fileInput.addEventListener('change', () => {
+  uploadFiles([...fileInput.files]);
+  fileInput.value = '';
+});
+
+async function uploadFiles(files) {
+  if (!activeCourse) { toast('Select a course first.'); return; }
+  const status = document.getElementById('upload-status');
+  for (const file of files) {
+    status.className = 'upload-status';
+    status.textContent = `Processing ${file.name}...`;
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('course', activeCourse);
+    try {
+      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.error) {
+        status.className = 'upload-status err';
+        status.textContent = data.error;
+      } else {
+        status.className = 'upload-status ok';
+        status.textContent = data.message;
+        await loadTeacherCourses();
+        selectCourse(activeCourse);
+        loadBooks();
+      }
+    } catch {
+      status.className = 'upload-status err';
+      status.textContent = 'Upload failed.';
+    }
+  }
+}
+
+// ── Teacher: search ────────────────────────────────────────────────────────
+async function searchContent() {
+  if (!activeCourse) return;
+  const query = document.getElementById('search-input').value.trim();
+  if (!query) return;
+  const el = document.getElementById('search-results');
+  el.innerHTML = '<div style="font-size:12px; color:var(--text-3);">Searching...</div>';
+  try {
+    const res = await fetch('/api/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, course: activeCourse }),
+    });
+    const data = await res.json();
+    if (data.error) {
+      el.innerHTML = `<div style="font-size:12px; color:var(--red);">${esc(data.error)}</div>`;
+      return;
+    }
+    if (!data.length) {
+      el.innerHTML = '<div style="font-size:12px; color:var(--text-3);">No matching content found.</div>';
+      return;
+    }
+    el.innerHTML = data.map(r => `
+      <div class="sr-item">
+        <div class="sr-file">${esc(r.filename)}</div>
+        <div class="sr-loc">${esc(r.location)}</div>
+        <div class="sr-text">${esc(r.preview.slice(0, 450))}${r.preview.length > 450 ? '...' : ''}</div>
+      </div>
+    `).join('');
+  } catch {
+    el.innerHTML = '<div style="font-size:12px; color:var(--red);">Search failed.</div>';
+  }
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+loadBooks();
+</script>
+</body>
+</html>
