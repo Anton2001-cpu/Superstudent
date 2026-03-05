@@ -1,8 +1,10 @@
+import hashlib
+import hmac
 import json
 import os
 from pathlib import Path
 
-from flask import Flask, jsonify, render_template, request, session, redirect, url_for
+from flask import Flask, jsonify, make_response, render_template, request, redirect, url_for
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
 
@@ -12,19 +14,24 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50 MB
-app.secret_key = os.getenv("SECRET_KEY", "supersecret-change-me")
-app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-app.config["SESSION_COOKIE_HTTPONLY"] = True
 
 SITE_PASSWORD = os.getenv("SITE_PASSWORD", "student")
+_SECRET = os.getenv("SECRET_KEY", "supersecret-change-me")
+
+
+def _make_token():
+    return hmac.new(_SECRET.encode(), SITE_PASSWORD.encode(), hashlib.sha256).hexdigest()
+
+
+def _is_authenticated():
+    return hmac.compare_digest(request.cookies.get("auth", ""), _make_token())
 
 
 @app.before_request
 def require_login():
     if request.endpoint in ("login", "logout", "static"):
         return
-    if not session.get("authenticated"):
-        # Return JSON error for API calls instead of redirecting
+    if not _is_authenticated():
         if request.path.startswith("/api/"):
             return jsonify({"error": "Not authenticated"}), 401
         return redirect(url_for("login"))
@@ -35,16 +42,19 @@ def login():
     error = None
     if request.method == "POST":
         if request.form.get("password") == SITE_PASSWORD:
-            session["authenticated"] = True
-            return redirect(url_for("index"))
+            resp = make_response(redirect(url_for("index")))
+            resp.set_cookie("auth", _make_token(), httponly=True,
+                            samesite="Lax", max_age=60 * 60 * 24 * 30)
+            return resp
         error = "Incorrect password."
     return render_template("login.html", error=error)
 
 
 @app.route("/logout")
 def logout():
-    session.clear()
-    return redirect(url_for("login"))
+    resp = make_response(redirect(url_for("login")))
+    resp.delete_cookie("auth")
+    return resp
 
 DATA_FOLDER = Path("vectordb")
 DATA_FOLDER.mkdir(exist_ok=True)
