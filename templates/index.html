@@ -411,47 +411,6 @@
     .extra-toggle-label {
       font-size: 10px;
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-3);
-    }
-    .extra-toggle-chevron {
-      color: var(--text-3);
-      transition: transform 0.18s;
-      line-height: 1;
-    }
-    .extra-toggle.open .extra-toggle-chevron { transform: rotate(90deg); }
-    .extra-body {
-      display: none;
-      margin-top: 10px;
-      padding: 12px 14px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      font-size: 12px;
-      color: var(--text-2);
-    }
-    .extra-body.open { display: block; }
-    .extra-disclaimer {
-      font-size: 11px;
-      color: var(--text-3);
-      margin-bottom: 8px;
-      font-style: italic;
-    }
-
-    /* Extra info */
-    .extra-toggle {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      cursor: pointer;
-      user-select: none;
-      margin-top: 14px;
-      width: fit-content;
-    }
-    .extra-toggle-label {
-      font-size: 10px;
-      font-weight: 700;
       letter-spacing: 0.04em;
       color: var(--text-3);
     }
@@ -464,12 +423,6 @@
     .extra-body {
       display: none;
       margin-top: 8px;
-      padding: 12px 14px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      font-size: 13px;
-      color: var(--text-2);
     }
     .extra-body.open { display: block; }
     .extra-disclaimer {
@@ -863,22 +816,18 @@
       user-select: none;
     }
     .drop-zone:hover, .drop-zone.over { border-color: var(--blue); background: var(--blue-dim); }
-    @keyframes spin-border {
-      to { transform: rotate(360deg); }
+    @keyframes upload-pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
     }
     .drop-zone.uploading {
-      position: relative;
-      border-color: transparent;
       pointer-events: none;
-      opacity: 0.7;
+      border-color: var(--blue);
+      background: var(--blue-dim);
     }
-    .drop-zone.uploading::before {
-      content: '';
-      position: absolute;
-      inset: -2px;
-      border-radius: 11px;
-      border: 2px dashed var(--blue);
-      animation: spin-border 1.2s linear infinite;
+    .drop-zone.uploading .drop-title,
+    .drop-zone.uploading .drop-sub {
+      animation: upload-pulse 1.4s ease-in-out infinite;
     }
     .drop-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
     .drop-sub { font-size: 11px; color: var(--text-2); }
@@ -1484,6 +1433,25 @@ function appendSources(block, sources, answer = '') {
 function buildExtraHtml(extra) {
   if (!extra) return '';
   const uid = Math.random().toString(36).slice(2);
+  // Parse markdown links: - [Title](URL): description
+  const cards = [];
+  const lines = extra.split('\n');
+  for (const line of lines) {
+    const m = line.match(/^\s*-\s*\[([^\]]+)\]\((https?:\/\/[^)]+)\):?\s*(.*)/);
+    if (m) {
+      const title = esc(m[1]);
+      const url = esc(m[2]);
+      const desc = esc(m[3].trim());
+      cards.push(`
+        <div class="source-card">
+          <div class="source-meta">
+            <a class="source-file" href="${url}" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:none;max-width:100%;white-space:normal;">${title}</a>
+          </div>
+          ${desc ? `<div class="source-preview">${desc}</div>` : ''}
+        </div>`);
+    }
+  }
+  const body = cards.length ? cards.join('') : `<div class="source-preview">${md(extra)}</div>`;
   return `
     <div class="extra-toggle" onclick="this.classList.toggle('open');document.getElementById('ex-${uid}').classList.toggle('open')">
       <svg class="extra-toggle-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9,18 15,12 9,6"/></svg>
@@ -1491,7 +1459,7 @@ function buildExtraHtml(extra) {
     </div>
     <div class="extra-body" id="ex-${uid}">
       <div class="extra-disclaimer">Deze informatie komt van online en staat niet in het cursusmateriaal.</div>
-      ${md(extra)}
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">${body}</div>
     </div>`;
 }
 
@@ -1693,6 +1661,8 @@ async function uploadFiles(files) {
     status.className = 'upload-status';
     status.textContent = `Processing ${file.name}...`;
     dropZone.classList.add('uploading');
+    dropZone.querySelector('.drop-title').textContent = 'Processing...';
+    dropZone.querySelector('.drop-sub').textContent = file.name;
     const fd = new FormData();
     fd.append('file', file);
     fd.append('course', activeCourse);
@@ -1714,6 +1684,8 @@ async function uploadFiles(files) {
       status.textContent = 'Upload failed.';
     } finally {
       dropZone.classList.remove('uploading');
+      dropZone.querySelector('.drop-title').textContent = 'Drop files here or click to browse';
+      dropZone.querySelector('.drop-sub').textContent = 'PDF, Word (.docx), or plain text (.txt) — up to 50 MB each';
     }
   }
 }
