@@ -304,22 +304,21 @@ class RAGEngine:
             answer = answer.replace(fallback_old, "").strip().rstrip("\n").strip()
         no_answer = "couldn't find" in answer.lower()
 
-        # Separate call for online extra info
-        extra_prompt = (
-            "You are a helpful assistant. The student just asked: \"{q}\". "
-            "Provide 1-2 relevant links (Wikipedia or well-known educational sites) related to this topic. "
-            "Use the same language as the question. "
-            "Format each as: - [Title](URL): one sentence description. "
-            "Only output the list, nothing else."
-        ).format(q=question)
-
-        extra_response = self.client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role": "user", "content": extra_prompt}],
-            temperature=0,
-            max_tokens=200,
-        )
-        extra = extra_response.choices[0].message.content.strip()
+        # Separate call for online extra info — uses web search
+        try:
+            extra_response = self.client.responses.create(
+                model="gpt-4o-mini",
+                tools=[{"type": "web_search_preview"}],
+                input=(
+                    f"The student asked: \"{question}\". "
+                    "Search online and give a short, helpful answer (2-4 sentences) about this topic. "
+                    "Respond in the same language as the question. "
+                    "Be informative — give real content, not just a list of links."
+                ),
+            )
+            extra = extra_response.output_text.strip()
+        except Exception:
+            extra = ""
 
         return {
             "answer": answer,

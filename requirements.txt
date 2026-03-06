@@ -1,6 +1,6 @@
 flask>=3.0.0
 gunicorn>=21.0.0
-openai>=1.30.0
+openai>=1.66.0
 chromadb==0.4.15
 numpy<2.0
 pypdf>=4.0.0

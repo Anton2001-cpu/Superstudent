@@ -423,6 +423,13 @@
     .extra-body {
       display: none;
       margin-top: 8px;
+      padding: 12px 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px;
+      color: var(--text-2);
+      line-height: 1.6;
     }
     .extra-body.open { display: block; }
     .extra-disclaimer {
@@ -1433,25 +1440,6 @@ function appendSources(block, sources, answer = '') {
 function buildExtraHtml(extra) {
   if (!extra) return '';
   const uid = Math.random().toString(36).slice(2);
-  // Parse markdown links: - [Title](URL): description
-  const cards = [];
-  const lines = extra.split('\n');
-  for (const line of lines) {
-    const m = line.match(/^\s*-\s*\[([^\]]+)\]\((https?:\/\/[^)]+)\):?\s*(.*)/);
-    if (m) {
-      const title = esc(m[1]);
-      const url = esc(m[2]);
-      const desc = esc(m[3].trim());
-      cards.push(`
-        <div class="source-card">
-          <div class="source-meta">
-            <a class="source-file" href="${url}" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:none;max-width:100%;white-space:normal;">${title}</a>
-          </div>
-          ${desc ? `<div class="source-preview">${desc}</div>` : ''}
-        </div>`);
-    }
-  }
-  const body = cards.length ? cards.join('') : `<div class="source-preview">${md(extra)}</div>`;
   return `
     <div class="extra-toggle" onclick="this.classList.toggle('open');document.getElementById('ex-${uid}').classList.toggle('open')">
       <svg class="extra-toggle-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9,18 15,12 9,6"/></svg>
@@ -1459,7 +1447,7 @@ function buildExtraHtml(extra) {
     </div>
     <div class="extra-body" id="ex-${uid}">
       <div class="extra-disclaimer">Deze informatie komt van online en staat niet in het cursusmateriaal.</div>
-      <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">${body}</div>
+      ${md(extra)}
     </div>`;
 }
 
