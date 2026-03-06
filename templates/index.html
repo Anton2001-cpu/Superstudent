@@ -1331,14 +1331,25 @@ function highlightPreview(previewText, answerText) {
   const keywords = extractKeywords(answerText);
   if (!keywords.length) return esc(previewText);
   const preview = previewText.slice(0, 900);
-  // Split on sentence boundaries
   const sentences = preview.split(/(?<=[.!?])\s+/);
-  return sentences.map(sentence => {
-    const lower = sentence.toLowerCase();
-    const hits = keywords.filter(k => lower.includes(k)).length;
-    if (hits >= 2) return `<mark class="source-highlight">${esc(sentence)}</mark>`;
-    return esc(sentence);
-  }).join(' ') + (previewText.length > 900 ? '...' : '');
+
+  // Score each sentence
+  const scored = sentences.map((s, i) => {
+    const lower = s.toLowerCase();
+    return { i, hits: keywords.filter(k => lower.includes(k)).length };
+  });
+
+  // Pick top 2 sentences with the most keyword hits (minimum 2 hits to qualify)
+  const topIndices = new Set(
+    scored.filter(x => x.hits >= 2)
+          .sort((a, b) => b.hits - a.hits)
+          .slice(0, 2)
+          .map(x => x.i)
+  );
+
+  return sentences.map((s, i) =>
+    topIndices.has(i) ? `<mark class="source-highlight">${esc(s)}</mark>` : esc(s)
+  ).join(' ') + (previewText.length > 900 ? '...' : '');
 }
 
 function buildSourcesHtml(sources, answer = '') {
