@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: superstudent
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    disk:
+      name: vectordb
+      mountPath: /app/vectordb
+      sizeGB: 1
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: SITE_PASSWORD
+        sync: false
+      - key: SECRET_KEY
+        sync: false
