@@ -1205,6 +1205,25 @@ function getSelectedBooks() {
 
 // ── Student Q&A ────────────────────────────────────────────────────────────
 let busy = false;
+let sessionStart = null;
+let successWished = false;
+
+function checkSessionDuration() {
+  if (successWished || !sessionStart) return;
+  if (Date.now() - sessionStart >= 3 * 60 * 60 * 1000) {
+    successWished = true;
+    const h = document.getElementById('qa-history');
+    const el = document.createElement('div');
+    el.className = 'result-block';
+    el.style.cssText = 'text-align:center; padding: 28px 20px;';
+    el.innerHTML = `
+      <div style="font-size:22px; margin-bottom:10px;">🎓</div>
+      <div style="font-size:15px; font-weight:600; color:var(--text); margin-bottom:6px)">Je bent al meer dan 3 uur aan het studeren!</div>
+      <div style="font-size:13px; color:var(--text-2);">Veel succes op je examen. Je hebt er hard voor gewerkt.</div>`;
+    h.appendChild(el);
+    h.scrollTop = h.scrollHeight;
+  }
+}
 
 async function askQuestion() {
   if (busy) return;
@@ -1220,6 +1239,7 @@ async function askQuestion() {
 
   input.value = '';
   document.getElementById('qa-empty')?.remove();
+  if (!sessionStart) sessionStart = Date.now();
 
   const loading = appendLoading(q);
   busy = true;
@@ -1295,6 +1315,7 @@ async function askQuestion() {
   document.getElementById('ask-btn').disabled = false;
   input.disabled = false;
   input.focus();
+  checkSessionDuration();
 }
 
 function appendLoading(q) {
