@@ -210,12 +210,13 @@ def chat():
     data = request.get_json(force=True)
     question = (data.get("question") or "").strip()
     books = data.get("books") or None
+    history = data.get("history") or []
 
     if not question:
         return jsonify({"error": "Question cannot be empty"}), 400
 
     try:
-        result = get_rag().query(question, books)
+        result = get_rag().query(question, books, history)
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -226,13 +227,14 @@ def chat_stream():
     data = request.get_json(force=True)
     question = (data.get("question") or "").strip()
     books = data.get("books") or None
+    history = data.get("history") or []
 
     if not question:
         return jsonify({"error": "Question cannot be empty"}), 400
 
     def generate():
         try:
-            for event in get_rag().stream_query(question, books):
+            for event in get_rag().stream_query(question, books, history):
                 yield f"data: {json.dumps(event)}\n\n"
         except Exception as e:
             yield f"data: {json.dumps({'type': 'error', 'text': str(e)})}\n\n"

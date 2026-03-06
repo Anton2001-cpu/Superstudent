@@ -135,7 +135,7 @@
 
     /* ── Shared sidebar ── */
     .sidebar {
-      width: 380px;
+      width: 220px;
       flex-shrink: 0;
       background: var(--sidebar);
       border-right: 1px solid var(--border);
@@ -221,6 +221,9 @@
       font-weight: 600;
       color: var(--text-2);
       letter-spacing: 0.01em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .btn-toggle-all {
       font-family: inherit;
@@ -233,11 +236,12 @@
     }
     .book-item {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 8px;
       padding: 5px 14px 5px 18px;
       cursor: pointer;
       transition: background 0.1s;
+      overflow: hidden;
     }
     .book-item:hover { background: var(--bg); }
     .book-item input[type="checkbox"] { display: none; }
@@ -269,7 +273,11 @@
       font-size: 12px;
       color: var(--text);
       line-height: 1.4;
-      word-break: break-word;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+      flex: 1;
     }
 
     .sb-collapse-btn {
@@ -294,7 +302,7 @@
       position: absolute;
       left: 0; top: 0; bottom: 0;
       z-index: 20;
-      width: 380px;
+      width: 260px;
       transform: translateX(0);
       transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
       box-shadow: 1px 0 0 var(--border), 4px 0 18px rgba(0,0,0,0.07);
@@ -332,7 +340,7 @@
       flex: 1;
       overflow-y: scroll;
       scrollbar-gutter: stable;
-      padding: 24px 28px 12px 400px; /* 320px sidebar + 20px gap */
+      padding: 24px 28px 12px 280px; /* 260px sidebar + 20px gap */
       display: flex;
       flex-direction: column;
       gap: 0;
@@ -390,11 +398,92 @@
     .result-answer ul { padding-left: 20px; margin: 6px 0; }
     .result-answer li { margin-bottom: 4px; }
 
+    /* Extra info */
+    .extra-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+      margin-top: 14px;
+      width: fit-content;
+    }
+    .extra-toggle-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-3);
+    }
+    .extra-toggle-chevron {
+      color: var(--text-3);
+      transition: transform 0.18s;
+      line-height: 1;
+    }
+    .extra-toggle.open .extra-toggle-chevron { transform: rotate(90deg); }
+    .extra-body {
+      display: none;
+      margin-top: 10px;
+      padding: 12px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 12px;
+      color: var(--text-2);
+    }
+    .extra-body.open { display: block; }
+    .extra-disclaimer {
+      font-size: 11px;
+      color: var(--text-3);
+      margin-bottom: 8px;
+      font-style: italic;
+    }
+
+    /* Extra info */
+    .extra-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+      margin-top: 14px;
+      width: fit-content;
+    }
+    .extra-toggle-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--text-3);
+    }
+    .extra-toggle-chevron {
+      color: var(--text-3);
+      transition: transform 0.18s;
+      line-height: 1;
+    }
+    .extra-toggle.open .extra-toggle-chevron { transform: rotate(90deg); }
+    .extra-body {
+      display: none;
+      margin-top: 8px;
+      padding: 12px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px;
+      color: var(--text-2);
+    }
+    .extra-body.open { display: block; }
+    .extra-disclaimer {
+      font-size: 11px;
+      color: var(--text-3);
+      margin-bottom: 8px;
+      font-style: italic;
+    }
+
     /* Sources */
     .sources-toggle {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 10px;
       cursor: pointer;
       user-select: none;
       margin-top: 16px;
@@ -404,8 +493,7 @@
     .sources-toggle-label {
       font-size: 10px;
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.04em;
       color: var(--text-3);
     }
     .sources-toggle-chevron {
@@ -504,7 +592,7 @@
 
     /* Input bar — slides with sidebar */
     .qa-input-bar {
-      padding: 13px 20px 13px 400px; /* 320px sidebar + 20px gap */
+      padding: 8px 16px 8px 280px; /* 260px sidebar + 20px gap */
       border-top: 1px solid var(--border);
       background: var(--card);
       display: flex;
@@ -523,7 +611,7 @@
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 9px 14px;
+      padding: 7px 12px;
       outline: none;
       transition: border-color 0.15s, background 0.15s;
     }
@@ -533,7 +621,7 @@
       font-family: inherit;
       font-size: 13px;
       font-weight: 500;
-      padding: 9px 20px;
+      padding: 7px 18px;
       background: var(--blue);
       color: white;
       border: none;
@@ -568,6 +656,10 @@
       color: var(--text-2);
       cursor: pointer;
       transition: all 0.12s;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .course-tab:hover { border-color: var(--blue); color: var(--text); }
     .course-tab.active { background: var(--blue); color: white; border-color: var(--blue); }
@@ -771,6 +863,23 @@
       user-select: none;
     }
     .drop-zone:hover, .drop-zone.over { border-color: var(--blue); background: var(--blue-dim); }
+    @keyframes spin-border {
+      to { transform: rotate(360deg); }
+    }
+    .drop-zone.uploading {
+      position: relative;
+      border-color: transparent;
+      pointer-events: none;
+      opacity: 0.7;
+    }
+    .drop-zone.uploading::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 11px;
+      border: 2px dashed var(--blue);
+      animation: spin-border 1.2s linear infinite;
+    }
     .drop-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
     .drop-sub { font-size: 11px; color: var(--text-2); }
     .upload-status { font-size: 12px; color: var(--text-2); margin-top: 8px; min-height: 18px; }
@@ -783,11 +892,21 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 8px;
       padding: 7px 0;
       border-bottom: 1px solid var(--border);
+      overflow: hidden;
     }
     .f-item:last-child { border-bottom: none; }
-    .f-name { font-size: 12px; color: var(--text-2); }
+    .f-name {
+      font-size: 12px;
+      color: var(--text-2);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+      flex: 1;
+    }
     .btn-del {
       font-family: inherit;
       font-size: 11px;
@@ -949,12 +1068,12 @@
     <div class="qa-history" id="qa-history">
       <div class="qa-empty" id="qa-empty">
         <div class="qa-empty-title">Ask a question about your courses</div>
-        <div class="qa-empty-sub">Select books from the left panel, then type your question below. Only the uploaded course materials will be used — no internet, no guessing.</div>
+        <div class="qa-empty-sub">Select books from the left panel, then type your question below. Only the uploaded course materials will be used, no internet, no guessing.</div>
       </div>
     </div>
     <div class="qa-input-bar">
       <input class="qa-input" type="text" id="q-input"
-             placeholder="Type your question here..."
+             placeholder="Type here a question"
              onkeydown="if(event.key==='Enter') askQuestion()">
       <button class="btn-ask" id="ask-btn" onclick="askQuestion()">Ask</button>
     </div>
@@ -1100,6 +1219,10 @@ function esc(s) {
     .replace(/>/g, '&gt;');
 }
 
+function trunc(s, n = 35) {
+  return s.length > n ? esc(s.slice(0, n)) + '…' : esc(s);
+}
+
 function md(text) {
   const lines = text.split('\n');
   let html = '', inList = false;
@@ -1175,14 +1298,14 @@ function renderBookList() {
   el.innerHTML = displayed.map((c, ci) => `
     <div class="course-group">
       <div class="course-group-header">
-        <span class="course-group-name">${esc(c.name)}</span>
+        <span class="course-group-name" title="${esc(c.name)}">${trunc(c.name)}</span>
         <button class="btn-toggle-all" onclick="toggleCourse(${ci})">select all</button>
       </div>
       ${c.files.map(f => `
         <label class="book-item">
           <input type="checkbox" class="book-cb" data-ci="${ci}" data-filename="${esc(f)}" checked>
           <div class="toggle"></div>
-          <span class="book-label">${esc(f)}</span>
+          <span class="book-label" title="${esc(f)}">${trunc(f)}</span>
         </label>
       `).join('')}
     </div>
@@ -1217,13 +1340,14 @@ function checkSessionDuration() {
     el.className = 'result-block';
     el.style.cssText = 'text-align:center; padding: 28px 20px;';
     el.innerHTML = `
-      <div style="font-size:22px; margin-bottom:10px;">🎓</div>
-      <div style="font-size:15px; font-weight:600; color:var(--text); margin-bottom:6px)">Je bent al meer dan 3 uur aan het studeren!</div>
+      <div style="font-size:15px; font-weight:600; color:var(--text); margin-bottom:6px;">Je bent al meer dan 3 uur aan het studeren!</div>
       <div style="font-size:13px; color:var(--text-2);">Veel succes op je examen. Je hebt er hard voor gewerkt.</div>`;
     h.appendChild(el);
     h.scrollTop = h.scrollHeight;
   }
 }
+
+const chatHistory = [];
 
 async function askQuestion() {
   if (busy) return;
@@ -1247,64 +1371,21 @@ async function askQuestion() {
   input.disabled = true;
 
   try {
-    const res = await apiFetch('/api/chat/stream', {
+    const res = await apiFetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question: q, books }),
+      body: JSON.stringify({ question: q, books, history: chatHistory }),
     });
     if (!res) throw new Error('Not authenticated');
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    let answerEl = null;
-    let rawAnswer = '';
-    let resultBlock = null;
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop();
-
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        let event;
-        try { event = JSON.parse(line.slice(6)); } catch { continue; }
-
-        if (event.type === 'token') {
-          if (!answerEl) {
-            loading.remove();
-            const block = document.createElement('div');
-            block.className = 'result-block';
-            block.innerHTML = `
-              <div class="result-question">${esc(q)}</div>
-              <div class="result-answer-label">Answer</div>
-              <div class="result-answer streaming-answer"></div>`;
-            document.getElementById('qa-history').appendChild(block);
-            answerEl = block.querySelector('.result-answer');
-            resultBlock = block;
-          }
-          rawAnswer += event.text;
-          answerEl.textContent = rawAnswer;
-          answerEl.scrollIntoView({ block: 'end', behavior: 'smooth' });
-
-        } else if (event.type === 'done') {
-          if (answerEl) {
-            answerEl.classList.remove('streaming-answer');
-            answerEl.innerHTML = md(rawAnswer);
-            appendSources(resultBlock, event.sources || [], rawAnswer);
-          } else {
-            loading.remove();
-            appendResult(q, rawAnswer || 'No response received.', []);
-          }
-
-        } else if (event.type === 'error') {
-          loading.remove();
-          appendResult(q, event.text, []);
-        }
-      }
+    const data = await res.json();
+    loading.remove();
+    if (data.error) {
+      appendResult(q, data.error, []);
+    } else {
+      appendResult(q, data.answer, data.sources || [], data.extra || '');
+      chatHistory.push({ role: 'user', content: q });
+      chatHistory.push({ role: 'assistant', content: data.answer });
+      if (chatHistory.length > 10) chatHistory.splice(0, 2);
     }
   } catch {
     loading.remove();
@@ -1400,7 +1481,21 @@ function appendSources(block, sources, answer = '') {
   block.scrollIntoView({ block: 'end', behavior: 'smooth' });
 }
 
-function appendResult(question, answer, sources) {
+function buildExtraHtml(extra) {
+  if (!extra) return '';
+  const uid = Math.random().toString(36).slice(2);
+  return `
+    <div class="extra-toggle" onclick="this.classList.toggle('open');document.getElementById('ex-${uid}').classList.toggle('open')">
+      <svg class="extra-toggle-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9,18 15,12 9,6"/></svg>
+      <span class="extra-toggle-label">Extra informatie online</span>
+    </div>
+    <div class="extra-body" id="ex-${uid}">
+      <div class="extra-disclaimer">Deze informatie komt van online en staat niet in het cursusmateriaal.</div>
+      ${md(extra)}
+    </div>`;
+}
+
+function appendResult(question, answer, sources, extra = '') {
   const h = document.getElementById('qa-history');
   const el = document.createElement('div');
   el.className = 'result-block';
@@ -1408,6 +1503,7 @@ function appendResult(question, answer, sources) {
     <div class="result-question">${esc(question)}</div>
     <div class="result-answer-label">Answer</div>
     <div class="result-answer">${md(answer)}</div>
+    ${buildExtraHtml(extra)}
     ${buildSourcesHtml(sources, answer)}`;
   h.appendChild(el);
   h.scrollTop = h.scrollHeight;
@@ -1439,7 +1535,7 @@ function renderTeacherList() {
     <button class="course-tab ${activeCourse === c.name ? 'active' : ''}"
             data-course="${esc(c.name)}"
             onclick="selectCourse(this.dataset.course)">
-      <span class="drag-handle" title="Drag to reorder">⠿</span>${esc(c.name)}
+      <span class="drag-handle" title="Drag to reorder">⠿</span><span title="${esc(c.name)}">${trunc(c.name)}</span>
     </button>
   `).join('');
   initDragDrop();
@@ -1521,7 +1617,7 @@ function renderFileList(files) {
   }
   el.innerHTML = files.map(f => `
     <div class="f-item" data-file="${esc(f)}">
-      <span class="f-name">${esc(f)}</span>
+      <span class="f-name" title="${esc(f)}">${trunc(f)}</span>
       <button class="btn-del" onclick="deleteFile(activeCourse, this.closest('.f-item').dataset.file)">Remove</button>
     </div>
   `).join('');
@@ -1596,6 +1692,7 @@ async function uploadFiles(files) {
   for (const file of files) {
     status.className = 'upload-status';
     status.textContent = `Processing ${file.name}...`;
+    dropZone.classList.add('uploading');
     const fd = new FormData();
     fd.append('file', file);
     fd.append('course', activeCourse);
@@ -1615,6 +1712,8 @@ async function uploadFiles(files) {
     } catch {
       status.className = 'upload-status err';
       status.textContent = 'Upload failed.';
+    } finally {
+      dropZone.classList.remove('uploading');
     }
   }
 }

@@ -43,8 +43,20 @@ class RAGEngine:
         """First page with little real content is likely a title page."""
         if page_index != 0:
             return False
-        # Title pages are short and have no real sentences
-        return len(text.strip()) < 600
+        # Short pages with no real sentences
+        if len(text.strip()) < 600:
+            return True
+        # Academic paper cover page: has email address + "abstract" heading
+        t = text.lower()
+        has_email = bool(re.search(r'[\w.+-]+@[\w-]+\.[a-z]{2,}', text))
+        has_abstract = "abstract" in t[:800]
+        has_affiliation = any(w in t[:600] for w in [
+            "university", "universiteit", "institute", "department", "faculty",
+            "corresponding author", "delft", "technische"
+        ])
+        if has_email and (has_abstract or has_affiliation):
+            return True
+        return False
 
     def _is_reference_page(self, text: str) -> bool:
         """Detect bibliography / reference list pages."""
@@ -198,7 +210,7 @@ class RAGEngine:
         variants.add(re.sub(r'(\b\w+)\s+(\w+\b)', lambda m: f"{m.group(1)}-{m.group(2)}", text))
         return " | ".join(v for v in variants if v != text) or text
 
-    def query(self, question: str, books: list = None) -> dict:
+    def query(self, question: str, books: list = None, history: list = None) -> dict:
         """books: list of filenames to restrict search to. None = all books."""
         total = self.collection.count()
         if total == 0:
@@ -207,8 +219,9 @@ class RAGEngine:
                 "sources": [],
             }
 
+        search_query = self._get_search_query(question, history or [])
         response = self.client.embeddings.create(
-            input=[self._expand_query(question)],
+            input=[self._expand_query(search_query)],
             model="text-embedding-3-small",
         )
         query_embedding = response.data[0].embedding
@@ -220,7 +233,7 @@ class RAGEngine:
             else:
                 where = {"$or": [{"filename": {"$eq": b}} for b in books]}
 
-        n_results = min(5, total)
+        n_results = min(3, total)
 
         try:
             results = self.collection.query(
@@ -239,7 +252,7 @@ class RAGEngine:
 
         if not docs:
             return {
-                "answer": "I couldn't find this in your selected course materials. Please ask your teacher.",
+                "answer": "I couldn't find this in your course material, click below to check relevant information online.",
                 "sources": [],
             }
 
@@ -259,41 +272,85 @@ class RAGEngine:
 
         context = "\n\n---\n\n".join(context_parts)
 
-        system_prompt = (
+        answer_prompt = (
             "You are a study assistant for students. "
-            "Answer the question using ONLY the course material provided below. "
-            "Do not use any outside knowledge or invent information. "
-            "Either give a complete answer based on the material, OR say exactly: "
-            "\"I couldn't find this in your course materials. Please ask your teacher.\" "
-            "Never do both in the same response. Never mix an answer with the fallback phrase. "
-            "Be clear and concise. Use bullet points for lists. Bold key terms with **term**."
+            "IMPORTANT: Always respond in the same language as the student's question. "
+            "If the question is in Dutch, answer in Dutch. If in English, answer in English. "
+            "Do not use emojis. "
+            "STRICT RULE: Give a maximum of 4-5 sentences. Use bullet points only when listing multiple items. "
+            "Be direct — give the core answer only, no unnecessary intro or conclusion. "
+            "Answer using ONLY the course material provided. Do not invent information. "
+            "Either give a short answer, OR say exactly (in the student's language): "
+            "\"I couldn't find this in your course material, click below to check relevant information online.\" "
+            "Never mix an answer with the fallback phrase. Bold key terms with **term**. "
+            "EXCEPTION: If the student explicitly asks for more detail (e.g. 'leg beter uit', 'meer uitleg', 'elaborate'), you may give a longer answer."
         )
+
+        messages = [{"role": "system", "content": answer_prompt}]
+        if history:
+            messages.extend(history)
+        messages.append({"role": "user", "content": f"Course materials:\n\n{context}\n\n---\n\nQuestion: {question}"})
 
         chat_response = self.client.chat.completions.create(
             model="gpt-4o",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {
-                    "role": "user",
-                    "content": f"Course materials:\n\n{context}\n\n---\n\nQuestion: {question}",
-                },
-            ],
+            messages=messages,
             temperature=0,
-            max_tokens=1200,
+            max_tokens=600,
         )
-
         answer = chat_response.choices[0].message.content.strip()
-        fallback = "I couldn't find this in your course materials. Please ask your teacher."
-        # Strip the fallback phrase if real content also exists in the answer
-        if fallback in answer and len(answer) > len(fallback) + 10:
-            answer = answer.replace(fallback, "").strip().rstrip("\n").strip()
+
+        fallback_old = "I couldn't find this in your course materials. Please ask your teacher."
+        if fallback_old in answer and len(answer) > len(fallback_old) + 10:
+            answer = answer.replace(fallback_old, "").strip().rstrip("\n").strip()
         no_answer = "couldn't find" in answer.lower()
+
+        # Separate call for online extra info
+        extra_prompt = (
+            "You are a helpful assistant. The student just asked: \"{q}\". "
+            "Provide 1-2 relevant links (Wikipedia or well-known educational sites) related to this topic. "
+            "Use the same language as the question. "
+            "Format each as: - [Title](URL): one sentence description. "
+            "Only output the list, nothing else."
+        ).format(q=question)
+
+        extra_response = self.client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": extra_prompt}],
+            temperature=0,
+            max_tokens=200,
+        )
+        extra = extra_response.choices[0].message.content.strip()
+
         return {
             "answer": answer,
+            "extra": extra,
             "sources": [] if no_answer else sources,
         }
 
-    def stream_query(self, question: str, books: list = None):
+    _FOLLOWUP_PHRASES = [
+        "explain better", "explain more", "elaborate", "more detail", "more info",
+        "tell me more", "can you explain", "what do you mean", "give an example",
+        "i don't understand", "i dont understand", "don't get it", "dont get it",
+        "leg beter uit", "meer uitleg", "vertel meer", "wat bedoel je", "meer detail",
+        "geef een voorbeeld", "kun je uitleggen", "kan je uitleggen", "meer informatie",
+        "verduidelijk", "hoe bedoel je", "ik snap het niet", "snap het niet",
+        "ik begrijp het niet", "begrijp het niet", "wat betekent dit", "wat betekent dat",
+        "niet begrepen", "leg uit", "uitleggen",
+    ]
+
+    def _is_followup(self, question: str) -> bool:
+        q = question.lower().strip()
+        return any(phrase in q for phrase in self._FOLLOWUP_PHRASES)
+
+    def _get_search_query(self, question: str, history: list) -> str:
+        """If followup question, use last user question from history as search query."""
+        if self._is_followup(question) and history:
+            for msg in reversed(history):
+                if msg.get("role") == "user":
+                    return msg["content"]
+        return question
+
+    def stream_query(self, question: str, books: list = None, history: list = None):
         """Stream the answer token by token. Yields dicts for SSE."""
         total = self.collection.count()
         if total == 0:
@@ -301,8 +358,9 @@ class RAGEngine:
             yield {"type": "done", "sources": []}
             return
 
+        search_query = self._get_search_query(question, history or [])
         response = self.client.embeddings.create(
-            input=[self._expand_query(question)],
+            input=[self._expand_query(search_query)],
             model="text-embedding-3-small",
         )
         query_embedding = response.data[0].embedding
@@ -324,7 +382,7 @@ class RAGEngine:
         metas = results["metadatas"][0]
 
         if not docs:
-            yield {"type": "token", "text": "I couldn't find this in your selected course materials. Please ask your teacher."}
+            yield {"type": "token", "text": "I couldn't find this in your course material, click below to check relevant information online."}
             yield {"type": "done", "sources": []}
             return
 
@@ -338,20 +396,30 @@ class RAGEngine:
 
         system_prompt = (
             "You are a study assistant for students. "
+            "IMPORTANT: Always respond in the same language as the student's question. "
+            "If the question is in Dutch, answer in Dutch. If in English, answer in English. "
             "Answer the question using ONLY the course material provided below. "
             "Do not use any outside knowledge or invent information. "
-            "Either give a complete answer based on the material, OR say exactly: "
+            "Do not use emojis. "
+            "Either give a complete answer based on the material, OR say exactly (in the student's language): "
             "\"I couldn't find this in your course materials. Please ask your teacher.\" "
             "Never do both in the same response. "
-            "Be clear and concise. Use bullet points for lists. Bold key terms with **term**."
+            "Be clear and concise. Use bullet points for lists. Bold key terms with **term**. "
+            "If the student explicitly asks for more info, extra explanation, or more detail (e.g. 'vertel meer', 'meer uitleg', 'tell me more', 'elaborate'), "
+            "give a more detailed answer still based strictly on the course material. "
+            "Only after a full course-material answer, if there is genuinely useful extra information available online, "
+            "you may add 1-2 relevant links under the heading '**Extra info:**' (in Dutch) or '**Extra info:**' (in English), "
+            "but ONLY when the student explicitly asked for more info. Never add links otherwise."
         )
+
+        messages = [{"role": "system", "content": system_prompt}]
+        if history:
+            messages.extend(history)
+        messages.append({"role": "user", "content": f"Course materials:\n\n{chr(10).join(context_parts)}\n\n---\n\nQuestion: {question}"})
 
         stream = self.client.chat.completions.create(
             model="gpt-4o",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Course materials:\n\n{chr(10).join(context_parts)}\n\n---\n\nQuestion: {question}"},
-            ],
+            messages=messages,
             temperature=0,
             max_tokens=1200,
             stream=True,
