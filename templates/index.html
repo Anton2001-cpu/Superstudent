@@ -453,10 +453,22 @@
       border-radius: 5px;
       white-space: nowrap;
     }
+    .source-highlight {
+      background: rgba(255,255,255,0.18);
+      color: var(--text);
+      border-radius: 3px;
+      padding: 1px 2px;
+      font-style: normal;
+      font-weight: 500;
+    }
+    [data-theme="dark"] .source-highlight {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+    }
     .source-preview {
       font-size: 12px;
       color: var(--text-2);
-      line-height: 1.7;
+      line-height: 1.8;
       border-left: 2px solid var(--border-2);
       padding-left: 10px;
       font-style: italic;
@@ -1262,7 +1274,7 @@ async function askQuestion() {
           if (answerEl) {
             answerEl.classList.remove('streaming-answer');
             answerEl.innerHTML = md(rawAnswer);
-            appendSources(resultBlock, event.sources || []);
+            appendSources(resultBlock, event.sources || [], rawAnswer);
           } else {
             loading.remove();
             appendResult(q, rawAnswer || 'No response received.', []);
@@ -1306,7 +1318,30 @@ function toggleSources(uid) {
   btn?.classList.toggle('open', open);
 }
 
-function buildSourcesHtml(sources) {
+const STOP_WORDS = new Set(['this','that','with','from','have','been','they','their','which','these','those','will','would','could','should','when','where','what','there','also','such','more','most','some','into','than','then','used','using','each','both','through','during','before','after','above','below','between','including','about','other','while','were','within','without','however','therefore','because','since','often','many','very','over','under']);
+
+function extractKeywords(text) {
+  return [...new Set(
+    text.toLowerCase().replace(/[*_`#[\]()]/g, '').split(/\W+/)
+      .filter(w => w.length > 4 && !STOP_WORDS.has(w))
+  )];
+}
+
+function highlightPreview(previewText, answerText) {
+  const keywords = extractKeywords(answerText);
+  if (!keywords.length) return esc(previewText);
+  const preview = previewText.slice(0, 900);
+  // Split on sentence boundaries
+  const sentences = preview.split(/(?<=[.!?])\s+/);
+  return sentences.map(sentence => {
+    const lower = sentence.toLowerCase();
+    const hits = keywords.filter(k => lower.includes(k)).length;
+    if (hits >= 2) return `<mark class="source-highlight">${esc(sentence)}</mark>`;
+    return esc(sentence);
+  }).join(' ') + (previewText.length > 900 ? '...' : '');
+}
+
+function buildSourcesHtml(sources, answer = '') {
   if (!sources || !sources.length) return '';
   const uid = Math.random().toString(36).slice(2);
   return `
@@ -1321,14 +1356,14 @@ function buildSourcesHtml(sources) {
             <span class="source-file" title="${esc(s.filename)}">${esc(s.filename)}</span>
             ${s.location ? `<span class="source-loc">${esc(s.location)}</span>` : ''}
           </div>
-          <div class="source-preview">${esc(s.preview.slice(0, 900))}${s.preview.length > 900 ? '...' : ''}</div>
+          <div class="source-preview">${highlightPreview(s.preview, answer)}</div>
         </div>
       `).join('')}
     </div>`;
 }
 
-function appendSources(block, sources) {
-  const html = buildSourcesHtml(sources);
+function appendSources(block, sources, answer = '') {
+  const html = buildSourcesHtml(sources, answer);
   if (html) block.insertAdjacentHTML('beforeend', html);
   block.scrollIntoView({ block: 'end', behavior: 'smooth' });
 }
@@ -1341,7 +1376,7 @@ function appendResult(question, answer, sources) {
     <div class="result-question">${esc(question)}</div>
     <div class="result-answer-label">Answer</div>
     <div class="result-answer">${md(answer)}</div>
-    ${buildSourcesHtml(sources)}`;
+    ${buildSourcesHtml(sources, answer)}`;
   h.appendChild(el);
   h.scrollTop = h.scrollHeight;
 }
