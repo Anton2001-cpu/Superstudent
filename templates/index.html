@@ -76,6 +76,18 @@
     .logo em { font-style: normal; color: var(--blue); }
 
     .header-right { display: flex; align-items: center; gap: 10px; }
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #34c759;
+      box-shadow: 0 0 0 2px rgba(52,199,89,0.25);
+      transition: background 0.4s, box-shadow 0.4s;
+      flex-shrink: 0;
+    }
+    .status-dot.offline {
+      background: #ff3b30;
+      box-shadow: 0 0 0 2px rgba(255,59,48,0.25);
+    }
 
     .tab-group {
       display: flex;
@@ -318,7 +330,8 @@
     }
     .qa-history {
       flex: 1;
-      overflow-y: auto;
+      overflow-y: scroll;
+      scrollbar-gutter: stable;
       padding: 24px 28px 12px 400px; /* 320px sidebar + 20px gap */
       display: flex;
       flex-direction: column;
@@ -870,6 +883,7 @@
       <!-- Sun: shown in dark mode -->
       <svg id="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.93" y1="4.93" x2="7.05" y2="7.05"/><line x1="16.95" y1="16.95" x2="19.07" y2="19.07"/><line x1="4.93" y1="19.07" x2="7.05" y2="16.95"/><line x1="16.95" y1="7.05" x2="19.07" y2="4.93"/></svg>
     </button>
+    <div class="status-dot" id="status-dot" title="Online"></div>
     <div class="tab-group">
       <button class="tab active" id="tab-student" onclick="switchView('student', this)">Student</button>
       <button class="tab" id="tab-teacher" onclick="requirePassword(this)">Teacher</button>
@@ -1571,6 +1585,22 @@ async function searchContent() {
     el.innerHTML = '<div style="font-size:12px; color:var(--red);">Search failed.</div>';
   }
 }
+
+// ── Online status ──────────────────────────────────────────────────────────
+async function checkOnline() {
+  const dot = document.getElementById('status-dot');
+  try {
+    const res = await fetch('/api/ping', { cache: 'no-store' });
+    const online = res.ok;
+    dot.classList.toggle('offline', !online);
+    dot.title = online ? 'Online' : 'Offline';
+  } catch {
+    dot.classList.add('offline');
+    dot.title = 'Offline';
+  }
+}
+checkOnline();
+setInterval(checkOnline, 30000);
 
 // ── Init ───────────────────────────────────────────────────────────────────
 loadBooks();

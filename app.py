@@ -29,7 +29,7 @@ def _is_authenticated():
 
 @app.before_request
 def require_login():
-    if request.endpoint in ("login", "logout", "static"):
+    if request.endpoint in ("login", "logout", "static", "ping"):
         return
     if not _is_authenticated():
         if request.path.startswith("/api/"):
@@ -107,6 +107,11 @@ def remove_course_name(name: str):
 @app.route("/")
 def index():
     return render_template("index.html")
+
+
+@app.route("/api/ping")
+def ping():
+    return jsonify({"ok": True})
 
 
 # Courses
