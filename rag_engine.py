@@ -1,5 +1,6 @@
 import os
 import hashlib
+import re
 from pathlib import Path
 
 import chromadb
@@ -190,6 +191,13 @@ class RAGEngine:
 
     # ── Query (student) ───────────────────────────────────────────────────
 
+    def _expand_query(self, text: str) -> str:
+        """Add hyphen/space variants so 'e waste' matches 'e-waste' and vice versa."""
+        variants = {text}
+        variants.add(re.sub(r'(\w)-(\w)', lambda m: f"{m.group(1)} {m.group(2)}", text))
+        variants.add(re.sub(r'(\b\w+)\s+(\w+\b)', lambda m: f"{m.group(1)}-{m.group(2)}", text))
+        return " | ".join(v for v in variants if v != text) or text
+
     def query(self, question: str, books: list = None) -> dict:
         """books: list of filenames to restrict search to. None = all books."""
         total = self.collection.count()
@@ -200,7 +208,7 @@ class RAGEngine:
             }
 
         response = self.client.embeddings.create(
-            input=[question],
+            input=[self._expand_query(question)],
             model="text-embedding-3-small",
         )
         query_embedding = response.data[0].embedding
@@ -212,7 +220,7 @@ class RAGEngine:
             else:
                 where = {"$or": [{"filename": {"$eq": b}} for b in books]}
 
-        n_results = min(3, total)
+        n_results = min(5, total)
 
         try:
             results = self.collection.query(
@@ -294,7 +302,7 @@ class RAGEngine:
             return []
 
         response = self.client.embeddings.create(
-            input=[query],
+            input=[self._expand_query(query)],
             model="text-embedding-3-small",
         )
         query_embedding = response.data[0].embedding
