@@ -449,6 +449,16 @@
       font-style: italic;
     }
 
+    /* Streaming cursor */
+    .streaming-answer::after {
+      content: '▋';
+      display: inline-block;
+      animation: blink 0.7s step-end infinite;
+      color: var(--blue);
+      margin-left: 1px;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
     /* Loading */
     .loading-block { padding: 22px 0; }
     .loading-q { font-size: 16px; font-weight: 500; color: var(--text); margin-bottom: 12px; }
@@ -1191,14 +1201,65 @@ async function askQuestion() {
   input.disabled = true;
 
   try {
-    const res = await apiFetch('/api/chat', {
+    const res = await apiFetch('/api/chat/stream', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ question: q, books }),
     });
-    const data = await res.json();
-    loading.remove();
-    appendResult(q, data.error ? data.error : data.answer, data.error ? [] : (data.sources || []));
+    if (!res) throw new Error('Not authenticated');
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let answerEl = null;
+    let rawAnswer = '';
+    let resultBlock = null;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        let event;
+        try { event = JSON.parse(line.slice(6)); } catch { continue; }
+
+        if (event.type === 'token') {
+          if (!answerEl) {
+            loading.remove();
+            const block = document.createElement('div');
+            block.className = 'result-block';
+            block.innerHTML = `
+              <div class="result-question">${esc(q)}</div>
+              <div class="result-answer-label">Answer</div>
+              <div class="result-answer streaming-answer"></div>`;
+            document.getElementById('qa-history').appendChild(block);
+            answerEl = block.querySelector('.result-answer');
+            resultBlock = block;
+          }
+          rawAnswer += event.text;
+          answerEl.textContent = rawAnswer;
+          answerEl.scrollIntoView({ block: 'end', behavior: 'smooth' });
+
+        } else if (event.type === 'done') {
+          if (answerEl) {
+            answerEl.classList.remove('streaming-answer');
+            answerEl.innerHTML = md(rawAnswer);
+            appendSources(resultBlock, event.sources || []);
+          } else {
+            loading.remove();
+            appendResult(q, rawAnswer || 'No response received.', []);
+          }
+
+        } else if (event.type === 'error') {
+          loading.remove();
+          appendResult(q, event.text, []);
+        }
+      }
+    }
   } catch {
     loading.remove();
     appendResult(q, 'Could not connect to the server. Make sure the app is running.', []);
@@ -1231,38 +1292,42 @@ function toggleSources(uid) {
   btn?.classList.toggle('open', open);
 }
 
+function buildSourcesHtml(sources) {
+  if (!sources || !sources.length) return '';
+  const uid = Math.random().toString(36).slice(2);
+  return `
+    <div class="sources-toggle" onclick="toggleSources('${uid}')">
+      <svg class="sources-toggle-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9,18 15,12 9,6"/></svg>
+      <span class="sources-toggle-label">${sources.length} source${sources.length > 1 ? 's' : ''} used</span>
+    </div>
+    <div class="sources-list" id="src-${uid}">
+      ${sources.map(s => `
+        <div class="source-card">
+          <div class="source-meta">
+            <span class="source-file" title="${esc(s.filename)}">${esc(s.filename)}</span>
+            ${s.location ? `<span class="source-loc">${esc(s.location)}</span>` : ''}
+          </div>
+          <div class="source-preview">${esc(s.preview.slice(0, 900))}${s.preview.length > 900 ? '...' : ''}</div>
+        </div>
+      `).join('')}
+    </div>`;
+}
+
+function appendSources(block, sources) {
+  const html = buildSourcesHtml(sources);
+  if (html) block.insertAdjacentHTML('beforeend', html);
+  block.scrollIntoView({ block: 'end', behavior: 'smooth' });
+}
+
 function appendResult(question, answer, sources) {
   const h = document.getElementById('qa-history');
   const el = document.createElement('div');
   el.className = 'result-block';
-
-  const uid = Math.random().toString(36).slice(2);
-  let srcHtml = '';
-  if (sources.length) {
-    srcHtml = `
-      <div class="sources-toggle" onclick="toggleSources('${uid}')">
-        <svg class="sources-toggle-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9,18 15,12 9,6"/></svg>
-        <span class="sources-toggle-label">${sources.length} source${sources.length > 1 ? 's' : ''} used</span>
-      </div>
-      <div class="sources-list" id="src-${uid}">
-        ${sources.map(s => `
-          <div class="source-card">
-            <div class="source-meta">
-              <span class="source-file" title="${esc(s.filename)}">${esc(s.filename)}</span>
-              ${s.location ? `<span class="source-loc">${esc(s.location)}</span>` : ''}
-            </div>
-            <div class="source-preview">${esc(s.preview.slice(0, 900))}${s.preview.length > 900 ? '...' : ''}</div>
-          </div>
-        `).join('')}
-      </div>`;
-  }
-
   el.innerHTML = `
     <div class="result-question">${esc(question)}</div>
     <div class="result-answer-label">Answer</div>
     <div class="result-answer">${md(answer)}</div>
-    ${srcHtml}`;
-
+    ${buildSourcesHtml(sources)}`;
   h.appendChild(el);
   h.scrollTop = h.scrollHeight;
 }

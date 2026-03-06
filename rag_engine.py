@@ -293,6 +293,80 @@ class RAGEngine:
             "sources": [] if no_answer else sources,
         }
 
+    def stream_query(self, question: str, books: list = None):
+        """Stream the answer token by token. Yields dicts for SSE."""
+        total = self.collection.count()
+        if total == 0:
+            yield {"type": "token", "text": "I couldn't find anything — no course materials have been uploaded yet. Please ask your teacher."}
+            yield {"type": "done", "sources": []}
+            return
+
+        response = self.client.embeddings.create(
+            input=[self._expand_query(question)],
+            model="text-embedding-3-small",
+        )
+        query_embedding = response.data[0].embedding
+
+        where = None
+        if books and len(books) > 0:
+            if len(books) == 1:
+                where = {"filename": {"$eq": books[0]}}
+            else:
+                where = {"$or": [{"filename": {"$eq": b}} for b in books]}
+
+        n_results = min(5, total)
+        try:
+            results = self.collection.query(query_embeddings=[query_embedding], n_results=n_results, where=where)
+        except Exception:
+            results = self.collection.query(query_embeddings=[query_embedding], n_results=n_results)
+
+        docs = results["documents"][0]
+        metas = results["metadatas"][0]
+
+        if not docs:
+            yield {"type": "token", "text": "I couldn't find this in your selected course materials. Please ask your teacher."}
+            yield {"type": "done", "sources": []}
+            return
+
+        context_parts = []
+        sources = []
+        for doc, meta in zip(docs, metas):
+            fname = meta.get("filename", "Unknown file")
+            loc = meta.get("location", "")
+            context_parts.append(f"[{fname} — {loc}]\n{doc}")
+            sources.append({"filename": fname, "location": loc, "preview": meta.get("preview", doc[:900])})
+
+        system_prompt = (
+            "You are a study assistant for students. "
+            "Answer the question using ONLY the course material provided below. "
+            "Do not use any outside knowledge or invent information. "
+            "Either give a complete answer based on the material, OR say exactly: "
+            "\"I couldn't find this in your course materials. Please ask your teacher.\" "
+            "Never do both in the same response. "
+            "Be clear and concise. Use bullet points for lists. Bold key terms with **term**."
+        )
+
+        stream = self.client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Course materials:\n\n{chr(10).join(context_parts)}\n\n---\n\nQuestion: {question}"},
+            ],
+            temperature=0,
+            max_tokens=1200,
+            stream=True,
+        )
+
+        full_answer = ""
+        for chunk in stream:
+            token = chunk.choices[0].delta.content or ""
+            if token:
+                full_answer += token
+                yield {"type": "token", "text": token}
+
+        no_answer = "couldn't find" in full_answer.lower()
+        yield {"type": "done", "sources": [] if no_answer else sources}
+
     # ── Search (teacher) ──────────────────────────────────────────────────
 
     def search_content(self, query: str, course_name: str) -> list:

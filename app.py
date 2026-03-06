@@ -4,7 +4,7 @@ import json
 import os
 from pathlib import Path
 
-from flask import Flask, jsonify, make_response, render_template, request, redirect, url_for
+from flask import Flask, jsonify, make_response, render_template, request, redirect, url_for, Response, stream_with_context
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
 
@@ -204,7 +204,7 @@ def upload():
 def chat():
     data = request.get_json(force=True)
     question = (data.get("question") or "").strip()
-    books = data.get("books") or None  # list of filenames, or None for all
+    books = data.get("books") or None
 
     if not question:
         return jsonify({"error": "Question cannot be empty"}), 400
@@ -214,6 +214,29 @@ def chat():
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/chat/stream", methods=["POST"])
+def chat_stream():
+    data = request.get_json(force=True)
+    question = (data.get("question") or "").strip()
+    books = data.get("books") or None
+
+    if not question:
+        return jsonify({"error": "Question cannot be empty"}), 400
+
+    def generate():
+        try:
+            for event in get_rag().stream_query(question, books):
+                yield f"data: {json.dumps(event)}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'text': str(e)})}\n\n"
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 # Search (teacher)
