@@ -1580,10 +1580,14 @@ function applyLang(lang) {
 }
 
 function toggleLang() {
+  const unchecked = new Set([...document.querySelectorAll('.book-cb:not(:checked)')].map(cb => cb.dataset.filename));
   const next = currentLang === 'NL' ? 'EN' : 'NL';
   localStorage.setItem('lang', next);
   applyLang(next);
-  renderBookList(); // re-render to update "select all" text etc.
+  renderBookList();
+  document.querySelectorAll('.book-cb').forEach(cb => {
+    if (unchecked.has(cb.dataset.filename)) cb.checked = false;
+  });
 }
 
 // ── Dark mode ──────────────────────────────────────────────────────────────
