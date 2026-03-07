@@ -49,6 +49,10 @@ def _is_rate_limited(ip: str) -> bool:
     now = time.time()
     attempts = [t for t in _failed_attempts[ip] if now - t < _LOCKOUT_SECONDS]
     _failed_attempts[ip] = attempts
+    # Prune stale IPs to prevent unbounded memory growth
+    stale = [k for k, v in _failed_attempts.items() if not v]
+    for k in stale:
+        _failed_attempts.pop(k, None)
     return len(attempts) >= _MAX_ATTEMPTS
 
 
@@ -90,6 +94,14 @@ def set_security_headers(response):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data:; "
+        "connect-src 'self'; "
+        "frame-ancestors 'none';"
+    )
     return response
 
 
@@ -117,7 +129,7 @@ def login():
             resp = make_response(redirect(url_for("index")))
             resp.set_cookie("auth", _make_token(), httponly=True,
                             samesite="Lax", secure=_IS_PRODUCTION,
-                            max_age=60 * 60 * 24 * 30)
+                            max_age=60 * 60 * 8)
             return resp
         else:
             _record_failure(ip)
@@ -327,7 +339,11 @@ def upload():
 def chat():
     data = request.get_json(force=True)
     question = (data.get("question") or "").strip()[:MAX_QUESTION_LENGTH]
-    books = data.get("books") or None
+    raw_books = data.get("books")
+    if isinstance(raw_books, list):
+        books = [str(b)[:200] for b in raw_books[:50] if isinstance(b, str)] or None
+    else:
+        books = None
 
     # Validate and sanitize history: max 10 entries, only role+content, content capped
     raw_history = data.get("history") or []
