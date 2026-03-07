@@ -1126,7 +1126,6 @@ function switchView(name, btn) {
 }
 
 // ── Password gate ──────────────────────────────────────────────────────────
-const TEACHER_PW = 'teacher';
 let pendingBtn = null;
 
 function requirePassword(btn) {
@@ -1145,8 +1144,15 @@ function closePwModal() {
   document.getElementById('pw-modal').style.display = 'none';
 }
 
-function checkPw() {
-  if (document.getElementById('pw-input').value === TEACHER_PW) {
+async function checkPw() {
+  const pw = document.getElementById('pw-input').value;
+  const r = await apiFetch('/api/teacher-login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: pw }),
+  });
+  if (!r) return;
+  if (r.ok) {
     sessionStorage.setItem('tAuth', '1');
     closePwModal();
     if (pendingBtn) activateTeacher(pendingBtn);

@@ -14,5 +14,7 @@ services:
         sync: false
       - key: SITE_PASSWORD
         sync: false
+      - key: TEACHER_PASSWORD
+        sync: false
       - key: SECRET_KEY
         sync: false

@@ -16,15 +16,38 @@ app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50 MB
 
 SITE_PASSWORD = os.getenv("SITE_PASSWORD", "student")
-_SECRET = os.getenv("SECRET_KEY", "supersecret-change-me")
+TEACHER_PASSWORD = os.getenv("TEACHER_PASSWORD", "")
+
+_SECRET = os.getenv("SECRET_KEY")
+if not _SECRET:
+    raise RuntimeError(
+        "SECRET_KEY is not set. Add it to your .env file or Render environment variables."
+    )
+
+_IS_PRODUCTION = bool(os.getenv("RENDER"))
 
 
 def _make_token():
     return hmac.new(_SECRET.encode(), SITE_PASSWORD.encode(), hashlib.sha256).hexdigest()
 
 
+def _make_teacher_token():
+    return hmac.new(_SECRET.encode(), f"teacher:{TEACHER_PASSWORD}".encode(), hashlib.sha256).hexdigest()
+
+
 def _is_authenticated():
     return hmac.compare_digest(request.cookies.get("auth", ""), _make_token())
+
+
+def _is_teacher():
+    if not TEACHER_PASSWORD:
+        return False
+    return hmac.compare_digest(request.cookies.get("teacher_auth", ""), _make_teacher_token())
+
+
+def require_teacher():
+    if not _is_teacher():
+        return jsonify({"error": "Teacher access required"}), 403
 
 
 @app.before_request
@@ -44,7 +67,8 @@ def login():
         if request.form.get("password") == SITE_PASSWORD:
             resp = make_response(redirect(url_for("index")))
             resp.set_cookie("auth", _make_token(), httponly=True,
-                            samesite="Lax", max_age=60 * 60 * 24 * 30)
+                            samesite="Lax", secure=_IS_PRODUCTION,
+                            max_age=60 * 60 * 24 * 30)
             return resp
         error = "Incorrect password."
     return render_template("login.html", error=error)
@@ -54,6 +78,22 @@ def login():
 def logout():
     resp = make_response(redirect(url_for("login")))
     resp.delete_cookie("auth")
+    resp.delete_cookie("teacher_auth")
+    return resp
+
+
+@app.route("/api/teacher-login", methods=["POST"])
+def teacher_login():
+    if not TEACHER_PASSWORD:
+        return jsonify({"error": "Teacher access not configured"}), 403
+    data = request.get_json(force=True)
+    pw = data.get("password", "")
+    if not hmac.compare_digest(pw, TEACHER_PASSWORD):
+        return jsonify({"error": "Incorrect password"}), 403
+    resp = make_response(jsonify({"success": True}))
+    resp.set_cookie("teacher_auth", _make_teacher_token(), httponly=True,
+                    samesite="Lax", secure=_IS_PRODUCTION,
+                    max_age=60 * 60 * 8)
     return resp
 
 DATA_FOLDER = Path("vectordb")
@@ -131,6 +171,8 @@ def get_courses():
 
 @app.route("/api/courses/reorder", methods=["POST"])
 def reorder_courses():
+    err = require_teacher()
+    if err: return err
     data = request.get_json(force=True)
     order = data.get("order") or []
     if not isinstance(order, list):
@@ -141,6 +183,8 @@ def reorder_courses():
 
 @app.route("/api/courses", methods=["POST"])
 def create_course():
+    err = require_teacher()
+    if err: return err
     data = request.get_json(force=True)
     name = (data.get("name") or "").strip()
     if not name:
@@ -151,6 +195,8 @@ def create_course():
 
 @app.route("/api/courses/<course_name>", methods=["DELETE"])
 def delete_course(course_name):
+    err = require_teacher()
+    if err: return err
     try:
         get_rag().delete_course(course_name)
         remove_course_name(course_name)
@@ -161,6 +207,8 @@ def delete_course(course_name):
 
 @app.route("/api/courses/<course_name>/files/<filename>", methods=["DELETE"])
 def delete_file(course_name, filename):
+    err = require_teacher()
+    if err: return err
     try:
         get_rag().delete_file(course_name, filename)
         return jsonify({"success": True})
@@ -172,6 +220,8 @@ def delete_file(course_name, filename):
 
 @app.route("/api/upload", methods=["POST"])
 def upload():
+    err = require_teacher()
+    if err: return err
     if "file" not in request.files:
         return jsonify({"error": "No file provided"}), 400
 
@@ -250,6 +300,8 @@ def chat_stream():
 
 @app.route("/api/search", methods=["POST"])
 def search():
+    err = require_teacher()
+    if err: return err
     data = request.get_json(force=True)
     query = (data.get("query") or "").strip()
     course = (data.get("course") or "").strip()
