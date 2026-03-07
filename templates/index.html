@@ -9,20 +9,22 @@
 
     /* ── Tokens ── */
     :root {
-      --bg:          #f5f5f7;
+      --bg:          #f4f4f4;
       --card:        #ffffff;
       --sidebar:     #ffffff;
       --border:      rgba(0,0,0,0.09);
       --border-2:    rgba(0,0,0,0.15);
-      --text:        #1d1d1f;
-      --text-2:      #6e6e73;
-      --text-3:      #aeaeb2;
-      --blue:        #0071e3;
-      --blue-h:      #0077ed;
-      --blue-dim:    rgba(0,113,227,0.1);
-      --red:         #ff3b30;
-      --green:       #34c759;
-      --header:      rgba(255,255,255,0.8);
+      --text:        #1a1a1a;
+      --text-2:      #5c5c5c;
+      --text-3:      #9a9a9a;
+      --blue:        #4a6899;
+      --blue-h:      #3a5480;
+      --blue-dim:    rgba(74,104,153,0.10);
+      --red:         #a03535;
+      --green:       #2e9e50;
+      --header:      rgba(255,255,255,0.88);
+      --ua-blue:     #4a6899;
+      --ua-blue-dim: rgba(74,104,153,0.10);
     }
 
     [data-theme="dark"] {
@@ -496,7 +498,7 @@
       font-size: 11px;
       color: var(--blue);
       font-weight: 600;
-      background: color-mix(in srgb, var(--blue) 12%, transparent);
+      background: var(--blue-dim);
       padding: 2px 7px;
       border-radius: 5px;
       white-space: nowrap;
@@ -938,6 +940,106 @@
     }
     .btn-confirm:hover { background: var(--blue-h); }
 
+    /* Language toggle */
+    .lang-btn {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-2);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+    .lang-btn:hover { background: var(--bg); color: var(--text); }
+
+    /* File item extended */
+    .f-meta { font-size: 10px; color: var(--text-3); white-space: nowrap; flex-shrink: 0; }
+    .f-drag-handle {
+      display: inline-block;
+      cursor: grab;
+      color: var(--text-3);
+      font-size: 12px;
+      padding: 0 4px;
+      user-select: none;
+      opacity: 0.5;
+      flex-shrink: 0;
+    }
+    .f-drag-handle:active { cursor: grabbing; }
+    .f-item.dragging { opacity: 0.4; }
+    .f-item.drag-target { border-top: 2px solid var(--blue); }
+    .btn-rename {
+      font-family: inherit;
+      font-size: 11px;
+      padding: 3px 8px;
+      background: transparent;
+      color: var(--blue);
+      border: 1px solid rgba(0,113,227,0.3);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.12s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .btn-rename:hover { background: var(--blue-dim); }
+    .rename-input {
+      font-family: inherit;
+      font-size: 12px;
+      padding: 3px 7px;
+      border: 1px solid var(--blue);
+      border-radius: 6px;
+      background: var(--bg);
+      color: var(--text);
+      outline: none;
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* Statistics panel */
+    .stats-section { margin-top: 8px; }
+    .stats-row { display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
+    .stats-kpi {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .stats-kpi-value { font-size: 22px; font-weight: 700; color: var(--text); }
+    .stats-kpi-label { font-size: 11px; color: var(--text-3); }
+    .stats-list { display: flex; flex-direction: column; gap: 6px; }
+    .stats-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--text-2);
+      padding: 6px 10px;
+      background: var(--bg);
+      border-radius: 7px;
+      border: 1px solid var(--border);
+    }
+    .stats-count {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--blue);
+      background: var(--blue-dim);
+      padding: 2px 7px;
+      border-radius: 5px;
+      flex-shrink: 0;
+    }
+    .stats-q { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
     /* ── Toast ── */
     .toast {
       position: fixed;
@@ -956,6 +1058,248 @@
       pointer-events: none;
     }
     .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ── Result actions (copy + thumbs) ── */
+    .result-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      margin-bottom: 4px;
+    }
+    .btn-copy, .btn-thumb {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--border-2);
+      border-radius: 7px;
+      background: transparent;
+      color: var(--text-3);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-copy:hover, .btn-thumb:hover { background: var(--bg); color: var(--text-2); }
+    .btn-thumb.voted { border-color: var(--blue); color: var(--blue); background: var(--blue-dim); }
+
+    /* ── Welcome note (student sidebar) ── */
+    .welcome-note {
+      margin: 6px 10px 8px;
+      padding: 9px 12px;
+      background: var(--blue-dim);
+      border-left: 3px solid var(--blue);
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--text);
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    /* ── Pomodoro ── */
+    .pomodoro-btn {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-2);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .pomodoro-btn:hover { background: var(--bg); color: var(--text); }
+    .pomodoro-btn.active { border-color: var(--blue); color: var(--blue); background: var(--blue-dim); }
+
+    .pomodoro-panel {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 210px;
+      background: var(--card);
+      border: 1px solid var(--border-2);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+      z-index: 500;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .pomodoro-panel.open { display: flex; }
+    .pomodoro-mode {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-3);
+    }
+    .pomodoro-ring {
+      position: relative;
+      width: 80px;
+      height: 80px;
+    }
+    .pomodoro-ring svg { transform: rotate(-90deg); }
+    .pomodoro-ring circle.bg { stroke: var(--border-2); fill: none; stroke-width: 5; }
+    .pomodoro-ring circle.prog {
+      fill: none;
+      stroke: var(--blue);
+      stroke-width: 5;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.8s linear;
+    }
+    .pomodoro-ring.pulse circle.prog { stroke: var(--green); }
+    .pomodoro-time {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .pomodoro-controls { display: flex; gap: 6px; }
+    .pomodoro-controls button {
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 5px 10px;
+      border-radius: 7px;
+      border: 1px solid var(--border-2);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .pomodoro-controls button:hover { border-color: var(--blue); color: var(--blue); }
+    .pomodoro-controls button.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .pomodoro-controls button.primary:hover { background: var(--blue-h); }
+
+    /* ── Preview modal ── */
+    .preview-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 800;
+      align-items: center;
+      justify-content: center;
+    }
+    .preview-modal.open { display: flex; }
+    .preview-modal-box {
+      background: var(--card);
+      border-radius: 14px;
+      width: min(680px, 94vw);
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+    .preview-modal-head {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .preview-modal-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .preview-modal-close {
+      width: 26px; height: 26px;
+      display: flex; align-items: center; justify-content: center;
+      border: none; border-radius: 6px;
+      background: transparent; color: var(--text-3);
+      cursor: pointer; font-size: 16px; line-height: 1;
+      transition: all 0.12s;
+    }
+    .preview-modal-close:hover { background: var(--bg); color: var(--text); }
+    .preview-modal-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .preview-chunk {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+    }
+    .preview-chunk-loc {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--blue);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 5px;
+    }
+    .preview-chunk-text {
+      font-size: 12px;
+      color: var(--text-2);
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    /* ── Welcome editor (teacher) ── */
+    .welcome-editor {
+      margin-top: 14px;
+      padding: 14px 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    .welcome-editor label {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-3);
+      margin-bottom: 7px;
+    }
+    .welcome-editor textarea {
+      width: 100%;
+      font-family: inherit;
+      font-size: 13px;
+      padding: 8px 10px;
+      border-radius: 7px;
+      border: 1px solid var(--border-2);
+      background: var(--card);
+      color: var(--text);
+      resize: vertical;
+      min-height: 70px;
+      outline: none;
+      line-height: 1.5;
+    }
+    .welcome-editor textarea:focus { border-color: var(--blue); }
+    .welcome-editor button {
+      margin-top: 7px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: 7px;
+      border: none;
+      background: var(--blue);
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .welcome-editor button:hover { background: var(--blue-h); }
   </style>
 </head>
 <body>
@@ -965,6 +1309,10 @@
   <div class="logo">Super<em>Student</em></div>
   <div class="header-right">
     <div class="status-dot" id="status-dot" title="Online"></div>
+    <button class="lang-btn" id="lang-btn" onclick="toggleLang()" title="Switch language">EN</button>
+    <button class="pomodoro-btn" id="pomodoro-btn" onclick="togglePomodoroPanel()" title="Pomodoro timer">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    </button>
     <button class="dark-btn" onclick="toggleDark()" id="dark-btn" title="Toggle dark mode">
       <!-- Moon: shown in light mode -->
       <svg id="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -998,7 +1346,7 @@
   <!-- Book selector sidebar -->
   <div class="sidebar" id="book-sidebar">
     <div class="sidebar-head">
-      <span class="sidebar-label">Study materials</span>
+      <span class="sidebar-label" data-i18n="studyMaterials">Study materials</span>
       <button class="sb-collapse-btn" onclick="toggleSidebar()" title="Hide panel">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15,18 9,12 15,6"/></svg>
       </button>
@@ -1047,6 +1395,7 @@
         <span style="font-size:12px; color:var(--text-3);">No courses yet.</span>
       </div>
       <button class="btn-new-course" onclick="toggleCreateForm()">+ New course</button>
+      <button class="btn-new-course" id="btn-stats" style="display:none" onclick="showStats()">Statistics</button>
       <button class="btn-del" id="btn-delete-course" style="display:none" onclick="deleteActiveCourse()">Delete course</button>
     </div>
 
@@ -1070,17 +1419,28 @@
           <!-- Upload card -->
           <div class="t-card">
             <div class="t-card-head">
-              <div class="t-card-title">Upload books</div>
+              <div class="t-card-title" data-i18n="uploadBooks">Upload books</div>
             </div>
             <div class="t-card-body">
               <div class="drop-zone" id="drop-zone"
                    onclick="document.getElementById('file-input').click()">
-                <div class="drop-title">Drop files here or click to browse</div>
-                <div class="drop-sub">PDF, Word (.docx), or plain text (.txt) — up to 50 MB each</div>
+                <div class="drop-title" data-i18n="dropTitle">Drop files here or click to browse</div>
+                <div class="drop-sub" data-i18n="dropSub">PDF, Word (.docx), or plain text (.txt) — up to 50 MB each</div>
               </div>
               <input type="file" id="file-input" multiple accept=".pdf,.docx,.doc,.txt" style="display:none">
               <div class="upload-status" id="upload-status"></div>
               <div class="file-list" id="file-list"></div>
+            </div>
+          </div>
+
+          <!-- Statistics modal card (hidden by default) -->
+          <div class="t-card" id="stats-card" style="display:none">
+            <div class="t-card-head" style="display:flex;align-items:center;justify-content:space-between;">
+              <div class="t-card-title" data-i18n="statistics">Statistics</div>
+              <button class="btn-cancel-sm" onclick="document.getElementById('stats-card').style.display='none'" data-i18n="close">Close</button>
+            </div>
+            <div class="t-card-body stats-section" id="stats-body">
+              <div style="font-size:12px;color:var(--text-3);" data-i18n="loading">Loading...</div>
             </div>
           </div>
 
@@ -1093,7 +1453,138 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- Pomodoro panel -->
+<div class="pomodoro-panel" id="pomodoro-panel">
+  <div class="pomodoro-mode" id="pomodoro-mode">WORK</div>
+  <div class="pomodoro-ring" id="pomodoro-ring">
+    <svg width="80" height="80" viewBox="0 0 80 80">
+      <circle class="bg" cx="40" cy="40" r="35"/>
+      <circle class="prog" id="pomodoro-prog" cx="40" cy="40" r="35"
+              stroke-dasharray="219.9" stroke-dashoffset="0"/>
+    </svg>
+    <div class="pomodoro-time" id="pomodoro-time">25:00</div>
+  </div>
+  <div class="pomodoro-controls">
+    <button class="primary" id="pomodoro-playpause" onclick="pomodoroStartPause()">Start</button>
+    <button onclick="pomodoroReset()">Reset</button>
+  </div>
+</div>
+
+<!-- Preview modal -->
+<div class="preview-modal" id="preview-modal" onclick="if(event.target===this)closePreviewModal()">
+  <div class="preview-modal-box">
+    <div class="preview-modal-head">
+      <span class="preview-modal-title" id="preview-modal-title">Preview</span>
+      <button class="preview-modal-close" onclick="closePreviewModal()">×</button>
+    </div>
+    <div class="preview-modal-body" id="preview-modal-body"></div>
+  </div>
+</div>
+
 <script>
+// ── Translations ───────────────────────────────────────────────────────────
+const TRANSLATIONS = {
+  NL: {
+    uploadBooks: 'Bestanden uploaden',
+    dropTitle: 'Bestanden hier neerzetten of klikken om te bladeren',
+    dropSub: 'PDF, Word (.docx) of tekstbestand (.txt) — max. 50 MB per bestand',
+    statistics: 'Statistieken',
+    close: 'Sluiten',
+    loading: 'Laden...',
+    studyMaterials: 'Studiemateriaal',
+    searchBooks: 'Boeken zoeken...',
+    noMaterials: 'Geen materialen beschikbaar.\nVraag je leraar om cursusmateriaal te uploaden.',
+    selectAll: 'alles selecteren',
+    askPlaceholder: 'Stel hier een vraag',
+    askBtn: 'Vraag',
+    totalQuestions: 'Totaal vragen',
+    topQuestions: 'Top 10 vragen',
+    perFile: 'Per bestand',
+    noStats: 'Nog geen statistieken beschikbaar.',
+    rename: 'Hernoem',
+    remove: 'Verwijder',
+    save: 'Opslaan',
+    cancel: 'Annuleer',
+    copied: 'Gekopieerd!',
+    thumbUp: 'Nuttig',
+    thumbDown: 'Niet nuttig',
+    pomodoroWork: 'WERKEN',
+    pomodoroBreak: 'PAUZE',
+    startTimer: 'Start',
+    pauseTimer: 'Pauze',
+    resetTimer: 'Reset',
+    preview: 'Bekijk',
+    welcomeText: 'Welkomstbericht',
+    saveWelcome: 'Opslaan',
+    welcomePlaceholder: 'Schrijf hier een welkomstbericht voor studenten...',
+    thumbsUp: 'Duim omhoog',
+    thumbsDown: 'Duim omlaag',
+  },
+  EN: {
+    uploadBooks: 'Upload books',
+    dropTitle: 'Drop files here or click to browse',
+    dropSub: 'PDF, Word (.docx), or plain text (.txt) — up to 50 MB each',
+    statistics: 'Statistics',
+    close: 'Close',
+    loading: 'Loading...',
+    studyMaterials: 'Study materials',
+    searchBooks: 'Search books...',
+    noMaterials: 'No materials available.\nAsk your teacher to upload course content.',
+    selectAll: 'select all',
+    askPlaceholder: 'Type here a question',
+    askBtn: 'Ask',
+    totalQuestions: 'Total questions',
+    topQuestions: 'Top 10 questions',
+    perFile: 'Per file',
+    noStats: 'No statistics available yet.',
+    rename: 'Rename',
+    remove: 'Remove',
+    save: 'Save',
+    cancel: 'Cancel',
+    copied: 'Copied!',
+    thumbUp: 'Helpful',
+    thumbDown: 'Not helpful',
+    pomodoroWork: 'WORK',
+    pomodoroBreak: 'BREAK',
+    startTimer: 'Start',
+    pauseTimer: 'Pause',
+    resetTimer: 'Reset',
+    preview: 'Preview',
+    welcomeText: 'Welcome message',
+    saveWelcome: 'Save',
+    welcomePlaceholder: 'Write a welcome message for students...',
+    thumbsUp: 'Thumbs up',
+    thumbsDown: 'Thumbs down',
+  }
+};
+
+let currentLang = localStorage.getItem('lang') || 'EN';
+
+function applyLang(lang) {
+  currentLang = lang;
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.EN;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+  // Update placeholders
+  const bookSearch = document.getElementById('book-search');
+  if (bookSearch) bookSearch.placeholder = t.searchBooks;
+  const qInput = document.getElementById('q-input');
+  if (qInput) qInput.placeholder = t.askPlaceholder;
+  const askBtn = document.getElementById('ask-btn');
+  if (askBtn) askBtn.textContent = t.askBtn;
+  const langBtn = document.getElementById('lang-btn');
+  if (langBtn) langBtn.textContent = lang;
+}
+
+function toggleLang() {
+  const next = currentLang === 'NL' ? 'EN' : 'NL';
+  localStorage.setItem('lang', next);
+  applyLang(next);
+  renderBookList(); // re-render to update "select all" text etc.
+}
+
 // ── Dark mode ──────────────────────────────────────────────────────────────
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
@@ -1174,7 +1665,10 @@ async function apiFetch(url, opts) {
   if (res.status === 403) {
     sessionStorage.removeItem('tAuth');
     switchView('student', document.getElementById('tab-student'));
-    alert('Your teacher session has expired. Please log in again as teacher.');
+    const msg = currentLang === 'NL'
+      ? 'Je leraarsessie is verlopen. Meld je opnieuw aan als leraar.'
+      : 'Your teacher session has expired. Please log in again as teacher.';
+    alert(msg);
     return null;
   }
   return res;
@@ -1241,41 +1735,51 @@ function toggleSort() {
 
 function renderBookList() {
   const el = document.getElementById('book-list');
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
   const filter = (document.getElementById('book-search')?.value || '').toLowerCase();
   let withFiles = allCourses.filter(c => c.files.length > 0);
 
-  // Filter files by search term, keep course if it has matching files
+  // files are now objects: {filename, display_name, ...}
   if (filter) {
     withFiles = withFiles.map(c => ({
       ...c,
-      files: c.files.filter(f => f.toLowerCase().includes(filter))
+      files: c.files.filter(f => {
+        const label = (f.display_name || f.filename || f).toLowerCase();
+        return label.includes(filter) || (f.filename || '').toLowerCase().includes(filter);
+      })
     })).filter(c => c.files.length > 0);
   }
 
   if (!withFiles.length) {
-    el.innerHTML = '<div class="sidebar-empty">No materials available.<br>Ask your teacher to upload course content.</div>';
+    const [line1, line2] = t.noMaterials.split('\n');
+    el.innerHTML = `<div class="sidebar-empty">${esc(line1)}<br>${esc(line2 || '')}</div>`;
     return;
   }
 
-  // Sort files within each course alphabetically if enabled
   const displayed = withFiles.map(c => ({
     ...c,
-    files: sortAlpha ? [...c.files].sort((a, b) => a.localeCompare(b)) : c.files
+    files: sortAlpha
+      ? [...c.files].sort((a, b) => (a.display_name || a.filename).localeCompare(b.display_name || b.filename))
+      : c.files
   }));
 
   el.innerHTML = displayed.map((c, ci) => `
     <div class="course-group">
       <div class="course-group-header">
         <span class="course-group-name" title="${esc(c.name)}">${trunc(c.name)}</span>
-        <button class="btn-toggle-all" onclick="toggleCourse(${ci})">select all</button>
+        <button class="btn-toggle-all" onclick="toggleCourse(${ci})">${t.selectAll}</button>
       </div>
-      ${c.files.map(f => `
+      ${c.welcome ? `<div class="welcome-note">${esc(c.welcome)}</div>` : ''}
+      ${c.files.map(f => {
+        const filename = f.filename || f;
+        const label = f.display_name || filename;
+        return `
         <label class="book-item">
-          <input type="checkbox" class="book-cb" data-ci="${ci}" data-filename="${esc(f)}" checked>
+          <input type="checkbox" class="book-cb" data-ci="${ci}" data-filename="${esc(filename)}" checked>
           <div class="toggle"></div>
-          <span class="book-label" title="${esc(f)}">${trunc(f)}</span>
-        </label>
-      `).join('')}
+          <span class="book-label" title="${esc(label)}">${trunc(label)}</span>
+        </label>`;
+      }).join('')}
     </div>
   `).join('');
 }
@@ -1342,7 +1846,7 @@ async function askQuestion() {
     const res = await apiFetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question: q, books, history: chatHistory }),
+      body: JSON.stringify({ question: q, books, history: chatHistory, lang: currentLang }),
     });
     if (!res) throw new Error('Not authenticated');
     const data = await res.json();
@@ -1463,14 +1967,30 @@ function buildExtraHtml(extra) {
     </div>`;
 }
 
+// Registry to hold question/answer text for feedback (avoids inline JS escaping issues)
+const _feedbackData = {};
+
 function appendResult(question, answer, sources, extra = '') {
   const h = document.getElementById('qa-history');
   const el = document.createElement('div');
   el.className = 'result-block';
+  const uid = Math.random().toString(36).slice(2, 9);
+  _feedbackData[uid] = { question, answer };
   el.innerHTML = `
     <div class="result-question">${esc(question)}</div>
     <div class="result-answer-label">Answer</div>
-    <div class="result-answer">${md(answer)}</div>
+    <div class="result-answer" id="ans-${uid}">${md(answer)}</div>
+    <div class="result-actions">
+      <button class="btn-copy" onclick="copyAnswer('${uid}')" title="Copy">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      </button>
+      <button class="btn-thumb" id="up-${uid}" onclick="submitFeedback('${uid}','up')" title="Helpful">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+      </button>
+      <button class="btn-thumb" id="dn-${uid}" onclick="submitFeedback('${uid}','down')" title="Not helpful">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
+      </button>
+    </div>
     ${buildExtraHtml(extra)}
     ${buildSourcesHtml(sources, answer)}`;
   h.appendChild(el);
@@ -1503,7 +2023,7 @@ function renderTeacherList() {
     <button class="course-tab ${activeCourse === c.name ? 'active' : ''}"
             data-course="${esc(c.name)}"
             onclick="selectCourse(this.dataset.course)">
-      <span class="drag-handle" title="Drag to reorder">⠿</span><span title="${esc(c.name)}">${trunc(c.name)}</span>
+      <span class="drag-handle" title="Drag to reorder"><svg width="10" height="14" viewBox="0 0 10 14" fill="none" style="opacity:.4"><circle cx="3" cy="3" r="1.3" fill="currentColor"/><circle cx="7" cy="3" r="1.3" fill="currentColor"/><circle cx="3" cy="7" r="1.3" fill="currentColor"/><circle cx="7" cy="7" r="1.3" fill="currentColor"/><circle cx="3" cy="11" r="1.3" fill="currentColor"/><circle cx="7" cy="11" r="1.3" fill="currentColor"/></svg></span><span title="${esc(c.name)}">${trunc(c.name)}</span>
     </button>
   `).join('');
   initDragDrop();
@@ -1565,8 +2085,44 @@ function selectCourse(name) {
   document.getElementById('no-course-msg').style.display = 'none';
   document.getElementById('course-detail').classList.add('active');
   document.getElementById('btn-delete-course').style.display = '';
+  document.getElementById('btn-stats').style.display = '';
   document.getElementById('upload-status').textContent = '';
+  document.getElementById('stats-card').style.display = 'none';
   renderFileList(course.files);
+  renderWelcomeEditor(name, course.welcome || '');
+}
+
+function renderWelcomeEditor(courseName, currentText) {
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
+  let el = document.getElementById('welcome-editor-card');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'welcome-editor-card';
+    const detail = document.getElementById('course-detail');
+    if (detail) detail.appendChild(el);
+  }
+  el.innerHTML = `
+    <div class="welcome-editor">
+      <label>${t.welcomeText}</label>
+      <textarea id="welcome-textarea" placeholder="${t.welcomePlaceholder}">${esc(currentText)}</textarea>
+      <button onclick="saveWelcome('${esc(courseName)}')">${t.saveWelcome}</button>
+    </div>`;
+}
+
+async function saveWelcome(courseName) {
+  const text = document.getElementById('welcome-textarea')?.value || '';
+  try {
+    const res = await apiFetch(`/api/courses/${encodeURIComponent(courseName)}/welcome`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    });
+    const data = await res.json();
+    if (data.error) { toast(data.error); return; }
+    const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
+    toast(t.save);
+    await loadTeacherCourses();
+  } catch { toast('Failed to save welcome text.'); }
 }
 
 function hideCourseDetail() {
@@ -1574,21 +2130,189 @@ function hideCourseDetail() {
   document.getElementById('no-course-msg').style.display = '';
   document.getElementById('course-detail').classList.remove('active');
   document.getElementById('btn-delete-course').style.display = 'none';
+  document.getElementById('btn-stats').style.display = 'none';
   renderTeacherList();
+}
+
+async function showStats() {
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
+  const card = document.getElementById('stats-card');
+  const body = document.getElementById('stats-body');
+  card.style.display = '';
+  body.innerHTML = `<div style="font-size:12px;color:var(--text-3);">${t.loading}</div>`;
+  try {
+    const res = await apiFetch('/api/stats');
+    const data = await res.json();
+    if (data.error) { body.innerHTML = `<div style="color:var(--red);font-size:12px;">${esc(data.error)}</div>`; return; }
+    if (data.total === 0) { body.innerHTML = `<div style="font-size:12px;color:var(--text-3);">${t.noStats}</div>`; return; }
+    const perCourseEntries = Object.entries(data.per_course).sort((a, b) => b[1] - a[1]);
+    body.innerHTML = `
+      <div class="stats-row">
+        <div class="stats-kpi">
+          <div class="stats-kpi-value">${data.total}</div>
+          <div class="stats-kpi-label">${t.totalQuestions}</div>
+        </div>
+        <div class="stats-kpi">
+          <div class="stats-kpi-value">${data.thumbs_up ?? 0}</div>
+          <div class="stats-kpi-label">${t.thumbsUp}</div>
+        </div>
+        <div class="stats-kpi">
+          <div class="stats-kpi-value">${data.thumbs_down ?? 0}</div>
+          <div class="stats-kpi-label">${t.thumbsDown}</div>
+        </div>
+      </div>
+      ${perCourseEntries.length ? `
+        <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">${t.perFile}</div>
+        <div class="stats-list" style="margin-bottom:14px;">
+          ${perCourseEntries.map(([name, count]) => `
+            <div class="stats-item">
+              <span class="stats-q" title="${esc(name)}">${trunc(name, 45)}</span>
+              <span class="stats-count">${count}</span>
+            </div>`).join('')}
+        </div>` : ''}
+      ${data.top_questions.length ? `
+        <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">${t.topQuestions}</div>
+        <div class="stats-list">
+          ${data.top_questions.map(q => `
+            <div class="stats-item">
+              <span class="stats-q" title="${esc(q.question)}">${trunc(q.question, 55)}</span>
+              <span class="stats-count">${q.count}×</span>
+            </div>`).join('')}
+        </div>` : ''}`;
+  } catch { body.innerHTML = '<div style="color:var(--red);font-size:12px;">Failed to load statistics.</div>'; }
+}
+
+function formatDate(iso) {
+  if (!iso) return '';
+  try {
+    const d = new Date(iso + (iso.endsWith('Z') ? '' : 'Z'));
+    return d.toLocaleDateString(currentLang === 'NL' ? 'nl-BE' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch { return ''; }
+}
+
+function formatSize(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function renderFileList(files) {
   const el = document.getElementById('file-list');
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
   if (!files.length) {
     el.innerHTML = '<div style="font-size:12px; color:var(--text-3); padding:8px 0;">No books uploaded yet.</div>';
     return;
   }
-  el.innerHTML = files.map(f => `
-    <div class="f-item" data-file="${esc(f)}">
-      <span class="f-name" title="${esc(f)}">${trunc(f)}</span>
-      <button class="btn-del" onclick="deleteFile(activeCourse, this.closest('.f-item').dataset.file)">Remove</button>
-    </div>
-  `).join('');
+  el.innerHTML = files.map(f => {
+    const filename = f.filename || f;
+    const displayName = f.display_name || filename;
+    const dateStr = formatDate(f.upload_date || '');
+    const sizeStr = formatSize(f.file_size || 0);
+    return `
+    <div class="f-item" data-file="${esc(filename)}">
+      <span class="f-drag-handle" title="Drag to reorder"><svg width="10" height="14" viewBox="0 0 10 14" fill="none" style="opacity:.4"><circle cx="3" cy="3" r="1.3" fill="currentColor"/><circle cx="7" cy="3" r="1.3" fill="currentColor"/><circle cx="3" cy="7" r="1.3" fill="currentColor"/><circle cx="7" cy="7" r="1.3" fill="currentColor"/><circle cx="3" cy="11" r="1.3" fill="currentColor"/><circle cx="7" cy="11" r="1.3" fill="currentColor"/></svg></span>
+      <span class="f-name" title="${esc(filename)}">${trunc(displayName, 30)}</span>
+      ${dateStr ? `<span class="f-meta">${esc(dateStr)}</span>` : ''}
+      ${sizeStr ? `<span class="f-meta">${esc(sizeStr)}</span>` : ''}
+      <button class="btn-rename" onclick="showFilePreview(activeCourse, '${esc(filename)}')">${t.preview}</button>
+      <button class="btn-rename" onclick="startRename(this, '${esc(filename)}')">${t.rename}</button>
+      <button class="btn-del" onclick="deleteFile(activeCourse, this.closest('.f-item').dataset.file)">${t.remove}</button>
+    </div>`;
+  }).join('');
+  initFileDragDrop();
+}
+
+function startRename(btn, filename) {
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
+  const item = btn.closest('.f-item');
+  const nameSpan = item.querySelector('.f-name');
+  const currentName = nameSpan.title;
+  // Replace name span with input
+  nameSpan.style.display = 'none';
+  btn.style.display = 'none';
+  const inp = document.createElement('input');
+  inp.className = 'rename-input';
+  inp.value = currentName;
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'btn-rename';
+  saveBtn.textContent = t.save;
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn-cancel-sm';
+  cancelBtn.textContent = t.cancel;
+  cancelBtn.style.flexShrink = '0';
+  item.insertBefore(inp, btn);
+  item.insertBefore(saveBtn, btn);
+  item.insertBefore(cancelBtn, btn);
+  inp.focus(); inp.select();
+  const cleanup = () => {
+    inp.remove(); saveBtn.remove(); cancelBtn.remove();
+    nameSpan.style.display = ''; btn.style.display = '';
+  };
+  saveBtn.onclick = () => doRename(filename, inp.value.trim(), cleanup);
+  cancelBtn.onclick = cleanup;
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') doRename(filename, inp.value.trim(), cleanup);
+    if (e.key === 'Escape') cleanup();
+  });
+}
+
+async function doRename(filename, displayName, cleanup) {
+  if (!displayName) { cleanup(); return; }
+  try {
+    const res = await apiFetch('/api/file-meta/rename', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ course: activeCourse, filename, display_name: displayName }),
+    });
+    const data = await res.json();
+    if (data.error) { toast(data.error); cleanup(); return; }
+    await loadTeacherCourses();
+    selectCourse(activeCourse);
+    loadBooks();
+    toast('Renamed successfully.');
+  } catch { toast('Rename failed.'); cleanup(); }
+}
+
+let _fileDragSrc = null;
+function initFileDragDrop() {
+  document.querySelectorAll('#file-list .f-item').forEach(item => {
+    const handle = item.querySelector('.f-drag-handle');
+    if (!handle) return;
+    handle.draggable = true;
+    handle.addEventListener('dragstart', e => {
+      _fileDragSrc = item;
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => item.classList.add('dragging'), 0);
+    });
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      document.querySelectorAll('#file-list .f-item').forEach(i => i.classList.remove('drag-target'));
+    });
+    item.addEventListener('dragover', e => { e.preventDefault(); item.classList.add('drag-target'); });
+    item.addEventListener('dragleave', () => item.classList.remove('drag-target'));
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      item.classList.remove('drag-target');
+      if (!_fileDragSrc || _fileDragSrc === item) return;
+      const container = document.getElementById('file-list');
+      const items = [...container.querySelectorAll('.f-item')];
+      const srcIdx = items.indexOf(_fileDragSrc);
+      const dstIdx = items.indexOf(item);
+      if (srcIdx < dstIdx) container.insertBefore(_fileDragSrc, item.nextSibling);
+      else container.insertBefore(_fileDragSrc, item);
+      const newOrder = [...container.querySelectorAll('.f-item')].map(i => i.dataset.file);
+      saveFileOrder(newOrder);
+    });
+  });
+}
+
+async function saveFileOrder(order) {
+  await apiFetch(`/api/courses/${encodeURIComponent(activeCourse)}/files/reorder`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ order }),
+  });
 }
 
 // ── Teacher: create course ─────────────────────────────────────────────────
@@ -1740,7 +2464,144 @@ async function checkOnline() {
 checkOnline();
 setInterval(checkOnline, 30000);
 
+// ── Copy answer ────────────────────────────────────────────────────────────
+function copyAnswer(uid) {
+  const el = document.getElementById('ans-' + uid);
+  if (!el) return;
+  const text = el.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
+    toast(t.copied);
+  });
+}
+
+// ── Feedback (thumbs) ──────────────────────────────────────────────────────
+async function submitFeedback(uid, rating) {
+  const upBtn = document.getElementById('up-' + uid);
+  const dnBtn = document.getElementById('dn-' + uid);
+  if (!upBtn || !dnBtn) return;
+  if (upBtn.disabled) return; // already voted
+  upBtn.disabled = true;
+  dnBtn.disabled = true;
+  const voted = rating === 'up' ? upBtn : dnBtn;
+  voted.classList.add('voted');
+  const { question = '', answer = '' } = _feedbackData[uid] || {};
+  try {
+    await apiFetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, answer, books: getSelectedBooks(), rating }),
+    });
+  } catch { /* silent */ }
+}
+
+// ── Pomodoro ───────────────────────────────────────────────────────────────
+const _pom = { running: false, seconds: 25 * 60, mode: 'work', interval: null };
+const POM_CIRCUMFERENCE = 2 * Math.PI * 35; // r=35 → ≈ 219.9
+
+function togglePomodoroPanel() {
+  const panel = document.getElementById('pomodoro-panel');
+  const btn = document.getElementById('pomodoro-btn');
+  panel.classList.toggle('open');
+  btn.classList.toggle('active', panel.classList.contains('open'));
+}
+
+function pomodoroStartPause() {
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
+  const btn = document.getElementById('pomodoro-playpause');
+  if (_pom.running) {
+    clearInterval(_pom.interval);
+    _pom.running = false;
+    btn.textContent = t.startTimer;
+    btn.classList.add('primary');
+  } else {
+    _pom.running = true;
+    btn.textContent = t.pauseTimer;
+    btn.classList.add('primary');
+    _pom.interval = setInterval(pomodoroTick, 1000);
+  }
+}
+
+function pomodoroReset() {
+  clearInterval(_pom.interval);
+  _pom.running = false;
+  _pom.mode = 'work';
+  _pom.seconds = 25 * 60;
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
+  document.getElementById('pomodoro-playpause').textContent = t.startTimer;
+  document.getElementById('pomodoro-playpause').classList.add('primary');
+  document.getElementById('pomodoro-mode').textContent = t.pomodoroWork;
+  document.getElementById('pomodoro-ring').classList.remove('pulse');
+  _pomUpdateDisplay();
+}
+
+function pomodoroTick() {
+  if (_pom.seconds > 0) {
+    _pom.seconds--;
+    _pomUpdateDisplay();
+  } else {
+    // Switch mode
+    clearInterval(_pom.interval);
+    _pom.running = false;
+    const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
+    if (_pom.mode === 'work') {
+      _pom.mode = 'break';
+      _pom.seconds = 5 * 60;
+      document.getElementById('pomodoro-mode').textContent = t.pomodoroBreak;
+    } else {
+      _pom.mode = 'work';
+      _pom.seconds = 25 * 60;
+      document.getElementById('pomodoro-mode').textContent = t.pomodoroWork;
+    }
+    document.getElementById('pomodoro-ring').classList.add('pulse');
+    setTimeout(() => document.getElementById('pomodoro-ring').classList.remove('pulse'), 1500);
+    document.getElementById('pomodoro-playpause').textContent = t.startTimer;
+    document.getElementById('pomodoro-playpause').classList.add('primary');
+    _pomUpdateDisplay();
+  }
+}
+
+function _pomUpdateDisplay() {
+  const total = _pom.mode === 'work' ? 25 * 60 : 5 * 60;
+  const fraction = _pom.seconds / total;
+  const offset = POM_CIRCUMFERENCE * (1 - fraction);
+  document.getElementById('pomodoro-prog').style.strokeDashoffset = offset;
+  const m = Math.floor(_pom.seconds / 60).toString().padStart(2, '0');
+  const s = (_pom.seconds % 60).toString().padStart(2, '0');
+  document.getElementById('pomodoro-time').textContent = `${m}:${s}`;
+}
+
+// ── File preview ───────────────────────────────────────────────────────────
+async function showFilePreview(course, filename) {
+  const modal = document.getElementById('preview-modal');
+  const title = document.getElementById('preview-modal-title');
+  const body = document.getElementById('preview-modal-body');
+  title.textContent = filename;
+  body.innerHTML = '<div style="font-size:12px;color:var(--text-3);padding:8px 0;">Loading...</div>';
+  modal.classList.add('open');
+  try {
+    const res = await apiFetch(`/api/courses/${encodeURIComponent(course)}/files/${encodeURIComponent(filename)}/preview`);
+    const chunks = await res.json();
+    if (!Array.isArray(chunks) || !chunks.length) {
+      body.innerHTML = '<div style="font-size:12px;color:var(--text-3);padding:8px 0;">No content found.</div>';
+      return;
+    }
+    body.innerHTML = chunks.map(ch => `
+      <div class="preview-chunk">
+        <div class="preview-chunk-loc">${esc(ch.location || '')}</div>
+        <div class="preview-chunk-text">${esc(ch.text || '')}</div>
+      </div>`).join('');
+  } catch {
+    body.innerHTML = '<div style="color:var(--red);font-size:12px;">Failed to load preview.</div>';
+  }
+}
+
+function closePreviewModal() {
+  document.getElementById('preview-modal').classList.remove('open');
+}
+
 // ── Init ───────────────────────────────────────────────────────────────────
+applyLang(currentLang);
 loadBooks();
 </script>
 </body>

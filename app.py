@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import time
+from datetime import datetime
 from pathlib import Path
 
 from flask import Flask, jsonify, make_response, render_template, request, redirect, url_for
@@ -13,7 +14,7 @@ from werkzeug.utils import secure_filename
 
 from rag_engine import RAGEngine
 
-load_dotenv()
+load_dotenv(override=True)
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50 MB
@@ -175,6 +176,9 @@ UPLOAD_FOLDER = Path("uploads")
 UPLOAD_FOLDER.mkdir(exist_ok=True)
 
 COURSES_FILE = DATA_FOLDER / "courses.json"
+FILE_META_FILE = DATA_FOLDER / "file_meta.json"
+STATS_FILE     = DATA_FOLDER / "stats.json"
+FEEDBACK_FILE  = DATA_FOLDER / "feedback.json"
 ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt"}
 
 MAX_QUESTION_LENGTH = 1000
@@ -215,6 +219,63 @@ def remove_course_name(name: str):
     COURSES_FILE.write_text(json.dumps(names))
 
 
+def load_file_meta() -> dict:
+    if not FILE_META_FILE.exists():
+        return {}
+    try:
+        return json.loads(FILE_META_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def save_file_meta(meta: dict):
+    FILE_META_FILE.write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
+
+
+def load_stats() -> list:
+    if not STATS_FILE.exists():
+        return []
+    try:
+        return json.loads(STATS_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+
+
+def load_feedback() -> list:
+    if not FEEDBACK_FILE.exists():
+        return []
+    try:
+        return json.loads(FEEDBACK_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+
+
+def log_feedback(question: str, answer: str, books: list, rating: str):
+    feedback = load_feedback()
+    feedback.append({
+        "question": question,
+        "answer": answer,
+        "books": books,
+        "rating": rating,
+        "timestamp": datetime.utcnow().isoformat(),
+    })
+    if len(feedback) > 1000:
+        feedback = feedback[-1000:]
+    FEEDBACK_FILE.write_text(json.dumps(feedback, ensure_ascii=False), encoding="utf-8")
+
+
+def log_question(question: str, books: list):
+    stats = load_stats()
+    stats.append({
+        "question": question,
+        "books": books,
+        "timestamp": datetime.utcnow().isoformat(),
+    })
+    if len(stats) > 500:
+        stats = stats[-500:]
+    STATS_FILE.write_text(json.dumps(stats, ensure_ascii=False), encoding="utf-8")
+
+
 # ── Routes ───────────────────────────────────────────────────────────────────
 
 @app.route("/")
@@ -236,7 +297,18 @@ def get_courses():
         saved = load_course_names()
         extra = sorted(n for n in rag_courses if n not in saved)
         all_names = saved + extra
-        result = [{"name": n, "files": rag_courses.get(n, [])} for n in all_names]
+        meta = load_file_meta()
+        result = []
+        for n in all_names:
+            raw_files = rag_courses.get(n, [])
+            saved_order = meta.get(n, {}).get("__order__", [])
+            ordered = [f for f in saved_order if f in raw_files] + [f for f in raw_files if f not in saved_order]
+            course_meta = meta.get(n, {})
+            files = [
+                {"filename": f, **course_meta.get(f, {"display_name": f, "upload_date": "", "file_size": 0})}
+                for f in ordered
+            ]
+            result.append({"name": n, "files": files, "welcome": meta.get(n, {}).get("__welcome__", "")})
         return jsonify(result)
     except Exception:
         log.exception("get_courses failed")
@@ -287,6 +359,14 @@ def delete_file(course_name, filename):
     if err: return err
     try:
         get_rag().delete_file(course_name, filename)
+        file_meta = load_file_meta()
+        if course_name in file_meta:
+            file_meta[course_name].pop(filename, None)
+            # Also remove from __order__
+            order = file_meta[course_name].get("__order__", [])
+            if filename in order:
+                file_meta[course_name]["__order__"] = [f for f in order if f != filename]
+            save_file_meta(file_meta)
         return jsonify({"success": True})
     except Exception:
         log.exception("delete_file failed")
@@ -320,6 +400,14 @@ def upload():
         engine = get_rag()
         chunks = engine.add_document(str(file_path), course_name, filename)
         save_course_name(course_name)
+        file_size = file_path.stat().st_size if file_path.exists() else 0
+        file_meta = load_file_meta()
+        file_meta.setdefault(course_name, {})[filename] = {
+            "display_name": filename,
+            "upload_date": datetime.utcnow().isoformat(),
+            "file_size": file_size,
+        }
+        save_file_meta(file_meta)
         return jsonify({
             "success": True,
             "chunks": chunks,
@@ -358,11 +446,16 @@ def chat():
                     "content": str(entry.get("content", ""))[:MAX_QUESTION_LENGTH],
                 })
 
+    lang = data.get("lang", "EN")
+    if lang not in ("NL", "EN"):
+        lang = "EN"
+
     if not question:
         return jsonify({"error": "Question cannot be empty"}), 400
 
     try:
-        result = get_rag().query(question, books, history)
+        result = get_rag().query(question, books, history, lang=lang)
+        log_question(question, books or [])
         return jsonify(result)
     except Exception:
         log.exception("chat failed")
@@ -389,6 +482,126 @@ def search():
         return jsonify(results)
     except Exception:
         log.exception("search failed")
+        return jsonify({"error": "Something went wrong. Please try again."}), 500
+
+
+# File metadata: rename
+
+@app.route("/api/file-meta/rename", methods=["POST"])
+def rename_file():
+    err = require_teacher()
+    if err: return err
+    data = request.get_json(force=True)
+    course = (data.get("course") or "").strip()[:MAX_COURSE_NAME_LENGTH]
+    filename = (data.get("filename") or "").strip()[:200]
+    display_name = (data.get("display_name") or "").strip()[:200]
+    if not course or not filename or not display_name:
+        return jsonify({"error": "course, filename and display_name are required"}), 400
+    file_meta = load_file_meta()
+    if course not in file_meta or filename not in file_meta[course]:
+        return jsonify({"error": "File not found in metadata"}), 404
+    file_meta[course][filename]["display_name"] = display_name
+    save_file_meta(file_meta)
+    return jsonify({"success": True})
+
+
+# File order within a course
+
+@app.route("/api/courses/<course_name>/files/reorder", methods=["POST"])
+def reorder_files(course_name):
+    err = require_teacher()
+    if err: return err
+    data = request.get_json(force=True)
+    raw_order = data.get("order") or []
+    if not isinstance(raw_order, list):
+        return jsonify({"error": "Order must be a list"}), 400
+    order = [str(item)[:200] for item in raw_order[:200] if isinstance(item, str)]
+    file_meta = load_file_meta()
+    file_meta.setdefault(course_name, {})["__order__"] = order
+    save_file_meta(file_meta)
+    return jsonify({"success": True})
+
+
+# Statistics
+
+@app.route("/api/stats", methods=["GET"])
+def get_stats():
+    err = require_teacher()
+    if err: return err
+    try:
+        stats = load_stats()
+        total = len(stats)
+        per_course: dict = {}
+        question_counts: dict = {}
+        for entry in stats:
+            for book in entry.get("books", []):
+                per_course[book] = per_course.get(book, 0) + 1
+            q = entry.get("question", "")
+            question_counts[q] = question_counts.get(q, 0) + 1
+        top_questions = sorted(question_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+        feedback = load_feedback()
+        thumbs_up = sum(1 for f in feedback if f.get("rating") == "up")
+        thumbs_down = sum(1 for f in feedback if f.get("rating") == "down")
+        return jsonify({
+            "total": total,
+            "per_course": per_course,
+            "top_questions": [{"question": q, "count": c} for q, c in top_questions],
+            "thumbs_up": thumbs_up,
+            "thumbs_down": thumbs_down,
+        })
+    except Exception:
+        log.exception("get_stats failed")
+        return jsonify({"error": "Something went wrong. Please try again."}), 500
+
+
+# Feedback
+
+@app.route("/api/feedback", methods=["POST"])
+def post_feedback():
+    data = request.get_json(force=True)
+    question = str(data.get("question") or "")[:MAX_QUESTION_LENGTH]
+    answer = str(data.get("answer") or "")[:4000]
+    raw_books = data.get("books")
+    if isinstance(raw_books, list):
+        books = [str(b)[:200] for b in raw_books[:50] if isinstance(b, str)]
+    else:
+        books = []
+    rating = str(data.get("rating") or "")
+    if rating not in ("up", "down"):
+        return jsonify({"error": "rating must be 'up' or 'down'"}), 400
+    log_feedback(question, answer, books, rating)
+    return jsonify({"success": True})
+
+
+# Welcome text
+
+@app.route("/api/courses/<course>/welcome", methods=["POST"])
+def set_welcome(course):
+    err = require_teacher()
+    if err: return err
+    data = request.get_json(force=True)
+    text = str(data.get("text") or "")[:2000]
+    file_meta = load_file_meta()
+    file_meta.setdefault(course, {})["__welcome__"] = text
+    save_file_meta(file_meta)
+    return jsonify({"success": True})
+
+
+# File preview
+
+@app.route("/api/courses/<course>/files/<filename>/preview", methods=["GET"])
+def preview_file(course, filename):
+    err = require_teacher()
+    if err: return err
+    try:
+        all_chunks = get_rag().search_content(filename, course)
+        # Filter to chunks from this specific file; fall back to all if none match
+        filtered = [c for c in all_chunks if c.get("filename") == filename]
+        chunks = filtered if filtered else all_chunks
+        result = [{"location": c.get("location", ""), "text": c.get("preview", "")} for c in chunks]
+        return jsonify(result)
+    except Exception:
+        log.exception("preview_file failed")
         return jsonify({"error": "Something went wrong. Please try again."}), 500
 
 
