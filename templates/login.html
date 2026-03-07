@@ -84,7 +84,7 @@
     <div class="sub">Enter the access password to continue.</div>
     <form method="POST">
       <label for="password">Password</label>
-      <input type="password" id="password" name="password" autofocus placeholder="••••••••">
+      <input type="password" id="password" name="password" autofocus placeholder="••••••••" autocomplete="current-password">
       <div class="error">{{ error or "" }}</div>
       <button type="submit">Continue</button>
     </form>

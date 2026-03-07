@@ -1171,6 +1171,12 @@ function activateTeacher(btn) {
 async function apiFetch(url, opts) {
   const res = await fetch(url, opts);
   if (res.status === 401) { window.location.href = '/login'; return null; }
+  if (res.status === 403) {
+    sessionStorage.removeItem('tAuth');
+    switchView('student', document.getElementById('tab-student'));
+    alert('Your teacher session has expired. Please log in again as teacher.');
+    return null;
+  }
   return res;
 }
 

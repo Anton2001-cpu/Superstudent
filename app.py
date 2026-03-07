@@ -102,6 +102,7 @@ def set_security_headers(response):
         "connect-src 'self'; "
         "frame-ancestors 'none';"
     )
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
     return response
 
 
