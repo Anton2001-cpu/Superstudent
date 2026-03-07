@@ -210,7 +210,7 @@ class RAGEngine:
         variants.add(re.sub(r'(\b\w+)\s+(\w+\b)', lambda m: f"{m.group(1)}-{m.group(2)}", text))
         return " | ".join(v for v in variants if v != text) or text
 
-    def query(self, question: str, books: list = None, history: list = None) -> dict:
+    def query(self, question: str, books: list = None, history: list = None, lang: str = "EN") -> dict:
         """books: list of filenames to restrict search to. None = all books."""
         total = self.collection.count()
         if total == 0:
@@ -272,18 +272,25 @@ class RAGEngine:
 
         context = "\n\n---\n\n".join(context_parts)
 
+        lang_instruction = (
+            "You MUST answer in Dutch (Nederlands). Do not use English under any circumstances."
+            if lang == "NL" else
+            "You MUST answer in English. Do not use Dutch under any circumstances."
+        )
+        fallback_phrase = (
+            "Ik kon dit niet vinden in je cursusmateriaal, klik hieronder voor relevante informatie online."
+            if lang == "NL" else
+            "I couldn't find this in your course material, click below to check relevant information online."
+        )
         answer_prompt = (
-            "You are a study assistant for students. "
-            "IMPORTANT: Always respond in the same language as the student's question. "
-            "If the question is in Dutch, answer in Dutch. If in English, answer in English. "
+            f"You are a study assistant for students. {lang_instruction} "
             "Do not use emojis. "
             "STRICT RULE: Give a maximum of 4-5 sentences. Use bullet points only when listing multiple items. "
             "Be direct — give the core answer only, no unnecessary intro or conclusion. "
-            "Answer using ONLY the course material provided. Do not invent information. "
-            "Either give a short answer, OR say exactly (in the student's language): "
-            "\"I couldn't find this in your course material, click below to check relevant information online.\" "
+            "Answer using ONLY the course material provided below. Do NOT use your own knowledge, do NOT search online, do NOT add links. "
+            f"Either give a short answer based strictly on the material, OR say exactly: \"{fallback_phrase}\" "
             "Never mix an answer with the fallback phrase. Bold key terms with **term**. "
-            "EXCEPTION: If the student explicitly asks for more detail (e.g. 'leg beter uit', 'meer uitleg', 'elaborate'), you may give a longer answer."
+            "EXCEPTION: If the student explicitly asks for more detail (e.g. 'leg beter uit', 'meer uitleg', 'elaborate'), you may give a longer answer — still only from the material."
         )
 
         messages = [{"role": "system", "content": answer_prompt}]
@@ -302,9 +309,10 @@ class RAGEngine:
         fallback_old = "I couldn't find this in your course materials. Please ask your teacher."
         if fallback_old in answer and len(answer) > len(fallback_old) + 10:
             answer = answer.replace(fallback_old, "").strip().rstrip("\n").strip()
-        no_answer = "couldn't find" in answer.lower()
+        no_answer = "couldn't find" in answer.lower() or "kon dit niet vinden" in answer.lower()
 
         # Separate call for online extra info — uses web search
+        reply_lang = "Dutch" if lang == "NL" else "English"
         try:
             extra_response = self.client.responses.create(
                 model="gpt-4o-mini",
@@ -312,7 +320,7 @@ class RAGEngine:
                 input=(
                     f"The student asked: \"{question}\". "
                     "Search online and give a short, helpful answer (2-4 sentences) about this topic. "
-                    "Respond in the same language as the question. "
+                    f"You MUST respond entirely in {reply_lang}, regardless of the language of the sources you find. "
                     "Be informative — give real content, not just a list of links."
                 ),
             )
@@ -398,17 +406,14 @@ class RAGEngine:
             "IMPORTANT: Always respond in the same language as the student's question. "
             "If the question is in Dutch, answer in Dutch. If in English, answer in English. "
             "Answer the question using ONLY the course material provided below. "
-            "Do not use any outside knowledge or invent information. "
+            "Do NOT use your own knowledge, do NOT search online, do NOT add links or URLs. "
             "Do not use emojis. "
             "Either give a complete answer based on the material, OR say exactly (in the student's language): "
             "\"I couldn't find this in your course materials. Please ask your teacher.\" "
             "Never do both in the same response. "
             "Be clear and concise. Use bullet points for lists. Bold key terms with **term**. "
             "If the student explicitly asks for more info, extra explanation, or more detail (e.g. 'vertel meer', 'meer uitleg', 'tell me more', 'elaborate'), "
-            "give a more detailed answer still based strictly on the course material. "
-            "Only after a full course-material answer, if there is genuinely useful extra information available online, "
-            "you may add 1-2 relevant links under the heading '**Extra info:**' (in Dutch) or '**Extra info:**' (in English), "
-            "but ONLY when the student explicitly asked for more info. Never add links otherwise."
+            "give a more detailed answer — still based strictly on the course material, never from outside sources."
         )
 
         messages = [{"role": "system", "content": system_prompt}]

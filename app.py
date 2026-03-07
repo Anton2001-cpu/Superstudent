@@ -594,12 +594,18 @@ def preview_file(course, filename):
     err = require_teacher()
     if err: return err
     try:
-        all_chunks = get_rag().search_content(filename, course)
-        # Filter to chunks from this specific file; fall back to all if none match
-        filtered = [c for c in all_chunks if c.get("filename") == filename]
-        chunks = filtered if filtered else all_chunks
-        result = [{"location": c.get("location", ""), "text": c.get("preview", "")} for c in chunks]
-        return jsonify(result)
+        collection = get_rag().collection
+        results = collection.get(
+            where={"$and": [{"course": {"$eq": course}}, {"filename": {"$eq": filename}}]},
+            include=["documents", "metadatas"],
+        )
+        docs = results.get("documents") or []
+        metas = results.get("metadatas") or []
+        chunks = [
+            {"location": m.get("location", ""), "text": d[:600]}
+            for d, m in sorted(zip(docs, metas), key=lambda x: x[1].get("location", ""))
+        ]
+        return jsonify(chunks)
     except Exception:
         log.exception("preview_file failed")
         return jsonify({"error": "Something went wrong. Please try again."}), 500

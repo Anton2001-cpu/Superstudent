@@ -699,6 +699,7 @@
       flex-shrink: 0;
     }
     .btn-new-course:hover { border-color: var(--blue); color: var(--blue); }
+    #btn-delete-course:hover { border-color: var(--red); color: var(--red); }
 
     /* ── Teacher: detail area ── */
     .detail-area {
@@ -1003,7 +1004,7 @@
     }
 
     /* Statistics panel */
-    .stats-section { margin-top: 8px; }
+    .stats-section { margin-top: 8px; max-height: 420px; overflow-y: auto; }
     .stats-row { display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
     .stats-kpi {
       background: var(--bg);
@@ -1396,7 +1397,7 @@
       </div>
       <button class="btn-new-course" onclick="toggleCreateForm()">+ New course</button>
       <button class="btn-new-course" id="btn-stats" style="display:none" onclick="showStats()">Statistics</button>
-      <button class="btn-del" id="btn-delete-course" style="display:none" onclick="deleteActiveCourse()">Delete course</button>
+      <button class="btn-new-course" id="btn-delete-course" style="display:none" onclick="deleteActiveCourse()">Delete course</button>
     </div>
 
     <!-- Create course inline form -->
@@ -2122,6 +2123,7 @@ async function saveWelcome(courseName) {
     const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
     toast(t.save);
     await loadTeacherCourses();
+    loadBooks();
   } catch { toast('Failed to save welcome text.'); }
 }
 
