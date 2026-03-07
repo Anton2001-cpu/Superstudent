@@ -1616,7 +1616,7 @@ async function createCourse() {
 async function deleteActiveCourse() {
   if (!activeCourse) return;
   if (!confirm(`Delete course "${activeCourse}" and all its materials?`)) return;
-  await fetch(`/api/courses/${encodeURIComponent(activeCourse)}`, { method: 'DELETE' });
+  await apiFetch(`/api/courses/${encodeURIComponent(activeCourse)}`, { method: 'DELETE' });
   toast('Course deleted.');
   hideCourseDetail();
   loadTeacherCourses();
@@ -1625,7 +1625,7 @@ async function deleteActiveCourse() {
 
 async function deleteFile(course, filename) {
   if (!confirm(`Remove "${filename}" from ${course}?`)) return;
-  await fetch(`/api/courses/${encodeURIComponent(course)}/files/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+  await apiFetch(`/api/courses/${encodeURIComponent(course)}/files/${encodeURIComponent(filename)}`, { method: 'DELETE' });
   toast(`Removed: ${filename}`);
   await loadTeacherCourses();
   selectCourse(course);

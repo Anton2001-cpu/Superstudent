@@ -153,7 +153,7 @@ def teacher_login():
     if _is_rate_limited(ip):
         return jsonify({"error": "Too many failed attempts. Try again in 5 minutes."}), 429
     data = request.get_json(force=True)
-    pw = data.get("password", "")
+    pw = str(data.get("password", ""))[:256]
     if not hmac.compare_digest(pw, TEACHER_PASSWORD):
         _record_failure(ip)
         return jsonify({"error": "Incorrect password"}), 403
@@ -247,9 +247,10 @@ def reorder_courses():
     err = require_teacher()
     if err: return err
     data = request.get_json(force=True)
-    order = data.get("order") or []
-    if not isinstance(order, list):
+    raw_order = data.get("order") or []
+    if not isinstance(raw_order, list):
         return jsonify({"error": "Order must be a list"}), 400
+    order = [str(item)[:MAX_COURSE_NAME_LENGTH] for item in raw_order[:200] if isinstance(item, str)]
     COURSES_FILE.write_text(json.dumps(order))
     return jsonify({"success": True})
 
