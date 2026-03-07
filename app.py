@@ -1,10 +1,13 @@
+import collections
 import hashlib
 import hmac
 import json
+import logging
 import os
+import time
 from pathlib import Path
 
-from flask import Flask, jsonify, make_response, render_template, request, redirect, url_for, Response, stream_with_context
+from flask import Flask, jsonify, make_response, render_template, request, redirect, url_for
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
 
@@ -14,6 +17,8 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50 MB
+
+log = logging.getLogger(__name__)
 
 SITE_PASSWORD = os.getenv("SITE_PASSWORD", "student")
 TEACHER_PASSWORD = os.getenv("TEACHER_PASSWORD", "")
@@ -26,6 +31,33 @@ if not _SECRET:
 
 _IS_PRODUCTION = bool(os.getenv("RENDER"))
 
+# ── Rate limiting (login brute-force protection) ────────────────────────────
+# Stores (ip -> [timestamp, ...]) for failed attempts
+_failed_attempts: dict = collections.defaultdict(list)
+_MAX_ATTEMPTS = 5       # max failed tries
+_LOCKOUT_SECONDS = 300  # 5 minutes
+
+
+def _client_ip() -> str:
+    return request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip()
+
+
+def _is_rate_limited(ip: str) -> bool:
+    now = time.time()
+    attempts = [t for t in _failed_attempts[ip] if now - t < _LOCKOUT_SECONDS]
+    _failed_attempts[ip] = attempts
+    return len(attempts) >= _MAX_ATTEMPTS
+
+
+def _record_failure(ip: str):
+    _failed_attempts[ip].append(time.time())
+
+
+def _clear_failures(ip: str):
+    _failed_attempts.pop(ip, None)
+
+
+# ── Auth helpers ────────────────────────────────────────────────────────────
 
 def _make_token():
     return hmac.new(_SECRET.encode(), SITE_PASSWORD.encode(), hashlib.sha256).hexdigest()
@@ -60,17 +92,25 @@ def require_login():
         return redirect(url_for("login"))
 
 
+# ── Auth routes ─────────────────────────────────────────────────────────────
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     error = None
     if request.method == "POST":
-        if request.form.get("password") == SITE_PASSWORD:
+        ip = _client_ip()
+        if _is_rate_limited(ip):
+            error = "Too many failed attempts. Try again in 5 minutes."
+        elif hmac.compare_digest(request.form.get("password", ""), SITE_PASSWORD):
+            _clear_failures(ip)
             resp = make_response(redirect(url_for("index")))
             resp.set_cookie("auth", _make_token(), httponly=True,
                             samesite="Lax", secure=_IS_PRODUCTION,
                             max_age=60 * 60 * 24 * 30)
             return resp
-        error = "Incorrect password."
+        else:
+            _record_failure(ip)
+            error = "Incorrect password."
     return render_template("login.html", error=error)
 
 
@@ -86,15 +126,23 @@ def logout():
 def teacher_login():
     if not TEACHER_PASSWORD:
         return jsonify({"error": "Teacher access not configured"}), 403
+    ip = _client_ip()
+    if _is_rate_limited(ip):
+        return jsonify({"error": "Too many failed attempts. Try again in 5 minutes."}), 429
     data = request.get_json(force=True)
     pw = data.get("password", "")
     if not hmac.compare_digest(pw, TEACHER_PASSWORD):
+        _record_failure(ip)
         return jsonify({"error": "Incorrect password"}), 403
+    _clear_failures(ip)
     resp = make_response(jsonify({"success": True}))
     resp.set_cookie("teacher_auth", _make_teacher_token(), httponly=True,
                     samesite="Lax", secure=_IS_PRODUCTION,
                     max_age=60 * 60 * 8)
     return resp
+
+
+# ── Data helpers ─────────────────────────────────────────────────────────────
 
 DATA_FOLDER = Path("vectordb")
 DATA_FOLDER.mkdir(exist_ok=True)
@@ -104,6 +152,9 @@ UPLOAD_FOLDER.mkdir(exist_ok=True)
 
 COURSES_FILE = DATA_FOLDER / "courses.json"
 ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt"}
+
+MAX_QUESTION_LENGTH = 1000
+MAX_COURSE_NAME_LENGTH = 100
 
 _rag = None
 
@@ -119,8 +170,6 @@ def allowed(filename: str) -> bool:
     return Path(filename).suffix.lower() in ALLOWED_EXTENSIONS
 
 
-# ── courses.json helpers ───────────────────────────────────────────────────
-
 def load_course_names() -> list:
     if not COURSES_FILE.exists():
         return []
@@ -133,7 +182,7 @@ def load_course_names() -> list:
 def save_course_name(name: str):
     names = load_course_names()
     if name not in names:
-        names.append(name)          # append to end, preserve custom order
+        names.append(name)
         COURSES_FILE.write_text(json.dumps(names))
 
 
@@ -142,7 +191,7 @@ def remove_course_name(name: str):
     COURSES_FILE.write_text(json.dumps(names))
 
 
-# ── Routes ─────────────────────────────────────────────────────────────────
+# ── Routes ───────────────────────────────────────────────────────────────────
 
 @app.route("/")
 def index():
@@ -160,13 +209,14 @@ def ping():
 def get_courses():
     try:
         rag_courses = {c["name"]: c["files"] for c in get_rag().get_courses()}
-        saved = load_course_names()                        # ordered list
+        saved = load_course_names()
         extra = sorted(n for n in rag_courses if n not in saved)
-        all_names = saved + extra                          # saved order first
+        all_names = saved + extra
         result = [{"name": n, "files": rag_courses.get(n, [])} for n in all_names]
         return jsonify(result)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except Exception:
+        log.exception("get_courses failed")
+        return jsonify({"error": "Something went wrong. Please try again."}), 500
 
 
 @app.route("/api/courses/reorder", methods=["POST"])
@@ -186,7 +236,7 @@ def create_course():
     err = require_teacher()
     if err: return err
     data = request.get_json(force=True)
-    name = (data.get("name") or "").strip()
+    name = (data.get("name") or "").strip()[:MAX_COURSE_NAME_LENGTH]
     if not name:
         return jsonify({"error": "Course name is required"}), 400
     save_course_name(name)
@@ -201,8 +251,9 @@ def delete_course(course_name):
         get_rag().delete_course(course_name)
         remove_course_name(course_name)
         return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except Exception:
+        log.exception("delete_course failed")
+        return jsonify({"error": "Something went wrong. Please try again."}), 500
 
 
 @app.route("/api/courses/<course_name>/files/<filename>", methods=["DELETE"])
@@ -212,8 +263,9 @@ def delete_file(course_name, filename):
     try:
         get_rag().delete_file(course_name, filename)
         return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except Exception:
+        log.exception("delete_file failed")
+        return jsonify({"error": "Something went wrong. Please try again."}), 500
 
 
 # Upload
@@ -226,7 +278,7 @@ def upload():
         return jsonify({"error": "No file provided"}), 400
 
     file = request.files["file"]
-    course_name = request.form.get("course", "").strip()
+    course_name = request.form.get("course", "").strip()[:MAX_COURSE_NAME_LENGTH]
 
     if not file.filename:
         return jsonify({"error": "No file selected"}), 400
@@ -242,15 +294,15 @@ def upload():
     try:
         engine = get_rag()
         chunks = engine.add_document(str(file_path), course_name, filename)
-        # Make sure course name is persisted even if it was created implicitly
         save_course_name(course_name)
         return jsonify({
             "success": True,
             "chunks": chunks,
             "message": f'Added {chunks} sections from "{filename}" to {course_name}',
         })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except Exception:
+        log.exception("upload failed")
+        return jsonify({"error": "Something went wrong processing the file."}), 500
 
 
 # Chat (student)
@@ -258,7 +310,7 @@ def upload():
 @app.route("/api/chat", methods=["POST"])
 def chat():
     data = request.get_json(force=True)
-    question = (data.get("question") or "").strip()
+    question = (data.get("question") or "").strip()[:MAX_QUESTION_LENGTH]
     books = data.get("books") or None
     history = data.get("history") or []
 
@@ -268,32 +320,9 @@ def chat():
     try:
         result = get_rag().query(question, books, history)
         return jsonify(result)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/chat/stream", methods=["POST"])
-def chat_stream():
-    data = request.get_json(force=True)
-    question = (data.get("question") or "").strip()
-    books = data.get("books") or None
-    history = data.get("history") or []
-
-    if not question:
-        return jsonify({"error": "Question cannot be empty"}), 400
-
-    def generate():
-        try:
-            for event in get_rag().stream_query(question, books, history):
-                yield f"data: {json.dumps(event)}\n\n"
-        except Exception as e:
-            yield f"data: {json.dumps({'type': 'error', 'text': str(e)})}\n\n"
-
-    return Response(
-        stream_with_context(generate()),
-        mimetype="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-    )
+    except Exception:
+        log.exception("chat failed")
+        return jsonify({"error": "Something went wrong. Please try again."}), 500
 
 
 # Search (teacher)
@@ -303,7 +332,7 @@ def search():
     err = require_teacher()
     if err: return err
     data = request.get_json(force=True)
-    query = (data.get("query") or "").strip()
+    query = (data.get("query") or "").strip()[:MAX_QUESTION_LENGTH]
     course = (data.get("course") or "").strip()
 
     if not query:
@@ -314,11 +343,12 @@ def search():
     try:
         results = get_rag().search_content(query, course)
         return jsonify(results)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except Exception:
+        log.exception("search failed")
+        return jsonify({"error": "Something went wrong. Please try again."}), 500
 
 
-# ── Startup ─────────────────────────────────────────────────────────────────
+# ── Startup ──────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     api_key = os.getenv("OPENAI_API_KEY", "")
