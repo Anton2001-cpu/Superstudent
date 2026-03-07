@@ -23,6 +23,9 @@ log = logging.getLogger(__name__)
 SITE_PASSWORD = os.getenv("SITE_PASSWORD", "student")
 TEACHER_PASSWORD = os.getenv("TEACHER_PASSWORD", "")
 
+if SITE_PASSWORD == "student":
+    log.warning("WARNING: SITE_PASSWORD is still set to the default 'student'. Set a strong password in your environment variables.")
+
 _SECRET = os.getenv("SECRET_KEY")
 if not _SECRET:
     raise RuntimeError(
@@ -80,6 +83,14 @@ def _is_teacher():
 def require_teacher():
     if not _is_teacher():
         return jsonify({"error": "Teacher access required"}), 403
+
+
+@app.after_request
+def set_security_headers(response):
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
 
 
 @app.before_request
@@ -303,6 +314,11 @@ def upload():
     except Exception:
         log.exception("upload failed")
         return jsonify({"error": "Something went wrong processing the file."}), 500
+    finally:
+        try:
+            file_path.unlink(missing_ok=True)
+        except Exception:
+            pass
 
 
 # Chat (student)
@@ -312,7 +328,17 @@ def chat():
     data = request.get_json(force=True)
     question = (data.get("question") or "").strip()[:MAX_QUESTION_LENGTH]
     books = data.get("books") or None
-    history = data.get("history") or []
+
+    # Validate and sanitize history: max 10 entries, only role+content, content capped
+    raw_history = data.get("history") or []
+    history = []
+    if isinstance(raw_history, list):
+        for entry in raw_history[-10:]:
+            if isinstance(entry, dict) and entry.get("role") in ("user", "assistant"):
+                history.append({
+                    "role": entry["role"],
+                    "content": str(entry.get("content", ""))[:MAX_QUESTION_LENGTH],
+                })
 
     if not question:
         return jsonify({"error": "Question cannot be empty"}), 400
