@@ -5,9 +5,13 @@ __pycache__/
 *.pyo
 
 # App data (stays local, not in GitHub)
-vectordb/
 uploads/
-courses.json
+vectordb/chroma.sqlite3
+vectordb/stats.json
+vectordb/feedback.json
+
+# Seed script (only needed locally)
+seed_pdf.py
 
 # Secrets
 .env

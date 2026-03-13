@@ -1321,8 +1321,8 @@
       <svg id="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.93" y1="4.93" x2="7.05" y2="7.05"/><line x1="16.95" y1="16.95" x2="19.07" y2="19.07"/><line x1="4.93" y1="19.07" x2="7.05" y2="16.95"/><line x1="16.95" y1="7.05" x2="19.07" y2="4.93"/></svg>
     </button>
     <div class="tab-group">
-      <button class="tab active" id="tab-student" onclick="switchView('student', this)">Student</button>
-      <button class="tab" id="tab-teacher" onclick="requirePassword(this)">Teacher</button>
+      <button class="tab active" id="tab-student" onclick="switchView('student', this)" data-i18n="tabStudent">Student</button>
+      <button class="tab" id="tab-teacher" onclick="requirePassword(this)" data-i18n="tabTeacher">Teacher</button>
     </div>
   </div>
 </div>
@@ -1330,13 +1330,13 @@
 <!-- Password modal -->
 <div class="modal-overlay" id="pw-modal" style="display:none">
   <div class="modal-box">
-    <div class="modal-title">Teacher access</div>
+    <div class="modal-title" data-i18n="teacherAccess">Teacher access</div>
     <input class="modal-field" type="password" id="pw-input" placeholder="Password"
            onkeydown="if(event.key==='Enter') checkPw()">
     <div class="pw-error" id="pw-error"></div>
     <div class="modal-actions">
-      <button class="btn-cancel" onclick="closePwModal()">Cancel</button>
-      <button class="btn-confirm" onclick="checkPw()">Continue</button>
+      <button class="btn-cancel" onclick="closePwModal()" data-i18n="cancel">Cancel</button>
+      <button class="btn-confirm" onclick="checkPw()" data-i18n="continue">Continue</button>
     </div>
   </div>
 </div>
@@ -1348,7 +1348,7 @@
   <div class="sidebar" id="book-sidebar">
     <div class="sidebar-head">
       <span class="sidebar-label" data-i18n="studyMaterials">Study materials</span>
-      <button class="sb-collapse-btn" onclick="toggleSidebar()" title="Hide panel">
+      <button class="sb-collapse-btn" onclick="toggleSidebar()" id="sb-collapse-btn" title="Hide panel">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15,18 9,12 15,6"/></svg>
       </button>
     </div>
@@ -1366,14 +1366,14 @@
   <!-- Q&A panel -->
   <div class="qa-panel">
     <!-- Expand sidebar button, visible when sidebar is collapsed -->
-    <button class="sb-expand-btn" id="sb-expand-btn" onclick="toggleSidebar()" title="Show materials">
+    <button class="sb-expand-btn" id="sb-expand-btn" onclick="toggleSidebar()" title="Show materials" >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9,18 15,12 9,6"/></svg>
     </button>
 
     <div class="qa-history" id="qa-history">
       <div class="qa-empty" id="qa-empty">
-        <div class="qa-empty-title">Ask a question about your courses</div>
-        <div class="qa-empty-sub">Select books from the left panel, then type your question below. Only the uploaded course materials will be used, no internet, no guessing.</div>
+        <div class="qa-empty-title" data-i18n="qaEmptyTitle">Ask a question about your courses</div>
+        <div class="qa-empty-sub" data-i18n="qaEmptyText">Select books from the left panel, then type your question below. Only the uploaded course materials will be used, no internet, no guessing.</div>
       </div>
     </div>
     <div class="qa-input-bar">
@@ -1395,22 +1395,22 @@
       <div class="t-course-tabs" id="t-course-tabs">
         <span style="font-size:12px; color:var(--text-3);">No courses yet.</span>
       </div>
-      <button class="btn-new-course" onclick="toggleCreateForm()">+ New course</button>
-      <button class="btn-new-course" id="btn-stats" style="display:none" onclick="showStats()">Statistics</button>
-      <button class="btn-new-course" id="btn-delete-course" style="display:none" onclick="deleteActiveCourse()">Delete course</button>
+      <button class="btn-new-course" onclick="toggleCreateForm()" data-i18n="newCourse">+ New course</button>
+      <button class="btn-new-course" id="btn-stats" style="display:none" onclick="showStats()" data-i18n="statistics">Statistics</button>
+      <button class="btn-new-course" id="btn-delete-course" style="display:none" onclick="deleteActiveCourse()" data-i18n="deleteCourse">Delete course</button>
     </div>
 
     <!-- Create course inline form -->
     <div class="create-form" id="create-form">
       <input class="create-input" type="text" id="new-course-name" placeholder="Course name"
              onkeydown="if(event.key==='Enter') createCourse(); if(event.key==='Escape') toggleCreateForm()">
-      <button class="btn-add" onclick="createCourse()">Add</button>
-      <button class="btn-cancel-sm" onclick="toggleCreateForm()">Cancel</button>
+      <button class="btn-add" onclick="createCourse()" data-i18n="add">Add</button>
+      <button class="btn-cancel-sm" onclick="toggleCreateForm()" data-i18n="cancel">Cancel</button>
     </div>
 
     <!-- Detail area -->
     <div class="detail-area">
-      <div class="panel-placeholder" id="no-course-msg">
+      <div class="panel-placeholder" id="no-course-msg" data-i18n="noCourseMsg">
         Create or select a course above to manage it.
       </div>
 
@@ -1520,6 +1520,38 @@ const TRANSLATIONS = {
     welcomePlaceholder: 'Schrijf hier een welkomstbericht voor studenten...',
     thumbsUp: 'Duim omhoog',
     thumbsDown: 'Duim omlaag',
+    tabStudent: 'Student',
+    tabTeacher: 'Leraar',
+    teacherAccess: 'Leraartoegang',
+    passwordPlaceholder: 'Wachtwoord',
+    continue: 'Doorgaan',
+    qaEmptyTitle: 'Stel een vraag over je cursussen',
+    qaEmptyText: 'Selecteer boeken uit het linkerpaneel en typ je vraag hieronder. Alleen het geüploade cursusmateriaal wordt gebruikt, geen internet, geen gokken.',
+    noCourses: 'Nog geen cursussen.',
+    newCourse: '+ Nieuwe cursus',
+    deleteCourse: 'Cursus verwijderen',
+    courseNamePlaceholder: 'Cursusnaam',
+    noCourseMsg: 'Maak een cursus aan of selecteer er een hierboven.',
+    add: 'Toevoegen',
+    incorrectPassword: 'Onjuist wachtwoord.',
+    selectBook: 'Selecteer minstens één boek uit het linkerpaneel.',
+    failedSaveWelcome: 'Opslaan van welkomstbericht mislukt.',
+    renamedOk: 'Hernoemd.',
+    renameFailed: 'Hernoemen mislukt.',
+    failedCreateCourse: 'Cursus aanmaken mislukt.',
+    courseDeleted: 'Cursus verwijderd.',
+    selectCourseFirst: 'Selecteer eerst een cursus.',
+    processing: 'Verwerken...',
+    uploadFailed: 'Upload mislukt.',
+    searching: 'Zoeken...',
+    noMatchingContent: 'Geen overeenkomende inhoud gevonden.',
+    searchFailed: 'Zoeken mislukt.',
+    noBooksUploaded: 'Nog geen boeken geüpload.',
+    online: 'Online',
+    offline: 'Offline',
+    hidePanelTitle: 'Paneel verbergen',
+    showMaterialsTitle: 'Materialen tonen',
+    sortAlphabeticallyTitle: 'Alfabetisch sorteren',
   },
   EN: {
     uploadBooks: 'Upload books',
@@ -1556,6 +1588,38 @@ const TRANSLATIONS = {
     welcomePlaceholder: 'Write a welcome message for students...',
     thumbsUp: 'Thumbs up',
     thumbsDown: 'Thumbs down',
+    tabStudent: 'Student',
+    tabTeacher: 'Teacher',
+    teacherAccess: 'Teacher access',
+    passwordPlaceholder: 'Password',
+    continue: 'Continue',
+    qaEmptyTitle: 'Ask a question about your courses',
+    qaEmptyText: 'Select books from the left panel, then type your question below. Only the uploaded course materials will be used, no internet, no guessing.',
+    noCourses: 'No courses yet.',
+    newCourse: '+ New course',
+    deleteCourse: 'Delete course',
+    courseNamePlaceholder: 'Course name',
+    noCourseMsg: 'Create or select a course above to manage it.',
+    add: 'Add',
+    incorrectPassword: 'Incorrect password.',
+    selectBook: 'Select at least one book from the left panel.',
+    failedSaveWelcome: 'Failed to save welcome text.',
+    renamedOk: 'Renamed successfully.',
+    renameFailed: 'Rename failed.',
+    failedCreateCourse: 'Failed to create course.',
+    courseDeleted: 'Course deleted.',
+    selectCourseFirst: 'Select a course first.',
+    processing: 'Processing...',
+    uploadFailed: 'Upload failed.',
+    searching: 'Searching...',
+    noMatchingContent: 'No matching content found.',
+    searchFailed: 'Search failed.',
+    noBooksUploaded: 'No books uploaded yet.',
+    online: 'Online',
+    offline: 'Offline',
+    hidePanelTitle: 'Hide panel',
+    showMaterialsTitle: 'Show materials',
+    sortAlphabeticallyTitle: 'Sort alphabetically',
   }
 };
 
@@ -1577,6 +1641,18 @@ function applyLang(lang) {
   if (askBtn) askBtn.textContent = t.askBtn;
   const langBtn = document.getElementById('lang-btn');
   if (langBtn) langBtn.textContent = lang;
+  const pwInput = document.getElementById('pw-input');
+  if (pwInput) pwInput.placeholder = t.passwordPlaceholder;
+  const newCourseName = document.getElementById('new-course-name');
+  if (newCourseName) newCourseName.placeholder = t.courseNamePlaceholder;
+  const sbCollapseBtn = document.getElementById('sb-collapse-btn');
+  if (sbCollapseBtn) sbCollapseBtn.title = t.hidePanelTitle;
+  const sbExpandBtn = document.getElementById('sb-expand-btn');
+  if (sbExpandBtn) sbExpandBtn.title = t.showMaterialsTitle;
+  const btnSort = document.getElementById('btn-sort');
+  if (btnSort) btnSort.title = t.sortAlphabeticallyTitle;
+  const dot = document.getElementById('status-dot');
+  if (dot) dot.title = dot.classList.contains('offline') ? t.offline : t.online;
 }
 
 function toggleLang() {
@@ -1653,7 +1729,7 @@ async function checkPw() {
     closePwModal();
     if (pendingBtn) activateTeacher(pendingBtn);
   } else {
-    document.getElementById('pw-error').textContent = 'Incorrect password.';
+    document.getElementById('pw-error').textContent = (TRANSLATIONS[currentLang] || TRANSLATIONS.EN).incorrectPassword;
     document.getElementById('pw-input').select();
   }
 }
@@ -1834,7 +1910,7 @@ async function askQuestion() {
 
   const books = getSelectedBooks();
   if (!books.length) {
-    toast('Select at least one book from the left panel.');
+    toast((TRANSLATIONS[currentLang] || TRANSLATIONS.EN).selectBook);
     return;
   }
 
@@ -2021,7 +2097,7 @@ async function loadTeacherCourses() {
 function renderTeacherList() {
   const el = document.getElementById('t-course-tabs');
   if (!teacherCourses.length) {
-    el.innerHTML = '<span style="font-size:12px; color:var(--text-3);">No courses yet.</span>';
+    el.innerHTML = `<span style="font-size:12px; color:var(--text-3);">${(TRANSLATIONS[currentLang] || TRANSLATIONS.EN).noCourses}</span>`;
     return;
   }
   el.innerHTML = teacherCourses.map(c => `
@@ -2128,7 +2204,7 @@ async function saveWelcome(courseName) {
     toast(t.save);
     await loadTeacherCourses();
     loadBooks();
-  } catch { toast('Failed to save welcome text.'); }
+  } catch { toast((TRANSLATIONS[currentLang] || TRANSLATIONS.EN).failedSaveWelcome); }
 }
 
 function hideCourseDetail() {
@@ -2207,7 +2283,7 @@ function renderFileList(files) {
   const el = document.getElementById('file-list');
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
   if (!files.length) {
-    el.innerHTML = '<div style="font-size:12px; color:var(--text-3); padding:8px 0;">No books uploaded yet.</div>';
+    el.innerHTML = `<div style="font-size:12px; color:var(--text-3); padding:8px 0;">${(TRANSLATIONS[currentLang] || TRANSLATIONS.EN).noBooksUploaded}</div>`;
     return;
   }
   el.innerHTML = files.map(f => {
@@ -2276,8 +2352,8 @@ async function doRename(filename, displayName, cleanup) {
     await loadTeacherCourses();
     selectCourse(activeCourse);
     loadBooks();
-    toast('Renamed successfully.');
-  } catch { toast('Rename failed.'); cleanup(); }
+    toast((TRANSLATIONS[currentLang] || TRANSLATIONS.EN).renamedOk);
+  } catch { toast((TRANSLATIONS[currentLang] || TRANSLATIONS.EN).renameFailed); cleanup(); }
 }
 
 let _fileDragSrc = null;
@@ -2345,24 +2421,30 @@ async function createCourse() {
     document.getElementById('create-form').classList.remove('open');
     await loadTeacherCourses();
     selectCourse(name);
-    toast(`Course created: ${name}`);
-  } catch { toast('Failed to create course.'); }
+    toast(currentLang === 'NL' ? `Cursus aangemaakt: ${name}` : `Course created: ${name}`);
+  } catch { toast((TRANSLATIONS[currentLang] || TRANSLATIONS.EN).failedCreateCourse); }
 }
 
 async function deleteActiveCourse() {
   if (!activeCourse) return;
-  if (!confirm(`Delete course "${activeCourse}" and all its materials?`)) return;
+  const _confirmMsg = currentLang === 'NL'
+    ? `Cursus "${activeCourse}" en al het materiaal verwijderen?`
+    : `Delete course "${activeCourse}" and all its materials?`;
+  if (!confirm(_confirmMsg)) return;
   await apiFetch(`/api/courses/${encodeURIComponent(activeCourse)}`, { method: 'DELETE' });
-  toast('Course deleted.');
+  toast((TRANSLATIONS[currentLang] || TRANSLATIONS.EN).courseDeleted);
   hideCourseDetail();
   loadTeacherCourses();
   loadBooks();
 }
 
 async function deleteFile(course, filename) {
-  if (!confirm(`Remove "${filename}" from ${course}?`)) return;
+  const _removeMsg = currentLang === 'NL'
+    ? `"${filename}" verwijderen uit ${course}?`
+    : `Remove "${filename}" from ${course}?`;
+  if (!confirm(_removeMsg)) return;
   await apiFetch(`/api/courses/${encodeURIComponent(course)}/files/${encodeURIComponent(filename)}`, { method: 'DELETE' });
-  toast(`Removed: ${filename}`);
+  toast(currentLang === 'NL' ? `Verwijderd: ${filename}` : `Removed: ${filename}`);
   await loadTeacherCourses();
   selectCourse(course);
   loadBooks();
@@ -2385,13 +2467,14 @@ fileInput.addEventListener('change', () => {
 });
 
 async function uploadFiles(files) {
-  if (!activeCourse) { toast('Select a course first.'); return; }
+  if (!activeCourse) { toast((TRANSLATIONS[currentLang] || TRANSLATIONS.EN).selectCourseFirst); return; }
   const status = document.getElementById('upload-status');
   for (const file of files) {
     status.className = 'upload-status';
-    status.textContent = `Processing ${file.name}...`;
+    const _tu = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
+    status.textContent = currentLang === 'NL' ? `Verwerken ${file.name}...` : `Processing ${file.name}...`;
     dropZone.classList.add('uploading');
-    dropZone.querySelector('.drop-title').textContent = 'Processing...';
+    dropZone.querySelector('.drop-title').textContent = _tu.processing;
     dropZone.querySelector('.drop-sub').textContent = file.name;
     const fd = new FormData();
     fd.append('file', file);
@@ -2411,11 +2494,12 @@ async function uploadFiles(files) {
       }
     } catch {
       status.className = 'upload-status err';
-      status.textContent = 'Upload failed.';
+      status.textContent = (TRANSLATIONS[currentLang] || TRANSLATIONS.EN).uploadFailed;
     } finally {
       dropZone.classList.remove('uploading');
-      dropZone.querySelector('.drop-title').textContent = 'Drop files here or click to browse';
-      dropZone.querySelector('.drop-sub').textContent = 'PDF, Word (.docx), or plain text (.txt) — up to 50 MB each';
+      const _tf = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
+      dropZone.querySelector('.drop-title').textContent = _tf.dropTitle;
+      dropZone.querySelector('.drop-sub').textContent = _tf.dropSub;
     }
   }
 }
@@ -2426,7 +2510,7 @@ async function searchContent() {
   const query = document.getElementById('search-input').value.trim();
   if (!query) return;
   const el = document.getElementById('search-results');
-  el.innerHTML = '<div style="font-size:12px; color:var(--text-3);">Searching...</div>';
+  el.innerHTML = `<div style="font-size:12px; color:var(--text-3);">${(TRANSLATIONS[currentLang] || TRANSLATIONS.EN).searching}</div>`;
   try {
     const res = await apiFetch('/api/search', {
       method: 'POST',
@@ -2439,7 +2523,7 @@ async function searchContent() {
       return;
     }
     if (!data.length) {
-      el.innerHTML = '<div style="font-size:12px; color:var(--text-3);">No matching content found.</div>';
+      el.innerHTML = `<div style="font-size:12px; color:var(--text-3);">${(TRANSLATIONS[currentLang] || TRANSLATIONS.EN).noMatchingContent}</div>`;
       return;
     }
     el.innerHTML = data.map(r => `
@@ -2450,7 +2534,7 @@ async function searchContent() {
       </div>
     `).join('');
   } catch {
-    el.innerHTML = '<div style="font-size:12px; color:var(--red);">Search failed.</div>';
+    el.innerHTML = `<div style="font-size:12px; color:var(--red);">${(TRANSLATIONS[currentLang] || TRANSLATIONS.EN).searchFailed}</div>`;
   }
 }
 
@@ -2461,10 +2545,11 @@ async function checkOnline() {
     const res = await fetch('/api/ping', { cache: 'no-store' });
     const online = res.ok;
     dot.classList.toggle('offline', !online);
-    dot.title = online ? 'Online' : 'Offline';
+    const _td = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
+    dot.title = online ? _td.online : _td.offline;
   } catch {
     dot.classList.add('offline');
-    dot.title = 'Offline';
+    dot.title = (TRANSLATIONS[currentLang] || TRANSLATIONS.EN).offline;
   }
 }
 checkOnline();

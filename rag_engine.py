@@ -1,3 +1,4 @@
+import json
 import os
 import hashlib
 import re
@@ -13,10 +14,7 @@ class RAGEngine:
     def __init__(self):
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-        db_path = Path("vectordb")
-        db_path.mkdir(exist_ok=True)
-
-        self.chroma = chromadb.PersistentClient(path=str(db_path))
+        self.chroma = chromadb.EphemeralClient()
         self.collection = self.chroma.get_or_create_collection(
             name="courses",
             metadata={"hnsw:space": "cosine"},
@@ -24,6 +22,21 @@ class RAGEngine:
 
         self.chunk_size = 1200
         self.chunk_overlap = 200
+
+        self._load_seed_data()
+
+    def _load_seed_data(self):
+        seed_file = Path(__file__).parent / "seed_data.json"
+        if not seed_file.exists():
+            return
+        with open(seed_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        self.collection.upsert(
+            ids=data["ids"],
+            embeddings=data["embeddings"],
+            documents=data["documents"],
+            metadatas=data["metadatas"],
+        )
 
     # ── Text extraction ───────────────────────────────────────────────────
 
@@ -299,7 +312,7 @@ class RAGEngine:
         messages.append({"role": "user", "content": f"Course materials:\n\n{context}\n\n---\n\nQuestion: {question}"})
 
         chat_response = self.client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4o-mini",
             messages=messages,
             temperature=0,
             max_tokens=600,
@@ -379,7 +392,7 @@ class RAGEngine:
             else:
                 where = {"$or": [{"filename": {"$eq": b}} for b in books]}
 
-        n_results = min(5, total)
+        n_results = min(3, total)
         try:
             results = self.collection.query(query_embeddings=[query_embedding], n_results=n_results, where=where)
         except Exception:
@@ -422,10 +435,10 @@ class RAGEngine:
         messages.append({"role": "user", "content": f"Course materials:\n\n{chr(10).join(context_parts)}\n\n---\n\nQuestion: {question}"})
 
         stream = self.client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4o-mini",
             messages=messages,
             temperature=0,
-            max_tokens=1200,
+            max_tokens=600,
             stream=True,
         )
 
