@@ -2127,7 +2127,7 @@ function appendLoading(q) {
   el.className = 'loading-block';
   el.innerHTML = `
     <div class="loading-q">${esc(q)}</div>
-    <div class="loading-note">Looking through your materials...</div>
+    <div class="loading-note">${currentLang === 'NL' ? 'Zoeken in je cursusmateriaal...' : 'Looking through your materials...'}</div>
     <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
   h.appendChild(el);
   h.scrollTop = h.scrollHeight;
