@@ -8,51 +8,52 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg-color: #121212;
-      --card-bg: #1e1e1e;
-      --primary-blue: #0084ff;
+      --bg-dark: #0a0a0a;
+      --card-bg: rgba(255,255,255,0.05);
+      --primary: #0084ff;
+      --primary-end: #00c6ff;
       --text-main: #ffffff;
-      --text-dim: #a0a0a0;
-      --border-color: #333;
+      --text-dim: #888;
+      --border-color: rgba(255,255,255,0.1);
     }
 
     body {
-      margin: 0;
       font-family: 'Inter', -apple-system, sans-serif;
-      background-color: var(--bg-color);
+      background-color: var(--bg-dark);
       color: var(--text-main);
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bg-glow {
+      position: fixed;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(circle, rgba(0,132,255,0.18) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
     }
 
     .main-header {
-      padding: 15px 30px;
+      position: relative;
+      z-index: 1;
+      padding: 18px 30px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       border-bottom: 1px solid var(--border-color);
     }
 
-    .logo { font-weight: bold; font-size: 1.2rem; }
-    .logo span { color: var(--primary-blue); }
+    .logo { font-weight: 700; font-size: 1.1rem; letter-spacing: -0.02em; }
+    .logo span { color: var(--primary); }
 
-    .header-tools { display: flex; gap: 15px; align-items: center; }
-    .tool-btn {
-      background: none; border: 1px solid var(--border-color);
-      color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer;
-      font-family: inherit; font-size: 13px;
-    }
-
-    .toggle-group {
-      background: #222; border-radius: 20px; padding: 3px; display: flex;
-    }
-    .toggle-group button {
-      background: none; border: none; color: var(--text-dim);
-      padding: 5px 15px; border-radius: 17px; cursor: pointer;
-      font-family: inherit; font-size: 13px;
-    }
-    .toggle-group button.active { background: #333; color: white; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
 
     .status-dot {
       width: 7px; height: 7px; border-radius: 50%;
@@ -61,97 +62,155 @@
       display: inline-block;
     }
 
+    .toggle-group {
+      background: rgba(128,128,128,0.12);
+      border-radius: 8px;
+      padding: 2px;
+      display: flex;
+    }
+    .toggle-group button {
+      background: none; border: none;
+      color: var(--text-dim);
+      padding: 5px 14px; border-radius: 6px;
+      cursor: pointer; font-family: inherit; font-size: 12px;
+      font-weight: 500;
+      transition: background 0.15s, color 0.15s;
+    }
+    .toggle-group button.active {
+      background: rgba(255,255,255,0.13);
+      color: white;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+
     .hero-container {
       flex: 1;
       display: flex;
       justify-content: center;
       align-items: center;
+      padding: 40px 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-content {
+      max-width: 420px;
+      width: 100%;
       text-align: center;
-      padding: 20px;
     }
 
-    .hero-content { max-width: 500px; width: 100%; }
-
-    .ai-icon-visual {
-      margin-bottom: 20px;
-      display: flex; justify-content: center;
+    h1 {
+      font-size: 1.85rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
     }
-    h1 { font-size: 2rem; margin-bottom: 15px; font-weight: 700; }
-    .hero-sub { color: var(--text-dim); margin-bottom: 40px; line-height: 1.5; }
+
+    .hero-sub {
+      color: var(--text-dim);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 36px;
+    }
 
     .login-card {
       background: var(--card-bg);
-      padding: 30px;
-      border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 28px;
       display: flex;
       flex-direction: column;
-      gap: 15px;
+      gap: 14px;
       text-align: left;
     }
 
     .login-card label {
-      font-size: 0.75rem; color: var(--text-dim);
-      font-weight: bold; letter-spacing: 0.06em;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     input[type="password"] {
       width: 100%;
-      background: #2a2a2a;
+      background: rgba(255,255,255,0.06);
       border: 1px solid var(--border-color);
-      padding: 12px;
-      border-radius: 8px;
+      padding: 13px 14px;
+      border-radius: 10px;
       color: white;
       font-size: 1rem;
       font-family: inherit;
       outline: none;
+      transition: border-color 0.15s;
     }
-    input[type="password"]:focus { border-color: var(--primary-blue); }
+    input[type="password"]:focus {
+      border-color: var(--primary);
+      background: rgba(0,132,255,0.06);
+    }
 
     .error {
-      font-size: 12px; color: #ff453a;
-      min-height: 16px; margin-top: -8px;
+      font-size: 12px;
+      color: #ff453a;
+      min-height: 16px;
+      margin-top: -6px;
     }
 
     .btn-primary {
-      background: var(--primary-blue);
-      color: white; border: none;
-      padding: 15px; border-radius: 8px;
-      font-weight: bold; font-size: 15px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-end));
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 15px;
       font-family: inherit;
       cursor: pointer;
       transition: opacity 0.15s, transform 0.15s;
+      letter-spacing: 0.01em;
     }
-    .btn-primary:hover { transform: translateY(-1px); opacity: 0.9; }
+    .btn-primary:hover {
+      opacity: 0.88;
+      transform: translateY(-1px);
+    }
 
-    .secondary-actions { margin-top: 20px; font-size: 0.85rem; color: var(--text-dim); }
-    .secondary-actions a { color: var(--text-dim); text-decoration: none; }
-    .secondary-actions a:hover { text-decoration: underline; }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-8px); }
+    .footer-note {
+      margin-top: 20px;
+      font-size: 0.82rem;
+      color: var(--text-dim);
     }
   </style>
 </head>
 <body>
 
+  <div class="bg-glow"></div>
+
   <header class="main-header">
     <div class="logo">Super<span>Student</span></div>
-    <div class="header-tools">
+    <div class="header-right">
       <span class="status-dot"></span>
       <div class="toggle-group">
-        <button class="active">Student</button>
-        <button>Teacher</button>
+        <button id="btn-student" class="active" onclick="setMode('student')">Student</button>
+        <button id="btn-teacher" onclick="setMode('teacher')">Teacher</button>
       </div>
     </div>
   </header>
 
+  <script>
+    function setMode(mode) {
+      document.getElementById('btn-student').classList.toggle('active', mode === 'student');
+      document.getElementById('btn-teacher').classList.toggle('active', mode === 'teacher');
+      localStorage.setItem('loginMode', mode);
+    }
+    // Restore previous selection
+    const saved = localStorage.getItem('loginMode');
+    if (saved === 'teacher') setMode('teacher');
+  </script>
+
   <main class="hero-container">
     <div class="hero-content">
-      <div class="ai-icon-visual">
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#0084ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-      </div>
 
       <h1>Activeer je cursusmateriaal met AI</h1>
       <p class="hero-sub">Stel vragen aan je eigen boeken en cursussen. Geen internet, geen gokwerk, alleen jouw leerstof.</p>
@@ -164,9 +223,8 @@
         <button class="btn-primary" type="submit">Start met studeren</button>
       </form>
 
-      <div class="secondary-actions">
-        <span>Vraag je leerkracht om het wachtwoord</span>
-      </div>
+      <div class="footer-note">Vraag je leerkracht om het wachtwoord</div>
+
     </div>
   </main>
 

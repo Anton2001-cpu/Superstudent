@@ -442,86 +442,83 @@
     }
 
     /* Sources */
-    .sources-toggle {
+    .sources-header {
       display: flex;
       align-items: center;
-      gap: 10px;
-      cursor: pointer;
-      user-select: none;
-      margin-top: 16px;
-      margin-bottom: 0;
-      width: fit-content;
+      gap: 8px;
+      margin-top: 20px;
+      margin-bottom: 10px;
     }
-    .sources-toggle-label {
+    .sources-label {
       font-size: 10px;
       font-weight: 700;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
       color: var(--text-3);
     }
-    .sources-toggle-chevron {
-      color: var(--text-3);
-      transition: transform 0.18s;
-      line-height: 1;
+    .sources-count {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--blue);
+      background: var(--blue-dim);
+      padding: 1px 7px;
+      border-radius: 5px;
     }
-    .sources-toggle.open .sources-toggle-chevron { transform: rotate(90deg); }
     .sources-list {
-      display: none;
+      display: flex;
       flex-direction: column;
-      gap: 10px;
-      margin-top: 10px;
+      gap: 8px;
     }
-    .sources-list.open { display: flex; }
     .source-card {
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 14px 16px;
+      overflow: hidden;
     }
     .source-meta {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       gap: 8px;
-      margin-bottom: 8px;
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border);
       flex-wrap: wrap;
     }
     .source-file {
       font-size: 12px;
       font-weight: 600;
       color: var(--text);
-      max-width: 220px;
+      flex: 1;
+      min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      title: attr(data-full);
     }
     .source-loc {
       font-size: 11px;
       color: var(--blue);
       font-weight: 600;
       background: var(--blue-dim);
-      padding: 2px 7px;
+      padding: 2px 8px;
       border-radius: 5px;
       white-space: nowrap;
+      flex-shrink: 0;
     }
     .source-highlight {
-      background: rgba(255,255,255,0.18);
+      background: rgba(255,214,0,0.22);
       color: var(--text);
-      border-radius: 3px;
+      border-radius: 2px;
       padding: 1px 2px;
       font-style: normal;
       font-weight: 500;
     }
     [data-theme="dark"] .source-highlight {
-      background: rgba(255,255,255,0.12);
-      color: #fff;
+      background: rgba(255,214,0,0.18);
     }
     .source-preview {
-      font-size: 12px;
+      font-size: 12.5px;
       color: var(--text-2);
-      line-height: 1.8;
-      border-left: 2px solid var(--border-2);
-      padding-left: 10px;
-      font-style: italic;
+      line-height: 1.75;
+      padding: 10px 14px;
     }
 
     /* Streaming cursor */
@@ -1712,7 +1709,7 @@ const TRANSLATIONS = {
   }
 };
 
-let currentLang = localStorage.getItem('lang') || 'EN';
+let currentLang = localStorage.getItem('lang') || 'NL';
 
 function applyLang(lang) {
   currentLang = lang;
@@ -1768,6 +1765,14 @@ function toggleDark() {
   localStorage.setItem('theme', next);
 }
 applyTheme(localStorage.getItem('theme') || 'dark');
+
+// If user selected "Teacher" on the login page, open teacher view automatically
+if (localStorage.getItem('loginMode') === 'teacher') {
+  localStorage.removeItem('loginMode');
+  window.addEventListener('DOMContentLoaded', () => {
+    requirePassword(document.getElementById('tab-teacher'));
+  });
+}
 
 // ── Toast ──────────────────────────────────────────────────────────────────
 function toast(msg, ms = 3000) {
@@ -1936,6 +1941,7 @@ function renderBookList() {
 
   el.innerHTML = displayed.map((c, ci) => `
     <div class="course-group">
+      <div class="sidebar-hint">Selecteer hier over welk vak je een vraag wil stellen. Meerdere vakken tegelijk mogelijk.</div>
       <div class="course-group-header">
         <span class="course-group-name" title="${esc(c.name)}">${trunc(c.name)}</span>
         <button class="btn-toggle-all" onclick="toggleCourse(${ci})">${t.selectAll}</button>
@@ -1951,7 +1957,6 @@ function renderBookList() {
           <span class="book-label" title="${esc(label)}">${trunc(label)}</span>
         </label>`;
       }).join('')}
-      <div class="sidebar-hint">Selecteer hier over welk vak je een vraag wil stellen. Meerdere vakken tegelijk mogelijk.</div>
     </div>
   `).join('');
 }
@@ -2056,13 +2061,6 @@ function appendLoading(q) {
   return el;
 }
 
-function toggleSources(uid) {
-  const list = document.getElementById('src-' + uid);
-  const btn  = list?.previousElementSibling;
-  if (!list) return;
-  const open = list.classList.toggle('open');
-  btn?.classList.toggle('open', open);
-}
 
 const STOP_WORDS = new Set(['this','that','with','from','have','been','they','their','which','these','those','will','would','could','should','when','where','what','there','also','such','more','most','some','into','than','then','used','using','each','both','through','during','before','after','above','below','between','including','about','other','while','were','within','without','however','therefore','because','since','often','many','very','over','under']);
 
@@ -2100,17 +2098,17 @@ function highlightPreview(previewText, answerText) {
 
 function buildSourcesHtml(sources, answer = '') {
   if (!sources || !sources.length) return '';
-  const uid = Math.random().toString(36).slice(2);
+  const label = currentLang === 'NL' ? 'Bronnen uit je cursusmateriaal' : 'Sources from your course material';
   return `
-    <div class="sources-toggle" onclick="toggleSources('${uid}')">
-      <svg class="sources-toggle-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9,18 15,12 9,6"/></svg>
-      <span class="sources-toggle-label">${sources.length} source${sources.length > 1 ? 's' : ''} used</span>
+    <div class="sources-header">
+      <span class="sources-label">${label}</span>
+      <span class="sources-count">${sources.length}</span>
     </div>
-    <div class="sources-list" id="src-${uid}">
+    <div class="sources-list">
       ${sources.map(s => `
         <div class="source-card">
           <div class="source-meta">
-            <span class="source-file" title="${esc(s.filename)}">${esc(s.filename)}</span>
+            <span class="source-file" title="${esc(s.filename)}">${esc(s.display_name || s.filename)}</span>
             ${s.location ? `<span class="source-loc">${esc(s.location)}</span>` : ''}
           </div>
           <div class="source-preview">${highlightPreview(s.preview, answer)}</div>
@@ -2190,6 +2188,8 @@ async function loadTeacherCourses() {
   if (activeCourse) {
     const still = teacherCourses.find(c => c.name === activeCourse);
     if (still) selectCourse(activeCourse); else hideCourseDetail();
+  } else if (teacherCourses.length) {
+    selectCourse(teacherCourses[0].name);
   }
 }
 

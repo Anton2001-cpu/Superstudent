@@ -459,6 +459,14 @@ def chat():
     try:
         result = get_rag().query(question, books, history, lang=lang)
         log_question(question, books or [])
+        # Enrich sources with display_name from file_meta
+        file_meta = load_file_meta()
+        for src in result.get("sources", []):
+            fname = src.get("filename", "")
+            for course_meta in file_meta.values():
+                if isinstance(course_meta, dict) and fname in course_meta:
+                    src["display_name"] = course_meta[fname].get("display_name", fname)
+                    break
         return jsonify(result)
     except Exception:
         log.exception("chat failed")
