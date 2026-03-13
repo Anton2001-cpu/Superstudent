@@ -2125,6 +2125,14 @@ function appendSources(block, sources, answer = '') {
   block.scrollIntoView({ block: 'end', behavior: 'smooth' });
 }
 
+function stripCitationLinks(text) {
+  return text
+    .replace(/\(\[.*?\]\(.*?\)\)/g, '')   // remove ([text](url))
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // turn [text](url) into just text
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 function buildExtraHtml(extra) {
   if (!extra) return '';
   const uid = Math.random().toString(36).slice(2);
@@ -2135,7 +2143,7 @@ function buildExtraHtml(extra) {
     </div>
     <div class="extra-body" id="ex-${uid}">
       <div class="extra-disclaimer">Deze informatie komt van online en staat niet in het cursusmateriaal.</div>
-      ${md(extra)}
+      ${md(stripCitationLinks(extra))}
     </div>`;
 }
 
