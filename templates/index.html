@@ -1320,7 +1320,7 @@
     #tour-overlay.active { display: block; }
     #tour-bg {
       position: fixed; inset: 0; z-index: 9990; pointer-events: all; cursor: default;
-      background: transparent; transition: background 0.3s;
+      background: transparent;
     }
     #tour-overlay.intro-mode #tour-bg { background: rgba(0,0,0,0.65); }
     #tour-spotlight {
@@ -1330,11 +1330,6 @@
       background: transparent;
       box-shadow: 0 0 0 9999px rgba(0,0,0,0.52);
       opacity: 0;
-      transition: top 0.35s cubic-bezier(0.4,0,0.2,1),
-                  left 0.35s cubic-bezier(0.4,0,0.2,1),
-                  width 0.35s cubic-bezier(0.4,0,0.2,1),
-                  height 0.35s cubic-bezier(0.4,0,0.2,1),
-                  opacity 0.2s;
     }
     #tour-spotlight.visible { opacity: 1; }
     #tour-tooltip {
@@ -1345,8 +1340,6 @@
       padding: 20px 22px;
       width: 320px;
       box-shadow: 0 12px 48px rgba(0,0,0,0.45);
-      transition: top 0.35s cubic-bezier(0.4,0,0.2,1),
-                  left 0.35s cubic-bezier(0.4,0,0.2,1);
     }
     .tour-badge {
       font-size: 10px; font-weight: 700; text-transform: uppercase;
@@ -1958,8 +1951,9 @@ function renderBookList() {
           <span class="book-label" title="${esc(label)}">${trunc(label)}</span>
         </label>`;
       }).join('')}
+      <div class="sidebar-hint">Selecteer hier over welk vak je een vraag wil stellen. Meerdere vakken tegelijk mogelijk.</div>
     </div>
-  `).join('') + '<div class="sidebar-hint">Selecteer hier over welk vak je een vraag wil stellen. Meerdere vakken tegelijk mogelijk.</div>';
+  `).join('');
 }
 
 function selectAllBooks(checked) {
