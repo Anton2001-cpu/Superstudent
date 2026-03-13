@@ -1366,6 +1366,63 @@
       border-radius: 8px; cursor: pointer; transition: background 0.12s;
     }
     .btn-tour-next:hover { background: var(--blue-h); }
+
+    /* ── Mobile backdrop (sidebar overlay on small screens) ── */
+    .sb-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 19;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 700px) {
+      /* Header: tighter, hide lang button */
+      .header { padding: 0 12px; }
+      .logo { left: 12px; font-size: 14px; }
+      .header-right { gap: 6px; }
+      .lang-btn { display: none; }
+      .tab { padding: 5px 10px; font-size: 11px; }
+
+      /* Sidebar: full-width overlay, starts collapsed */
+      #book-sidebar {
+        width: min(280px, 85vw);
+        box-shadow: 4px 0 24px rgba(0,0,0,0.25);
+      }
+      .sb-backdrop.visible { display: block; }
+
+      /* QA content: no sidebar padding offset */
+      .qa-history {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+        padding-top: 16px !important;
+      }
+      .qa-input-bar {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+      }
+
+      /* Expand btn: always show on mobile after collapse */
+      .sb-expand-btn { left: 8px; top: 10px; }
+
+      /* Tour tooltip: narrower */
+      #tour-tooltip { width: min(300px, calc(100vw - 24px)); }
+
+      /* Teacher view: scrollable tabs */
+      .t-topbar { padding: 10px 12px; flex-wrap: wrap; gap: 6px; }
+      .t-course-tabs { min-width: 0; }
+      .detail-body { padding: 12px; }
+
+      /* Result blocks: tighter */
+      .qa-history .result-block { padding: 16px 0; }
+      .result-question { font-size: 14px; }
+    }
+
+    @media (max-width: 400px) {
+      .tab { padding: 4px 8px; font-size: 10px; }
+      .dark-btn, .pomodoro-btn { width: 28px; height: 28px; }
+    }
   </style>
 </head>
 <body>
@@ -1405,6 +1462,9 @@
     </div>
   </div>
 </div>
+
+<!-- Mobile sidebar backdrop -->
+<div class="sb-backdrop" id="sb-backdrop" onclick="closeSidebarMobile()"></div>
 
 <!-- ── Student view ── -->
 <div class="view active" id="view-student">
@@ -1881,13 +1941,27 @@ function md(text) {
 }
 
 // ── Sidebar toggle ─────────────────────────────────────────────────────────
+const _isMobile = () => window.innerWidth <= 700;
+
 function toggleSidebar() {
-  const sb   = document.getElementById('book-sidebar');
-  const btn  = document.getElementById('sb-expand-btn');
-  const view = document.getElementById('view-student');
+  const sb       = document.getElementById('book-sidebar');
+  const btn      = document.getElementById('sb-expand-btn');
+  const view     = document.getElementById('view-student');
+  const backdrop = document.getElementById('sb-backdrop');
   const collapsed = sb.classList.toggle('collapsed');
   btn.classList.toggle('visible', collapsed);
-  view.classList.toggle('sb-closed', collapsed);
+  // On desktop, shift the content; on mobile, overlay only
+  if (!_isMobile()) view.classList.toggle('sb-closed', collapsed);
+  if (backdrop) backdrop.classList.toggle('visible', !collapsed && _isMobile());
+}
+
+function closeSidebarMobile() {
+  const sb       = document.getElementById('book-sidebar');
+  const btn      = document.getElementById('sb-expand-btn');
+  const backdrop = document.getElementById('sb-backdrop');
+  sb.classList.add('collapsed');
+  btn.classList.add('visible');
+  if (backdrop) backdrop.classList.remove('visible');
 }
 
 // ── Books / student sidebar ────────────────────────────────────────────────
@@ -2866,7 +2940,7 @@ function showTourStep(idx) {
   spotlight.style.height = (r.height + pad * 2) + 'px';
   spotlight.classList.add('visible');
 
-  const ttW = 320, ttH = 200;
+  const ttW = Math.min(320, window.innerWidth - 24), ttH = 200;
 
   // Narrow left-anchored elements (sidebar): center tooltip in the remaining right space
   if (r.left < window.innerWidth * 0.35 && r.width < window.innerWidth * 0.5) {
@@ -2916,6 +2990,18 @@ function endTour() {
 // ── Init ───────────────────────────────────────────────────────────────────
 applyLang(currentLang);
 loadBooks();
+
+// Auto-collapse sidebar on mobile
+if (_isMobile()) {
+  const sb   = document.getElementById('book-sidebar');
+  const btn  = document.getElementById('sb-expand-btn');
+  const view = document.getElementById('view-student');
+  sb.classList.add('collapsed');
+  btn.classList.add('visible');
+  // On mobile content is never shifted (sidebar is overlay)
+  view.classList.remove('sb-closed');
+}
+
 if (!localStorage.getItem('tourDone')) {
   setTimeout(startTour, 900);
 }
