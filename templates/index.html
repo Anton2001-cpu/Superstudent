@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1301,6 +1301,81 @@
       transition: background 0.12s;
     }
     .welcome-editor button:hover { background: var(--blue-h); }
+
+    /* ── Sidebar hint ── */
+    .sidebar-hint {
+      margin: 8px 10px 2px;
+      padding: 7px 10px;
+      background: var(--blue-dim);
+      border-left: 3px solid var(--blue);
+      border-radius: 5px;
+      font-size: 11px;
+      color: var(--text-3);
+      line-height: 1.5;
+    }
+
+    /* ── Onboarding Tour ── */
+    #tour-overlay { display: none; position: fixed; inset: 0; z-index: 9989; pointer-events: none; }
+    #tour-overlay.active { display: block; }
+    #tour-bg {
+      position: fixed; inset: 0; z-index: 9990; pointer-events: all; cursor: default;
+    }
+    #tour-spotlight {
+      position: fixed; z-index: 9991; pointer-events: none;
+      border-radius: 10px;
+      border: 2px solid rgba(255,255,255,0.28);
+      background: transparent;
+      box-shadow: 0 0 0 9999px rgba(0,0,0,0.74);
+      opacity: 0;
+      transition: top 0.35s cubic-bezier(0.4,0,0.2,1),
+                  left 0.35s cubic-bezier(0.4,0,0.2,1),
+                  width 0.35s cubic-bezier(0.4,0,0.2,1),
+                  height 0.35s cubic-bezier(0.4,0,0.2,1),
+                  opacity 0.2s;
+    }
+    #tour-spotlight.visible { opacity: 1; }
+    #tour-tooltip {
+      position: fixed; z-index: 9995; pointer-events: all;
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 20px 22px;
+      width: 320px;
+      box-shadow: 0 12px 48px rgba(0,0,0,0.45);
+      transition: top 0.35s cubic-bezier(0.4,0,0.2,1),
+                  left 0.35s cubic-bezier(0.4,0,0.2,1);
+    }
+    .tour-badge {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--blue); margin-bottom: 8px;
+    }
+    .tour-title {
+      font-size: 15px; font-weight: 600; color: var(--text);
+      margin-bottom: 8px; line-height: 1.35;
+    }
+    .tour-msg {
+      font-size: 13px; color: var(--text-2); line-height: 1.6; margin-bottom: 18px;
+    }
+    .tour-footer { display: flex; align-items: center; justify-content: space-between; }
+    .tour-dots { display: flex; gap: 5px; }
+    .tour-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--border-2); transition: background 0.2s;
+    }
+    .tour-dot.active { background: var(--blue); }
+    .tour-btns { display: flex; gap: 8px; }
+    .btn-tour-skip {
+      font-family: inherit; font-size: 12px; padding: 7px 13px;
+      background: transparent; border: 1px solid var(--border-2);
+      border-radius: 8px; color: var(--text-3); cursor: pointer; transition: all 0.12s;
+    }
+    .btn-tour-skip:hover { border-color: var(--red); color: var(--red); }
+    .btn-tour-next {
+      font-family: inherit; font-size: 12px; font-weight: 500; padding: 7px 16px;
+      background: var(--blue); color: white; border: none;
+      border-radius: 8px; cursor: pointer; transition: background 0.12s;
+    }
+    .btn-tour-next:hover { background: var(--blue-h); }
   </style>
 </head>
 <body>
@@ -1358,6 +1433,7 @@
              oninput="renderBookList()">
       <button class="btn-sort" id="btn-sort" onclick="toggleSort()" title="Sort alphabetically">A-Z</button>
     </div>
+    <div class="sidebar-hint">Selecteer hier over welk vak je een vraag wil stellen. Meerdere vakken tegelijk mogelijk.</div>
     <div class="sidebar-body" id="book-list">
       <div class="sidebar-empty">No materials available.<br>Ask your teacher to upload course content.</div>
     </div>
@@ -1468,6 +1544,24 @@
   <div class="pomodoro-controls">
     <button class="primary" id="pomodoro-playpause" onclick="pomodoroStartPause()">Start</button>
     <button onclick="pomodoroReset()">Reset</button>
+  </div>
+</div>
+
+<!-- ── Onboarding Tour ── -->
+<div id="tour-overlay">
+  <div id="tour-bg"></div>
+  <div id="tour-spotlight"></div>
+  <div id="tour-tooltip">
+    <div class="tour-badge" id="tour-badge">Stap 1 van 4</div>
+    <div class="tour-title" id="tour-title"></div>
+    <div class="tour-msg" id="tour-msg"></div>
+    <div class="tour-footer">
+      <div class="tour-dots" id="tour-dots"></div>
+      <div class="tour-btns">
+        <button class="btn-tour-skip" onclick="endTour()">Overslaan</button>
+        <button class="btn-tour-next" id="tour-next-btn" onclick="tourNext()">Volgende →</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1678,7 +1772,7 @@ function toggleDark() {
   applyTheme(next);
   localStorage.setItem('theme', next);
 }
-applyTheme(localStorage.getItem('theme') || 'light');
+applyTheme(localStorage.getItem('theme') || 'dark');
 
 // ── Toast ──────────────────────────────────────────────────────────────────
 function toast(msg, ms = 3000) {
@@ -2691,9 +2785,107 @@ function closePreviewModal() {
   document.getElementById('preview-modal').classList.remove('open');
 }
 
+// ── Onboarding Tour ────────────────────────────────────────────────────────
+const TOUR_STEPS = [
+  {
+    target: null,
+    title: 'Welkom bij SuperStudent',
+    msg: 'AI-studieassistent op basis van RAG-technologie. Antwoorden komen enkel van je cursusmateriaal — geen hallucinaties, geen giswerk van buiten de cursus.'
+  },
+  {
+    target: '#book-sidebar',
+    title: 'Kies je vak',
+    msg: 'Hier zie je de beschikbare vakken. "Hybrid Intelligence" is al ingeladen. Vink het aan om het te activeren voordat je een vraag stelt.'
+  },
+  {
+    target: '.qa-input-bar',
+    title: 'Stel een vraag',
+    msg: 'Typ hier je vraag. Je krijgt een antwoord op basis van de cursus, met vermelding van de exacte pagina en extra online uitleg. Probeer: "Wat is hybrid intelligence?"'
+  },
+  {
+    target: '#tab-teacher',
+    title: 'Teacher-paneel',
+    msg: 'Leraren kunnen vakken aanmaken, cursussen uploaden en statistieken bekijken over welke vragen het meest gesteld worden. Klik op "Teacher" om in te loggen.'
+  }
+];
+
+let _tourStep = 0;
+
+function _buildTourDots() {
+  const el = document.getElementById('tour-dots');
+  el.innerHTML = TOUR_STEPS.map((_, i) => `<div class="tour-dot" id="tour-dot-${i}"></div>`).join('');
+}
+
+function showTourStep(idx) {
+  const step = TOUR_STEPS[idx];
+  const spotlight = document.getElementById('tour-spotlight');
+  const tooltip = document.getElementById('tour-tooltip');
+
+  document.getElementById('tour-badge').textContent = `Stap ${idx + 1} van ${TOUR_STEPS.length}`;
+  document.getElementById('tour-title').textContent = step.title;
+  document.getElementById('tour-msg').textContent = step.msg;
+  document.getElementById('tour-next-btn').textContent = idx === TOUR_STEPS.length - 1 ? 'Klaar ✓' : 'Volgende →';
+
+  document.querySelectorAll('.tour-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
+
+  if (!step.target) {
+    spotlight.classList.remove('visible');
+    tooltip.style.top = '50%';
+    tooltip.style.left = '50%';
+    tooltip.style.transform = 'translate(-50%, -50%)';
+    return;
+  }
+
+  tooltip.style.transform = '';
+  const target = document.querySelector(step.target);
+  if (!target) { tourNext(); return; }
+
+  const pad = 6;
+  const r = target.getBoundingClientRect();
+  spotlight.style.top    = (r.top  - pad) + 'px';
+  spotlight.style.left   = (r.left - pad) + 'px';
+  spotlight.style.width  = (r.width  + pad * 2) + 'px';
+  spotlight.style.height = (r.height + pad * 2) + 'px';
+  spotlight.classList.add('visible');
+
+  const ttW = 320, ttH = 190;
+  const spaceBelow = window.innerHeight - r.bottom - 16;
+  const spaceAbove = r.top - 16;
+  let ttTop = (spaceBelow >= ttH || spaceBelow >= spaceAbove)
+    ? r.bottom + pad + 10
+    : r.top - pad - ttH - 10;
+  let ttLeft = r.left + r.width / 2 - ttW / 2;
+  ttLeft = Math.max(12, Math.min(ttLeft, window.innerWidth - ttW - 12));
+  ttTop  = Math.max(12, Math.min(ttTop,  window.innerHeight - ttH - 12));
+  tooltip.style.top  = ttTop  + 'px';
+  tooltip.style.left = ttLeft + 'px';
+}
+
+function startTour() {
+  _tourStep = 0;
+  _buildTourDots();
+  document.getElementById('tour-overlay').classList.add('active');
+  showTourStep(0);
+}
+
+function tourNext() {
+  _tourStep++;
+  if (_tourStep >= TOUR_STEPS.length) { endTour(); return; }
+  showTourStep(_tourStep);
+}
+
+function endTour() {
+  localStorage.setItem('tourDone', '1');
+  document.getElementById('tour-overlay').classList.remove('active');
+  document.getElementById('tour-spotlight').classList.remove('visible');
+}
+
 // ── Init ───────────────────────────────────────────────────────────────────
 applyLang(currentLang);
 loadBooks();
+if (!localStorage.getItem('tourDone')) {
+  setTimeout(startTour, 900);
+}
 </script>
 </body>
 </html>
