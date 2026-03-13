@@ -32,12 +32,21 @@
       z-index: 1;
       padding: 18px 30px;
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-end;
       align-items: center;
       border-bottom: 1px solid var(--border-color);
     }
 
-    .logo { font-weight: 700; font-size: 1.1rem; letter-spacing: -0.02em; }
+    .logo {
+      position: absolute;
+      left: 30px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: -0.02em;
+      pointer-events: none;
+    }
     .logo span { color: var(--primary); }
 
     .header-right { display: flex; align-items: center; gap: 12px; }

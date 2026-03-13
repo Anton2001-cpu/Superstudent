@@ -60,7 +60,8 @@
       padding: 0 20px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-end;
+      position: relative;
       background: var(--header);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
@@ -70,10 +71,15 @@
     }
 
     .logo {
+      position: absolute;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
       font-size: 15px;
       font-weight: 600;
       letter-spacing: -0.02em;
       color: var(--text);
+      pointer-events: none;
     }
     .logo em { font-style: normal; color: var(--blue); }
 
@@ -1603,7 +1609,7 @@ const TRANSLATIONS = {
     passwordPlaceholder: 'Wachtwoord',
     continue: 'Doorgaan',
     qaEmptyTitle: 'Stel een vraag over je cursusmateriaal',
-    qaEmptyText: 'Antwoorden zijn gebaseerd op het geüploade cursusmateriaal. Online informatie wordt enkel getoond onder de knop "Extra informatie online" onder elk antwoord.',
+    qaEmptyText: 'Antwoorden zijn uitsluitend gebaseerd op het geüploade cursusmateriaal. Online informatie wordt enkel getoond onder "Extra informatie online" onder elk antwoord.',
     noCourses: 'Nog geen cursussen.',
     newCourse: '+ Nieuwe cursus',
     deleteCourse: 'Cursus verwijderen',
