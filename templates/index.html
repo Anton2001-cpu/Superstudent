@@ -1322,13 +1322,13 @@
       position: fixed; inset: 0; z-index: 9990; pointer-events: all; cursor: default;
       background: transparent; transition: background 0.3s;
     }
-    #tour-overlay.intro-mode #tour-bg { background: rgba(0,0,0,0.88); }
+    #tour-overlay.intro-mode #tour-bg { background: rgba(0,0,0,0.65); }
     #tour-spotlight {
       position: fixed; z-index: 9991; pointer-events: none;
       border-radius: 10px;
       border: 2px solid rgba(255,255,255,0.28);
       background: transparent;
-      box-shadow: 0 0 0 9999px rgba(0,0,0,0.74);
+      box-shadow: 0 0 0 9999px rgba(0,0,0,0.52);
       opacity: 0;
       transition: top 0.35s cubic-bezier(0.4,0,0.2,1),
                   left 0.35s cubic-bezier(0.4,0,0.2,1),
@@ -2855,7 +2855,7 @@ function showTourStep(idx) {
 
   const ttW = 320, ttH = 200;
 
-  // For left-anchored elements (sidebar): center tooltip in the remaining right space
+  // Left-anchored elements (sidebar): center tooltip in the remaining right space
   if (r.left < window.innerWidth * 0.35) {
     const rightAreaStart = r.right + pad + 16;
     const rightAreaWidth = window.innerWidth - rightAreaStart;
@@ -2867,11 +2867,13 @@ function showTourStep(idx) {
     return;
   }
 
+  // Always go above if element is in the bottom third of the screen
+  const forceAbove = r.top > window.innerHeight * 0.65;
   const spaceBelow = window.innerHeight - r.bottom - 16;
   const spaceAbove = r.top - 16;
-  let ttTop = (spaceBelow >= ttH || spaceBelow >= spaceAbove)
-    ? r.bottom + pad + 10
-    : r.top - pad - ttH - 10;
+  let ttTop = (forceAbove || spaceBelow < ttH)
+    ? Math.max(12, r.top - pad - ttH - 10)
+    : r.bottom + pad + 10;
   let ttLeft = r.left + r.width / 2 - ttW / 2;
   ttLeft = Math.max(12, Math.min(ttLeft, window.innerWidth - ttW - 12));
   ttTop  = Math.max(12, Math.min(ttTop,  window.innerHeight - ttH - 12));
