@@ -1839,7 +1839,8 @@ function activateTeacher(btn) {
 async function apiFetch(url, opts) {
   const res = await fetch(url, opts);
   if (res.status === 401) { window.location.href = '/login'; return null; }
-  if (res.status === 403) {
+  // Don't intercept 403 on teacher-login itself — let checkPw handle it
+  if (res.status === 403 && url !== '/api/teacher-login') {
     sessionStorage.removeItem('tAuth');
     switchView('student', document.getElementById('tab-student'));
     const msg = currentLang === 'NL'
