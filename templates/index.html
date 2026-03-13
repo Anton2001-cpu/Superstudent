@@ -2829,7 +2829,7 @@ function showTourStep(idx) {
   document.getElementById('tour-badge').textContent = `Stap ${idx + 1} van ${TOUR_STEPS.length}`;
   document.getElementById('tour-title').textContent = step.title;
   document.getElementById('tour-msg').textContent = step.msg;
-  document.getElementById('tour-next-btn').textContent = idx === TOUR_STEPS.length - 1 ? 'Klaar ✓' : 'Volgende →';
+  document.getElementById('tour-next-btn').textContent = idx === TOUR_STEPS.length - 1 ? 'Klaar' : 'Volgende';
 
   document.querySelectorAll('.tour-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
 
