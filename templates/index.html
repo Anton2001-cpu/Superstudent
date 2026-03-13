@@ -442,33 +442,35 @@
     }
 
     /* Sources */
-    .sources-header {
+    .sources-toggle {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-top: 20px;
-      margin-bottom: 10px;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+      margin-top: 16px;
+      margin-bottom: 0;
+      width: fit-content;
     }
-    .sources-label {
+    .sources-toggle-label {
       font-size: 10px;
       font-weight: 700;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
+      letter-spacing: 0.04em;
       color: var(--text-3);
     }
-    .sources-count {
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--blue);
-      background: var(--blue-dim);
-      padding: 1px 7px;
-      border-radius: 5px;
+    .sources-toggle-chevron {
+      color: var(--text-3);
+      transition: transform 0.18s;
+      line-height: 1;
     }
+    .sources-toggle.open .sources-toggle-chevron { transform: rotate(90deg); }
     .sources-list {
-      display: flex;
+      display: none;
       flex-direction: column;
       gap: 8px;
+      margin-top: 10px;
     }
+    .sources-list.open { display: flex; }
     .source-card {
       background: var(--bg);
       border: 1px solid var(--border);
@@ -502,17 +504,6 @@
       border-radius: 5px;
       white-space: nowrap;
       flex-shrink: 0;
-    }
-    .source-highlight {
-      background: rgba(255,214,0,0.22);
-      color: var(--text);
-      border-radius: 2px;
-      padding: 1px 2px;
-      font-style: normal;
-      font-weight: 500;
-    }
-    [data-theme="dark"] .source-highlight {
-      background: rgba(255,214,0,0.18);
     }
     .source-preview {
       font-size: 12.5px;
@@ -2098,23 +2089,34 @@ function highlightPreview(previewText, answerText) {
 
 function buildSourcesHtml(sources, answer = '') {
   if (!sources || !sources.length) return '';
-  const label = currentLang === 'NL' ? 'Bronnen uit je cursusmateriaal' : 'Sources from your course material';
+  const uid = Math.random().toString(36).slice(2);
+  const label = currentLang === 'NL'
+    ? `${sources.length} bron${sources.length > 1 ? 'nen' : ''} gebruikt`
+    : `${sources.length} source${sources.length > 1 ? 's' : ''} used`;
   return `
-    <div class="sources-header">
-      <span class="sources-label">${label}</span>
-      <span class="sources-count">${sources.length}</span>
+    <div class="sources-toggle" onclick="toggleSources('${uid}')">
+      <svg class="sources-toggle-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9,18 15,12 9,6"/></svg>
+      <span class="sources-toggle-label">${label}</span>
     </div>
-    <div class="sources-list">
+    <div class="sources-list" id="src-${uid}">
       ${sources.map(s => `
         <div class="source-card">
           <div class="source-meta">
             <span class="source-file" title="${esc(s.filename)}">${esc(s.display_name || s.filename)}</span>
             ${s.location ? `<span class="source-loc">${esc(s.location)}</span>` : ''}
           </div>
-          <div class="source-preview">${highlightPreview(s.preview, answer)}</div>
+          <div class="source-preview">${esc(s.preview)}</div>
         </div>
       `).join('')}
     </div>`;
+}
+
+function toggleSources(uid) {
+  const list = document.getElementById('src-' + uid);
+  const btn  = list?.previousElementSibling;
+  if (!list) return;
+  const open = list.classList.toggle('open');
+  btn?.classList.toggle('open', open);
 }
 
 function appendSources(block, sources, answer = '') {
