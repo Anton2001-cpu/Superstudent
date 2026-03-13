@@ -86,18 +86,18 @@
     }
 
     h1 {
-      font-size: 1.85rem;
+      font-size: 1.35rem;
       font-weight: 700;
-      margin-bottom: 12px;
-      letter-spacing: -0.03em;
-      line-height: 1.2;
+      margin-bottom: 10px;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
     }
 
     .hero-sub {
       color: var(--text-dim);
-      font-size: 0.95rem;
-      line-height: 1.6;
-      margin-bottom: 36px;
+      font-size: 0.85rem;
+      line-height: 1.55;
+      margin-bottom: 28px;
     }
 
     .login-card {
@@ -105,11 +105,11 @@
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border: 1px solid var(--border-color);
-      border-radius: 16px;
-      padding: 28px;
+      border-radius: 12px;
+      padding: 20px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 10px;
       text-align: left;
     }
 
@@ -146,13 +146,13 @@
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, var(--primary), var(--primary-end));
+      background: var(--primary);
       color: white;
       border: none;
-      padding: 14px;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 15px;
+      padding: 11px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
       font-family: inherit;
       cursor: pointer;
       transition: opacity 0.15s, transform 0.15s;
@@ -183,35 +183,37 @@
     </div>
   </header>
 
-  <script>
-    function setMode(mode) {
-      document.getElementById('btn-student').classList.toggle('active', mode === 'student');
-      document.getElementById('btn-teacher').classList.toggle('active', mode === 'teacher');
-      localStorage.setItem('loginMode', mode);
-    }
-    // Restore previous selection
-    const saved = localStorage.getItem('loginMode');
-    if (saved === 'teacher') setMode('teacher');
-  </script>
-
   <main class="hero-container">
     <div class="hero-content">
 
-      <h1>Activeer je cursusmateriaal met AI</h1>
+      <h1 id="hero-title">Activeer je cursusmateriaal met AI</h1>
       <p class="hero-sub">Stel vragen aan je eigen boeken en cursussen. Geen internet, geen gokwerk, alleen jouw leerstof.</p>
 
       <form class="login-card" method="POST">
-        <label for="password">VOER TOEGANGSCODE IN</label>
+        <input type="hidden" name="mode" id="mode-input" value="student">
+        <label for="password" id="pw-label">VOER TOEGANGSCODE IN</label>
         <input type="password" id="password" name="password"
                placeholder="••••••••" autofocus autocomplete="current-password">
         <div class="error">{{ error or "" }}</div>
         <button class="btn-primary" type="submit">Start met studeren</button>
       </form>
 
-      <div class="footer-note">Vraag je leerkracht om het wachtwoord</div>
+      <div class="footer-note" id="footer-note">Vraag je leerkracht om het wachtwoord</div>
 
     </div>
   </main>
+
+  <script>
+    function setMode(mode) {
+      document.getElementById('btn-student').classList.toggle('active', mode === 'student');
+      document.getElementById('btn-teacher').classList.toggle('active', mode === 'teacher');
+      document.getElementById('mode-input').value = mode;
+      document.getElementById('pw-label').textContent =
+        mode === 'teacher' ? 'LERAARWACHTWOORD' : 'VOER TOEGANGSCODE IN';
+      document.getElementById('footer-note').textContent =
+        mode === 'teacher' ? 'Voer het leraarspasswoord in om toegang te krijgen' : 'Vraag je leerkracht om het wachtwoord';
+    }
+  </script>
 
 </body>
 </html>

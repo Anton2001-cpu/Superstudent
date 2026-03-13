@@ -124,9 +124,21 @@ def login():
     error = None
     if request.method == "POST":
         ip = _client_ip()
+        mode = request.form.get("mode", "student")
+        password = request.form.get("password", "")
         if _is_rate_limited(ip):
             error = "Too many failed attempts. Try again in 5 minutes."
-        elif hmac.compare_digest(request.form.get("password", ""), SITE_PASSWORD):
+        elif mode == "teacher" and TEACHER_PASSWORD and hmac.compare_digest(password, TEACHER_PASSWORD):
+            _clear_failures(ip)
+            resp = make_response(redirect(url_for("index") + "?teacher=1"))
+            resp.set_cookie("auth", _make_token(), httponly=True,
+                            samesite="Lax", secure=_IS_PRODUCTION,
+                            max_age=60 * 60 * 8)
+            resp.set_cookie("teacher_auth", _make_teacher_token(), httponly=True,
+                            samesite="Lax", secure=_IS_PRODUCTION,
+                            max_age=60 * 60 * 8)
+            return resp
+        elif mode != "teacher" and hmac.compare_digest(password, SITE_PASSWORD):
             _clear_failures(ip)
             resp = make_response(redirect(url_for("index")))
             resp.set_cookie("auth", _make_token(), httponly=True,
@@ -135,7 +147,7 @@ def login():
             return resp
         else:
             _record_failure(ip)
-            error = "Incorrect password."
+            error = "Onjuist wachtwoord." if mode == "teacher" else "Incorrect password."
     return render_template("login.html", error=error)
 
 

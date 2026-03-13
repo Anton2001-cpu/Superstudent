@@ -1757,11 +1757,13 @@ function toggleDark() {
 }
 applyTheme(localStorage.getItem('theme') || 'dark');
 
-// If user selected "Teacher" on the login page, open teacher view automatically
-if (localStorage.getItem('loginMode') === 'teacher') {
-  localStorage.removeItem('loginMode');
+// If redirected from login as teacher, skip tour and open teacher view directly
+if (new URLSearchParams(window.location.search).get('teacher') === '1') {
+  history.replaceState({}, '', '/');
+  localStorage.setItem('tourDone', '1');
   window.addEventListener('DOMContentLoaded', () => {
-    requirePassword(document.getElementById('tab-teacher'));
+    sessionStorage.setItem('tAuth', '1');
+    activateTeacher(document.getElementById('tab-teacher'));
   });
 }
 
