@@ -33,7 +33,7 @@ if not _SECRET:
         "SECRET_KEY is not set. Add it to your .env file or Render environment variables."
     )
 
-_IS_PRODUCTION = bool(os.getenv("RENDER"))
+_IS_PRODUCTION = bool(os.getenv("RENDER") or os.getenv("VERCEL"))
 
 # ── Rate limiting (login brute-force protection) ────────────────────────────
 # Stores (ip -> [timestamp, ...]) for failed attempts
@@ -169,11 +169,14 @@ def teacher_login():
 
 # ── Data helpers ─────────────────────────────────────────────────────────────
 
-DATA_FOLDER = Path("vectordb")
-DATA_FOLDER.mkdir(exist_ok=True)
+_ON_VERCEL = bool(os.getenv("VERCEL"))
+_WRITABLE_ROOT = Path("/tmp") if _ON_VERCEL else Path(".")
 
-UPLOAD_FOLDER = Path("uploads")
-UPLOAD_FOLDER.mkdir(exist_ok=True)
+DATA_FOLDER = _WRITABLE_ROOT / "vectordb"
+DATA_FOLDER.mkdir(exist_ok=True, parents=True)
+
+UPLOAD_FOLDER = _WRITABLE_ROOT / "uploads"
+UPLOAD_FOLDER.mkdir(exist_ok=True, parents=True)
 
 COURSES_FILE = DATA_FOLDER / "courses.json"
 FILE_META_FILE = DATA_FOLDER / "file_meta.json"

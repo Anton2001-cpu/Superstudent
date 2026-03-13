@@ -4,25 +4,104 @@ import hashlib
 import re
 from pathlib import Path
 
-import chromadb
+import numpy as np
 from openai import OpenAI
 import pypdf
 from docx import Document as DocxDocument
 
 
+# ── In-memory vector store (replaces chromadb) ───────────────────────────────
+
+class _Collection:
+    def __init__(self):
+        self._ids = []
+        self._embeddings = []
+        self._documents = []
+        self._metadatas = []
+
+    def count(self):
+        return len(self._ids)
+
+    def upsert(self, ids, embeddings, documents, metadatas):
+        existing = {id_: i for i, id_ in enumerate(self._ids)}
+        for id_, emb, doc, meta in zip(ids, embeddings, documents, metadatas):
+            if id_ in existing:
+                i = existing[id_]
+                self._embeddings[i] = emb
+                self._documents[i] = doc
+                self._metadatas[i] = meta
+            else:
+                self._ids.append(id_)
+                self._embeddings.append(emb)
+                self._documents.append(doc)
+                self._metadatas.append(meta)
+
+    def query(self, query_embeddings, n_results=3, where=None, include=None):
+        if not self._ids:
+            return {"ids": [[]], "documents": [[]], "metadatas": [[]], "distances": [[]]}
+
+        q = np.array(query_embeddings[0], dtype=np.float32)
+        embs = np.array(self._embeddings, dtype=np.float32)
+
+        q_norm = q / (np.linalg.norm(q) + 1e-10)
+        embs_norm = embs / (np.linalg.norm(embs, axis=1, keepdims=True) + 1e-10)
+        similarities = embs_norm @ q_norm
+
+        indices = list(range(len(self._ids)))
+        if where:
+            indices = [i for i in indices if self._match(self._metadatas[i], where)]
+
+        indices.sort(key=lambda i: float(similarities[i]), reverse=True)
+        top = indices[:n_results]
+
+        return {
+            "ids": [[self._ids[i] for i in top]],
+            "documents": [[self._documents[i] for i in top]],
+            "metadatas": [[self._metadatas[i] for i in top]],
+            "distances": [[float(1 - similarities[i]) for i in top]],
+        }
+
+    def get(self, where=None, include=None):
+        if where is None:
+            return {"ids": list(self._ids), "documents": list(self._documents), "metadatas": list(self._metadatas)}
+        indices = [i for i in range(len(self._ids)) if self._match(self._metadatas[i], where)]
+        return {
+            "ids": [self._ids[i] for i in indices],
+            "documents": [self._documents[i] for i in indices],
+            "metadatas": [self._metadatas[i] for i in indices],
+        }
+
+    def delete(self, ids):
+        id_set = set(ids)
+        keep = [i for i in range(len(self._ids)) if self._ids[i] not in id_set]
+        self._ids = [self._ids[i] for i in keep]
+        self._embeddings = [self._embeddings[i] for i in keep]
+        self._documents = [self._documents[i] for i in keep]
+        self._metadatas = [self._metadatas[i] for i in keep]
+
+    def _match(self, meta, where):
+        if "$and" in where:
+            return all(self._match(meta, c) for c in where["$and"])
+        if "$or" in where:
+            return any(self._match(meta, c) for c in where["$or"])
+        for key, condition in where.items():
+            val = meta.get(key)
+            if isinstance(condition, dict):
+                if "$eq" in condition and val != condition["$eq"]:
+                    return False
+            elif val != condition:
+                return False
+        return True
+
+
+# ── RAG Engine ────────────────────────────────────────────────────────────────
+
 class RAGEngine:
     def __init__(self):
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-        self.chroma = chromadb.EphemeralClient()
-        self.collection = self.chroma.get_or_create_collection(
-            name="courses",
-            metadata={"hnsw:space": "cosine"},
-        )
-
+        self.collection = _Collection()
         self.chunk_size = 1200
         self.chunk_overlap = 200
-
         self._load_seed_data()
 
     def _load_seed_data(self):
@@ -41,7 +120,6 @@ class RAGEngine:
     # ── Text extraction ───────────────────────────────────────────────────
 
     def extract_with_meta(self, file_path: str) -> list:
-        """Returns list of {text, location} dicts."""
         ext = Path(file_path).suffix.lower()
         if ext == ".pdf":
             return self._extract_pdf(file_path)
@@ -53,13 +131,10 @@ class RAGEngine:
             raise ValueError(f"Unsupported file type: {ext}")
 
     def _is_title_page(self, text: str, page_index: int) -> bool:
-        """First page with little real content is likely a title page."""
         if page_index != 0:
             return False
-        # Short pages with no real sentences
         if len(text.strip()) < 600:
             return True
-        # Academic paper cover page: has email address + "abstract" heading
         t = text.lower()
         has_email = bool(re.search(r'[\w.+-]+@[\w-]+\.[a-z]{2,}', text))
         has_abstract = "abstract" in t[:800]
@@ -72,14 +147,11 @@ class RAGEngine:
         return False
 
     def _is_reference_page(self, text: str) -> bool:
-        """Detect bibliography / reference list pages."""
         first_lines = text.strip()[:300].lower()
         ref_headings = ["references", "bibliography", "referenties", "literatuur",
                         "bronnen", "literatuurlijst", "works cited", "bibliographie"]
         if any(first_lines.startswith(h) or f"\n{h}" in first_lines for h in ref_headings):
             return True
-        # Page dominated by citation entries like [1], [2] … or numbered refs
-        import re
         citation_hits = len(re.findall(r"^\s*\[\d+\]", text, re.MULTILINE))
         if citation_hits >= 4:
             return True
@@ -112,10 +184,7 @@ class RAGEngine:
                 continue
             if para.style.name.startswith("Heading"):
                 if current_lines:
-                    sections.append({
-                        "text": "\n".join(current_lines),
-                        "location": current_heading,
-                    })
+                    sections.append({"text": "\n".join(current_lines), "location": current_heading})
                     current_lines = []
                     section_num += 1
                 current_heading = text or f"Section {section_num}"
@@ -124,10 +193,7 @@ class RAGEngine:
                 current_lines.append(text)
 
         if current_lines:
-            sections.append({
-                "text": "\n".join(current_lines),
-                "location": current_heading,
-            })
+            sections.append({"text": "\n".join(current_lines), "location": current_heading})
 
         if not sections:
             full = "\n".join(p.text for p in doc.paragraphs if p.text.strip())
@@ -142,7 +208,7 @@ class RAGEngine:
         blocks = []
         size = 60
         for i in range(0, len(lines), size):
-            chunk = "\n".join(lines[i : i + size]).strip()
+            chunk = "\n".join(lines[i: i + size]).strip()
             if chunk:
                 end = min(i + size, len(lines))
                 blocks.append({"text": chunk, "location": f"Lines {i + 1}-{end}"})
@@ -181,14 +247,10 @@ class RAGEngine:
 
         texts = [c["text"] for c in all_chunks]
 
-        # Embed in batches of 100
         all_embeddings = []
         for i in range(0, len(texts), 100):
-            batch = texts[i : i + 100]
-            response = self.client.embeddings.create(
-                input=batch,
-                model="text-embedding-3-small",
-            )
+            batch = texts[i: i + 100]
+            response = self.client.embeddings.create(input=batch, model="text-embedding-3-small")
             all_embeddings.extend([item.embedding for item in response.data])
 
         ids = [
@@ -206,25 +268,18 @@ class RAGEngine:
             for c in all_chunks
         ]
 
-        self.collection.upsert(
-            ids=ids,
-            embeddings=all_embeddings,
-            documents=texts,
-            metadatas=metadatas,
-        )
+        self.collection.upsert(ids=ids, embeddings=all_embeddings, documents=texts, metadatas=metadatas)
         return len(all_chunks)
 
     # ── Query (student) ───────────────────────────────────────────────────
 
     def _expand_query(self, text: str) -> str:
-        """Add hyphen/space variants so 'e waste' matches 'e-waste' and vice versa."""
         variants = {text}
         variants.add(re.sub(r'(\w)-(\w)', lambda m: f"{m.group(1)} {m.group(2)}", text))
         variants.add(re.sub(r'(\b\w+)\s+(\w+\b)', lambda m: f"{m.group(1)}-{m.group(2)}", text))
         return " | ".join(v for v in variants if v != text) or text
 
     def query(self, question: str, books: list = None, history: list = None, lang: str = "EN") -> dict:
-        """books: list of filenames to restrict search to. None = all books."""
         total = self.collection.count()
         if total == 0:
             return {
@@ -248,17 +303,7 @@ class RAGEngine:
 
         n_results = min(3, total)
 
-        try:
-            results = self.collection.query(
-                query_embeddings=[query_embedding],
-                n_results=n_results,
-                where=where,
-            )
-        except Exception:
-            results = self.collection.query(
-                query_embeddings=[query_embedding],
-                n_results=n_results,
-            )
+        results = self.collection.query(query_embeddings=[query_embedding], n_results=n_results, where=where)
 
         docs = results["documents"][0]
         metas = results["metadatas"][0]
@@ -274,9 +319,7 @@ class RAGEngine:
         for doc, meta in zip(docs, metas):
             fname = meta.get("filename", "Unknown file")
             loc = meta.get("location", "")
-            context_parts.append(
-                f"[{fname} — {loc}]\n{doc}"
-            )
+            context_parts.append(f"[{fname} — {loc}]\n{doc}")
             sources.append({
                 "filename": fname,
                 "location": loc,
@@ -324,7 +367,6 @@ class RAGEngine:
             answer = answer.replace(fallback_old, "").strip().rstrip("\n").strip()
         no_answer = "couldn't find" in answer.lower() or "kon dit niet vinden" in answer.lower()
 
-        # Separate call for online extra info — uses web search
         reply_lang = "Dutch" if lang == "NL" else "English"
         try:
             extra_response = self.client.responses.create(
@@ -363,7 +405,6 @@ class RAGEngine:
         return any(phrase in q for phrase in self._FOLLOWUP_PHRASES)
 
     def _get_search_query(self, question: str, history: list) -> str:
-        """If followup question, use last user question from history as search query."""
         if self._is_followup(question) and history:
             for msg in reversed(history):
                 if msg.get("role") == "user":
@@ -371,7 +412,6 @@ class RAGEngine:
         return question
 
     def stream_query(self, question: str, books: list = None, history: list = None):
-        """Stream the answer token by token. Yields dicts for SSE."""
         total = self.collection.count()
         if total == 0:
             yield {"type": "token", "text": "I couldn't find anything — no course materials have been uploaded yet. Please ask your teacher."}
@@ -393,10 +433,7 @@ class RAGEngine:
                 where = {"$or": [{"filename": {"$eq": b}} for b in books]}
 
         n_results = min(3, total)
-        try:
-            results = self.collection.query(query_embeddings=[query_embedding], n_results=n_results, where=where)
-        except Exception:
-            results = self.collection.query(query_embeddings=[query_embedding], n_results=n_results)
+        results = self.collection.query(query_embeddings=[query_embedding], n_results=n_results, where=where)
 
         docs = results["documents"][0]
         metas = results["metadatas"][0]
@@ -455,7 +492,6 @@ class RAGEngine:
     # ── Search (teacher) ──────────────────────────────────────────────────
 
     def search_content(self, query: str, course_name: str) -> list:
-        """Semantic search through a course's content. Returns matching passages."""
         total = self.collection.count()
         if total == 0:
             return []
@@ -470,11 +506,7 @@ class RAGEngine:
         n_results = min(8, total)
 
         try:
-            results = self.collection.query(
-                query_embeddings=[query_embedding],
-                n_results=n_results,
-                where=where,
-            )
+            results = self.collection.query(query_embeddings=[query_embedding], n_results=n_results, where=where)
         except Exception:
             return []
 
@@ -512,21 +544,13 @@ class RAGEngine:
         ]
 
     def delete_course(self, course_name: str):
-        results = self.collection.get(
-            where={"course": {"$eq": course_name}},
-            include=["metadatas"],
-        )
+        results = self.collection.get(where={"course": {"$eq": course_name}}, include=["metadatas"])
         if results["ids"]:
             self.collection.delete(ids=results["ids"])
 
     def delete_file(self, course_name: str, filename: str):
         results = self.collection.get(
-            where={
-                "$and": [
-                    {"course": {"$eq": course_name}},
-                    {"filename": {"$eq": filename}},
-                ]
-            },
+            where={"$and": [{"course": {"$eq": course_name}}, {"filename": {"$eq": filename}}]},
             include=["metadatas"],
         )
         if results["ids"]:
