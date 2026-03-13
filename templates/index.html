@@ -1304,22 +1304,25 @@
 
     /* ── Sidebar hint ── */
     .sidebar-hint {
-      margin: 8px 10px 2px;
+      margin: 4px 10px 10px;
       padding: 7px 10px;
       background: var(--blue-dim);
       border-left: 3px solid var(--blue);
       border-radius: 5px;
       font-size: 11px;
-      color: var(--text-3);
+      color: rgba(255,255,255,0.75);
       line-height: 1.5;
     }
+    [data-theme="light"] .sidebar-hint { color: var(--text-2); }
 
     /* ── Onboarding Tour ── */
     #tour-overlay { display: none; position: fixed; inset: 0; z-index: 9989; pointer-events: none; }
     #tour-overlay.active { display: block; }
     #tour-bg {
       position: fixed; inset: 0; z-index: 9990; pointer-events: all; cursor: default;
+      background: transparent; transition: background 0.3s;
     }
+    #tour-overlay.intro-mode #tour-bg { background: rgba(0,0,0,0.88); }
     #tour-spotlight {
       position: fixed; z-index: 9991; pointer-events: none;
       border-radius: 10px;
@@ -1433,7 +1436,6 @@
              oninput="renderBookList()">
       <button class="btn-sort" id="btn-sort" onclick="toggleSort()" title="Sort alphabetically">A-Z</button>
     </div>
-    <div class="sidebar-hint">Selecteer hier over welk vak je een vraag wil stellen. Meerdere vakken tegelijk mogelijk.</div>
     <div class="sidebar-body" id="book-list">
       <div class="sidebar-empty">No materials available.<br>Ask your teacher to upload course content.</div>
     </div>
@@ -1956,7 +1958,7 @@ function renderBookList() {
         </label>`;
       }).join('')}
     </div>
-  `).join('');
+  `).join('') + '<div class="sidebar-hint">Selecteer hier over welk vak je een vraag wil stellen. Meerdere vakken tegelijk mogelijk.</div>';
 }
 
 function selectAllBooks(checked) {
@@ -2790,7 +2792,7 @@ const TOUR_STEPS = [
   {
     target: null,
     title: 'Welkom bij SuperStudent',
-    msg: 'AI-studieassistent op basis van RAG-technologie. Antwoorden komen enkel van je cursusmateriaal — geen hallucinaties, geen giswerk van buiten de cursus.'
+    msg: 'SuperStudent is een AI-studieassistent waarbij antwoorden enkel uit je cursusmateriaal komen. Zo kunnen er geen hallucinaties optreden en krijg je altijd betrouwbare informatie op basis van wat je leraar heeft geupload.'
   },
   {
     target: '#book-sidebar',
@@ -2828,7 +2830,9 @@ function showTourStep(idx) {
 
   document.querySelectorAll('.tour-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
 
+  const overlay = document.getElementById('tour-overlay');
   if (!step.target) {
+    overlay.classList.add('intro-mode');
     spotlight.classList.remove('visible');
     tooltip.style.top = '50%';
     tooltip.style.left = '50%';
@@ -2836,6 +2840,7 @@ function showTourStep(idx) {
     return;
   }
 
+  overlay.classList.remove('intro-mode');
   tooltip.style.transform = '';
   const target = document.querySelector(step.target);
   if (!target) { tourNext(); return; }
@@ -2848,7 +2853,20 @@ function showTourStep(idx) {
   spotlight.style.height = (r.height + pad * 2) + 'px';
   spotlight.classList.add('visible');
 
-  const ttW = 320, ttH = 190;
+  const ttW = 320, ttH = 200;
+
+  // For left-anchored elements (sidebar): center tooltip in the remaining right space
+  if (r.left < window.innerWidth * 0.35) {
+    const rightAreaStart = r.right + pad + 16;
+    const rightAreaWidth = window.innerWidth - rightAreaStart;
+    let ttLeft = rightAreaStart + (rightAreaWidth / 2) - (ttW / 2);
+    ttLeft = Math.max(rightAreaStart, Math.min(ttLeft, window.innerWidth - ttW - 12));
+    const ttTop = Math.max(12, (window.innerHeight / 2) - (ttH / 2));
+    tooltip.style.top  = ttTop  + 'px';
+    tooltip.style.left = ttLeft + 'px';
+    return;
+  }
+
   const spaceBelow = window.innerHeight - r.bottom - 16;
   const spaceAbove = r.top - 16;
   let ttTop = (spaceBelow >= ttH || spaceBelow >= spaceAbove)
