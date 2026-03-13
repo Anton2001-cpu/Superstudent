@@ -2856,8 +2856,8 @@ function showTourStep(idx) {
 
   const ttW = 320, ttH = 200;
 
-  // Left-anchored elements (sidebar): center tooltip in the remaining right space
-  if (r.left < window.innerWidth * 0.35) {
+  // Narrow left-anchored elements (sidebar): center tooltip in the remaining right space
+  if (r.left < window.innerWidth * 0.35 && r.width < window.innerWidth * 0.5) {
     const rightAreaStart = r.right + pad + 16;
     const rightAreaWidth = window.innerWidth - rightAreaStart;
     let ttLeft = rightAreaStart + (rightAreaWidth / 2) - (ttW / 2);
