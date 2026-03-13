@@ -341,12 +341,12 @@ class RAGEngine:
         answer_prompt = (
             f"You are a study assistant for students. {lang_instruction} "
             "Do not use emojis. "
-            "STRICT RULE: Give a maximum of 4-5 sentences. Use bullet points only when listing multiple items. "
-            "Be direct — give the core answer only, no unnecessary intro or conclusion. "
+            "Give a clear, well-structured answer of 6-10 sentences. Use bullet points when listing multiple items. "
+            "Bold all key terms and important concepts with **term**. "
             "Answer using ONLY the course material provided below. Do NOT use your own knowledge, do NOT search online, do NOT add links. "
-            f"Either give a short answer based strictly on the material, OR say exactly: \"{fallback_phrase}\" "
-            "Never mix an answer with the fallback phrase. Bold key terms with **term**. "
-            "EXCEPTION: If the student explicitly asks for more detail (e.g. 'leg beter uit', 'meer uitleg', 'elaborate'), you may give a longer answer — still only from the material."
+            f"Either give a substantive answer based strictly on the material, OR say exactly: \"{fallback_phrase}\" "
+            "Never mix an answer with the fallback phrase. "
+            "Structure your answer: start with the core concept in 1-2 sentences, then elaborate with details or examples from the material."
         )
 
         messages = [{"role": "system", "content": answer_prompt}]
@@ -358,7 +358,7 @@ class RAGEngine:
             model="gpt-4o-mini",
             messages=messages,
             temperature=0,
-            max_tokens=600,
+            max_tokens=900,
         )
         answer = chat_response.choices[0].message.content.strip()
 
