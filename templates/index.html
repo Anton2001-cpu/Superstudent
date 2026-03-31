@@ -370,6 +370,18 @@
     }
     .qa-empty-title { font-size: 15px; font-weight: 500; color: var(--text); }
     .qa-empty-sub { font-size: 13px; color: var(--text-2); max-width: 300px; line-height: 1.55; }
+    .suggestion-chip {
+      margin-top: 8px;
+      padding: 7px 14px;
+      background: var(--blue-dim);
+      border: 1px solid var(--blue);
+      border-radius: 20px;
+      font-size: 13px;
+      color: var(--blue);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .suggestion-chip:hover { background: var(--blue); color: #fff; }
 
     /* Result block */
     .result-block {
@@ -1499,6 +1511,7 @@
       <div class="qa-empty" id="qa-empty">
         <div class="qa-empty-title" data-i18n="qaEmptyTitle">Ask a question about your courses</div>
         <div class="qa-empty-sub" data-i18n="qaEmptyText">Select books from the left panel, then type your question below. Only the uploaded course materials will be used, no internet, no guessing.</div>
+        <button class="suggestion-chip" id="suggestion-chip" style="display:none" onclick="useSuggestion()"></button>
       </div>
     </div>
     <div class="qa-input-bar">
@@ -2014,12 +2027,11 @@ function renderBookList() {
 
   el.innerHTML = displayed.map((c, ci) => `
     <div class="course-group">
-      <div class="sidebar-hint">Selecteer hier over welk vak je een vraag wil stellen. Meerdere vakken tegelijk mogelijk.</div>
+      <div class="sidebar-hint">Selecteer hier over welke cursus je een vraag wil stellen. Meerdere cursussen tegelijk mogelijk.</div>
       <div class="course-group-header">
         <span class="course-group-name" title="${esc(c.name)}">${trunc(c.name)}</span>
         <button class="btn-toggle-all" onclick="toggleCourse(${ci})">${t.selectAll}</button>
       </div>
-      ${c.welcome ? `<div class="welcome-note">${esc(c.welcome)}</div>` : ''}
       ${c.files.map(f => {
         const filename = f.filename || f;
         const label = f.display_name || filename;
