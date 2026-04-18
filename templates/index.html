@@ -573,7 +573,7 @@
 
     /* Input bar — slides with sidebar */
     .qa-input-bar {
-      padding: 8px 16px 8px 280px; /* 260px sidebar + 20px gap */
+      padding: 8px 44px 8px 280px; /* 260px sidebar + 20px gap */
       border-top: 1px solid var(--border);
       background: var(--card);
       display: flex;
@@ -582,8 +582,8 @@
       flex-shrink: 0;
       transition: padding-left 0.26s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    #view-student.sb-closed .qa-input-bar { padding-left: 20px; }
-    #view-student.sb-closed .qa-history { padding-left: 20px; }
+    #view-student.sb-closed .qa-input-bar { padding-left: 44px; }
+    #view-student.sb-closed .qa-history { padding-left: 44px; }
     .qa-input {
       flex: 1;
       font-family: inherit;
@@ -2622,27 +2622,42 @@ function _renderStats(data, period) {
   const allDays = data.per_day ? Object.entries(data.per_day).sort((a,b) => a[0].localeCompare(b[0])) : [];
   const days = allDays.slice(-nDays);
   const maxVal = Math.max(...days.map(([,v]) => v), 1);
-  const gap = nDays <= 7 ? 4 : nDays <= 30 ? 2 : 1;
-
-  const BAR_MAX_PX = 80;
-  const chartBars = days.map(([day, count], i) => {
-    const barPx = count > 0 ? Math.max(Math.round(count / maxVal * BAR_MAX_PX), 3) : 0;
-    let label = '';
-    if (nDays === 7) {
-      label = new Date(day + 'T00:00:00Z').toLocaleDateString(lang, {weekday:'short'});
-    } else if (nDays === 30 && i % 7 === 0) {
-      label = new Date(day + 'T00:00:00Z').toLocaleDateString(lang, {day:'numeric', month:'short'});
-    } else if (nDays === 90 && i % 14 === 0) {
-      label = new Date(day + 'T00:00:00Z').toLocaleDateString(lang, {day:'numeric', month:'short'});
-    }
-    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;min-width:0;">
-      <div style="font-size:8px;color:var(--text-3);height:12px;line-height:12px;text-align:center;">${count > 0 && nDays <= 30 ? count : ''}</div>
-      <div style="flex:1;width:100%;display:flex;align-items:flex-end;">
-        <div style="width:100%;height:${barPx}px;background:var(--blue);border-radius:2px 2px 0 0;opacity:0.85;"></div>
-      </div>
-      <div style="font-size:8px;color:var(--text-3);white-space:nowrap;overflow:hidden;width:100%;text-align:center;height:12px;line-height:12px;">${label}</div>
-    </div>`;
+  // SVG line chart
+  const CH = 80, CW = 100, PAD = 5;
+  const pts = days.map(([, count], i) => {
+    const x = days.length < 2 ? CW / 2 : (i / (days.length - 1)) * CW;
+    const y = PAD + (1 - count / maxVal) * (CH - 2 * PAD);
+    return { x, y, count };
+  });
+  const polyline = pts.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
+  const area = pts.length
+    ? `M${pts[0].x.toFixed(2)},${CH} ` + pts.map(p => `L${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ') + ` L${pts[pts.length-1].x.toFixed(2)},${CH} Z`
+    : '';
+  const gridLines = [0.25, 0.5, 0.75].map(pct => {
+    const gy = (PAD + (1 - pct) * (CH - 2 * PAD)).toFixed(2);
+    return `<line x1="0" y1="${gy}" x2="${CW}" y2="${gy}" stroke="currentColor" stroke-opacity="0.12" stroke-width="0.6"/>`;
   }).join('');
+  const dots = pts.filter(p => p.count > 0).map(p =>
+    `<circle cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="1.8" fill="var(--blue)"/>`
+  ).join('');
+
+  const dayLabels = days.map(([day], i) => {
+    let label = '';
+    if (nDays === 7) label = new Date(day + 'T00:00:00Z').toLocaleDateString(lang, {weekday:'short'});
+    else if (nDays === 30 && i % 7 === 0) label = new Date(day + 'T00:00:00Z').toLocaleDateString(lang, {day:'numeric', month:'short'});
+    else if (nDays === 90 && i % 14 === 0) label = new Date(day + 'T00:00:00Z').toLocaleDateString(lang, {day:'numeric', month:'short'});
+    return `<div style="flex:1;text-align:center;font-size:8px;color:var(--text-3);white-space:nowrap;overflow:hidden;">${label}</div>`;
+  }).join('');
+
+  const chartSvg = `
+    <svg viewBox="0 0 ${CW} ${CH}" preserveAspectRatio="none" style="width:100%;height:${CH}px;display:block;overflow:visible;">
+      ${gridLines}
+      <line x1="0" y1="${CH - PAD}" x2="${CW}" y2="${CH - PAD}" stroke="currentColor" stroke-opacity="0.2" stroke-width="0.6"/>
+      <path d="${area}" fill="var(--blue)" fill-opacity="0.07"/>
+      <polyline points="${polyline}" stroke="var(--blue)" fill="none" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+      ${dots}
+    </svg>
+    <div style="display:flex;margin-top:3px;">${dayLabels}</div>`;
 
   const periodBtn = (p, label) => `<button onclick="_renderStats(_statsData,'${p}')" style="font-family:inherit;font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;border:1px solid ${p===period?'var(--blue)':'var(--border-2)'};background:${p===period?'var(--blue)':'transparent'};color:${p===period?'white':'var(--text-2)'};cursor:pointer;">${label}</button>`;
 
@@ -2674,9 +2689,7 @@ function _renderStats(data, period) {
             ${periodBtn('7d','7D')}${periodBtn('30d','30D')}${periodBtn('3m','3M')}
           </div>
         </div>
-        <div style="display:flex;align-items:flex-end;gap:${gap}px;height:110px;">
-          ${chartBars}
-        </div>
+        ${chartSvg}
       </div>
     </div>
     ${perCourseEntries.length ? `
