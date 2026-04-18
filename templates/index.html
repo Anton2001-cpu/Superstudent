@@ -2001,15 +2001,6 @@ function showTeacherSkeleton() {
   document.getElementById('course-detail').classList.add('active');
   document.getElementById('no-course-msg').style.display = 'none';
 
-  // Drop zone: show real structure but shimmer the interior
-  const dropZone = document.getElementById('drop-zone');
-  if (dropZone) {
-    dropZone.style.pointerEvents = 'none';
-    dropZone.innerHTML = `
-      <div class="skel skel-line med" style="margin:0 auto 6px;"></div>
-      <div class="skel skel-line short" style="margin:0 auto;"></div>`;
-  }
-
   // File list: shimmer rows that look like actual file rows
   document.getElementById('file-list').innerHTML = [1,2,3].map(() => `
     <div class="f-item">
