@@ -841,30 +841,23 @@ def preview_file(course, filename):
         return jsonify({"error": "Invalid parameters"}), 400
     try:
         if _sb:
-            rows = _sb.table("chunks") \
+            resp = _sb.table("chunks") \
                 .select("document,location,preview") \
                 .eq("course", course) \
                 .eq("filename", filename) \
                 .order("location") \
                 .limit(500) \
-                .execute().data or []
+                .execute()
+            rows = resp.data or []
+            if not rows:
+                return jsonify({"error": f"DEBUG: _sb set, course={repr(course)}, filename={repr(filename)}, rows=0, resp={repr(resp)[:300]}"}), 200
             chunks = [{"location": r.get("location", ""), "text": (r.get("document") or "")[:600]} for r in rows]
         else:
-            collection = get_rag().collection
-            results = collection.get(
-                where={"$and": [{"course": {"$eq": course}}, {"filename": {"$eq": filename}}]},
-                include=["documents", "metadatas"],
-            )
-            docs = results.get("documents") or []
-            metas = results.get("metadatas") or []
-            chunks = [
-                {"location": m.get("location", ""), "text": d[:600]}
-                for d, m in sorted(zip(docs, metas), key=lambda x: x[1].get("location", ""))
-            ]
+            return jsonify({"error": "DEBUG: _sb is None — Supabase not connected"}), 200
         return jsonify(chunks)
-    except Exception:
+    except Exception as e:
         log.exception("preview_file failed")
-        return jsonify({"error": "Something went wrong. Please try again."}), 500
+        return jsonify({"error": f"DEBUG exception: {str(e)[:300]}"}), 200
 
 
 # ── Startup ──────────────────────────────────────────────────────────────────
