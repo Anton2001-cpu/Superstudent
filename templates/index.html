@@ -2639,9 +2639,21 @@ function _renderStats(data, period) {
     const y = PAD + (1 - count / maxVal) * (CH - 2 * PAD);
     return { x, y, count };
   });
-  const polyline = pts.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
+  function smoothLine(points) {
+    if (!points.length) return '';
+    let d = `M${points[0].x.toFixed(2)},${points[0].y.toFixed(2)}`;
+    for (let i = 1; i < points.length; i++) {
+      const p = points[i-1], c = points[i];
+      const cx = ((p.x + c.x) / 2).toFixed(2);
+      d += ` C${cx},${p.y.toFixed(2)} ${cx},${c.y.toFixed(2)} ${c.x.toFixed(2)},${c.y.toFixed(2)}`;
+    }
+    return d;
+  }
+  const linePath = smoothLine(pts);
   const area = pts.length
-    ? `M${pts[0].x.toFixed(2)},${CH} ` + pts.map(p => `L${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ') + ` L${pts[pts.length-1].x.toFixed(2)},${CH} Z`
+    ? `M${pts[0].x.toFixed(2)},${CH} L${pts[0].x.toFixed(2)},${pts[0].y.toFixed(2)}` +
+      linePath.slice(linePath.indexOf(' ')) +
+      ` L${pts[pts.length-1].x.toFixed(2)},${CH} Z`
     : '';
   const gridLines = [0.25, 0.5, 0.75].map(pct => {
     const gy = (PAD + (1 - pct) * (CH - 2 * PAD)).toFixed(2);
@@ -2670,7 +2682,7 @@ function _renderStats(data, period) {
         ${gridLines}
         <line x1="0" y1="${CH - PAD}" x2="${CW}" y2="${CH - PAD}" stroke="currentColor" stroke-opacity="0.2" stroke-width="0.6"/>
         <path d="${area}" fill="var(--blue)" fill-opacity="0.07"/>
-        <polyline points="${polyline}" stroke="var(--blue)" fill="none" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="${linePath}" stroke="var(--blue)" fill="none" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
       </svg>
       <div class="chart-dots-layer">${htmlDots}</div>
     </div>
