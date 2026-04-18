@@ -4,12 +4,15 @@ import hmac
 import json
 import logging
 import os
+import re
+import secrets
 import time
 from datetime import datetime
 from pathlib import Path
 
 from flask import Flask, jsonify, make_response, render_template, request, redirect, url_for
 from dotenv import load_dotenv
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 
 from rag_engine import RAGEngine
@@ -18,14 +21,23 @@ load_dotenv(override=True)
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50 MB
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 log = logging.getLogger(__name__)
 
 SITE_PASSWORD = os.getenv("SITE_PASSWORD", "student")
 TEACHER_PASSWORD = os.getenv("TEACHER_PASSWORD", "")
 
+_IS_PRODUCTION = bool(os.getenv("RENDER") or os.getenv("VERCEL"))
+
 if SITE_PASSWORD == "student":
-    log.warning("WARNING: SITE_PASSWORD is still set to the default 'student'. Set a strong password in your environment variables.")
+    if _IS_PRODUCTION:
+        raise RuntimeError(
+            "SITE_PASSWORD is still set to the default 'student'. "
+            "Set a strong password in your Vercel/Render environment variables."
+        )
+    else:
+        log.warning("WARNING: SITE_PASSWORD is the default 'student'. Set a strong password before deploying.")
 
 _SECRET = os.getenv("SECRET_KEY")
 if not _SECRET:
@@ -33,17 +45,37 @@ if not _SECRET:
         "SECRET_KEY is not set. Add it to your .env file or Render environment variables."
     )
 
-_IS_PRODUCTION = bool(os.getenv("RENDER") or os.getenv("VERCEL"))
-
 # ── Rate limiting (login brute-force protection) ────────────────────────────
 # Stores (ip -> [timestamp, ...]) for failed attempts
 _failed_attempts: dict = collections.defaultdict(list)
 _MAX_ATTEMPTS = 5       # max failed tries
 _LOCKOUT_SECONDS = 300  # 5 minutes
 
+# ── Rate limiting (chat questions) ──────────────────────────────────────────
+_chat_attempts: dict = collections.defaultdict(list)
+_CHAT_MAX = 5           # max questions per hour per IP
+_CHAT_WINDOW = 3600     # 1 hour in seconds
+
+
+def _is_chat_limited(ip: str) -> tuple[bool, int]:
+    now = time.time()
+    hits = [t for t in _chat_attempts[ip] if now - t < _CHAT_WINDOW]
+    _chat_attempts[ip] = hits
+    stale = [k for k, v in _chat_attempts.items() if not v]
+    for k in stale:
+        _chat_attempts.pop(k, None)
+    if len(hits) >= _CHAT_MAX:
+        wait = int(_CHAT_WINDOW - (now - hits[0])) + 1
+        return True, wait
+    return False, 0
+
+
+def _record_chat(ip: str):
+    _chat_attempts[ip].append(time.time())
+
 
 def _client_ip() -> str:
-    return request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip()
+    return request.remote_addr or ""
 
 
 def _is_rate_limited(ip: str) -> bool:
@@ -90,6 +122,25 @@ def require_teacher():
         return jsonify({"error": "Teacher access required"}), 403
 
 
+# ── CSRF helpers ────────────────────────────────────────────────────────────
+
+def _new_csrf_token() -> str:
+    return secrets.token_hex(32)
+
+
+def _csrf_valid() -> bool:
+    cookie = request.cookies.get("csrf_token", "")
+    header = request.headers.get("X-CSRF-Token", "")
+    return bool(cookie) and hmac.compare_digest(cookie, header)
+
+
+# ── Path param validation ────────────────────────────────────────────────────
+
+def _safe_param(value: str) -> bool:
+    return bool(value) and "\x00" not in value and ".." not in value \
+        and "/" not in value and "\\" not in value
+
+
 @app.after_request
 def set_security_headers(response):
     response.headers["X-Frame-Options"] = "DENY"
@@ -104,7 +155,14 @@ def set_security_headers(response):
         "frame-ancestors 'none';"
     )
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    if _IS_PRODUCTION:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
+
+
+@app.errorhandler(413)
+def too_large(e):
+    return jsonify({"error": "File too large. Maximum size is 50 MB."}), 413
 
 
 @app.before_request
@@ -115,6 +173,9 @@ def require_login():
         if request.path.startswith("/api/"):
             return jsonify({"error": "Not authenticated"}), 401
         return redirect(url_for("login"))
+    if request.method in ("POST", "DELETE", "PUT", "PATCH") and request.path.startswith("/api/"):
+        if not _csrf_valid():
+            return jsonify({"error": "CSRF validation failed"}), 403
 
 
 # ── Auth routes ─────────────────────────────────────────────────────────────
@@ -130,6 +191,7 @@ def login():
             error = "Too many failed attempts. Try again in 5 minutes."
         elif mode == "teacher" and TEACHER_PASSWORD and hmac.compare_digest(password, TEACHER_PASSWORD):
             _clear_failures(ip)
+            csrf = _new_csrf_token()
             resp = make_response(redirect(url_for("index") + "?teacher=1"))
             resp.set_cookie("auth", _make_token(), httponly=True,
                             samesite="Lax", secure=_IS_PRODUCTION,
@@ -137,11 +199,18 @@ def login():
             resp.set_cookie("teacher_auth", _make_teacher_token(), httponly=True,
                             samesite="Lax", secure=_IS_PRODUCTION,
                             max_age=60 * 60 * 8)
+            resp.set_cookie("csrf_token", csrf, httponly=False,
+                            samesite="Lax", secure=_IS_PRODUCTION,
+                            max_age=60 * 60 * 8)
             return resp
         elif mode != "teacher" and hmac.compare_digest(password, SITE_PASSWORD):
             _clear_failures(ip)
+            csrf = _new_csrf_token()
             resp = make_response(redirect(url_for("index")))
             resp.set_cookie("auth", _make_token(), httponly=True,
+                            samesite="Lax", secure=_IS_PRODUCTION,
+                            max_age=60 * 60 * 8)
+            resp.set_cookie("csrf_token", csrf, httponly=False,
                             samesite="Lax", secure=_IS_PRODUCTION,
                             max_age=60 * 60 * 8)
             return resp
@@ -166,7 +235,7 @@ def teacher_login():
     ip = _client_ip()
     if _is_rate_limited(ip):
         return jsonify({"error": "Too many failed attempts. Try again in 5 minutes."}), 429
-    data = request.get_json(force=True)
+    data = request.get_json(silent=True) or {}
     pw = str(data.get("password", ""))[:256]
     if not hmac.compare_digest(pw, TEACHER_PASSWORD):
         _record_failure(ip)
@@ -199,6 +268,15 @@ ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt"}
 MAX_QUESTION_LENGTH = 1000
 MAX_COURSE_NAME_LENGTH = 100
 
+# ── Supabase client ───────────────────────────────────────────────────────────
+
+_SUPABASE_URL = os.getenv("SUPABASE_URL")
+_SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+_sb = None
+if _SUPABASE_URL and _SUPABASE_KEY:
+    from supabase import create_client as _create_sb
+    _sb = _create_sb(_SUPABASE_URL, _SUPABASE_KEY)
+
 _rag = None
 
 
@@ -213,7 +291,12 @@ def allowed(filename: str) -> bool:
     return Path(filename).suffix.lower() in ALLOWED_EXTENSIONS
 
 
+# ── Courses ───────────────────────────────────────────────────────────────────
+
 def load_course_names() -> list:
+    if _sb:
+        result = _sb.table("courses").select("name").order("position").execute()
+        return [r["name"] for r in (result.data or [])]
     if not COURSES_FILE.exists():
         return []
     try:
@@ -223,6 +306,12 @@ def load_course_names() -> list:
 
 
 def save_course_name(name: str):
+    if _sb:
+        existing = [r["name"] for r in (_sb.table("courses").select("name").execute().data or [])]
+        if name not in existing:
+            pos = len(existing)
+            _sb.table("courses").insert({"name": name, "position": pos}).execute()
+        return
     names = load_course_names()
     if name not in names:
         names.append(name)
@@ -230,11 +319,34 @@ def save_course_name(name: str):
 
 
 def remove_course_name(name: str):
+    if _sb:
+        _sb.table("courses").delete().eq("name", name).execute()
+        return
     names = [n for n in load_course_names() if n != name]
     COURSES_FILE.write_text(json.dumps(names))
 
 
+# ── File metadata ─────────────────────────────────────────────────────────────
+
 def load_file_meta() -> dict:
+    if _sb:
+        meta_rows = _sb.table("file_metadata").select("*").order("position").execute().data or []
+        welcome_rows = _sb.table("course_welcome").select("*").execute().data or []
+        result: dict = {}
+        for row in meta_rows:
+            course, filename = row["course"], row["filename"]
+            result.setdefault(course, {"__order__": []})
+            result[course][filename] = {
+                "display_name": row.get("display_name") or filename,
+                "upload_date": row.get("upload_date") or "",
+                "file_size": row.get("file_size") or 0,
+            }
+            result[course]["__order__"].append(filename)
+        for row in welcome_rows:
+            course = row["course"]
+            result.setdefault(course, {"__order__": []})
+            result[course]["__welcome__"] = row.get("welcome_text", "")
+        return result
     if not FILE_META_FILE.exists():
         return {}
     try:
@@ -244,10 +356,40 @@ def load_file_meta() -> dict:
 
 
 def save_file_meta(meta: dict):
+    if _sb:
+        for course, course_data in meta.items():
+            if not isinstance(course_data, dict):
+                continue
+            order = course_data.get("__order__", [])
+            welcome = course_data.get("__welcome__")
+            _sb.table("file_metadata").delete().eq("course", course).execute()
+            rows = []
+            for key, val in course_data.items():
+                if key.startswith("__") or not isinstance(val, dict):
+                    continue
+                rows.append({
+                    "course": course,
+                    "filename": key,
+                    "display_name": val.get("display_name", key),
+                    "upload_date": val.get("upload_date", ""),
+                    "file_size": val.get("file_size", 0),
+                    "position": order.index(key) if key in order else 9999,
+                })
+            if rows:
+                _sb.table("file_metadata").insert(rows).execute()
+            if welcome is not None:
+                _sb.table("course_welcome").upsert({"course": course, "welcome_text": welcome}).execute()
+        return
     FILE_META_FILE.write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
 
 
+# ── Stats & feedback ──────────────────────────────────────────────────────────
+
 def load_stats() -> list:
+    if _sb:
+        rows = _sb.table("stats").select("question,books,timestamp").order("id", desc=True).limit(500).execute().data or []
+        rows.reverse()
+        return [{"question": r["question"], "books": r["books"] or [], "timestamp": r["timestamp"]} for r in rows]
     if not STATS_FILE.exists():
         return []
     try:
@@ -257,6 +399,10 @@ def load_stats() -> list:
 
 
 def load_feedback() -> list:
+    if _sb:
+        rows = _sb.table("feedback").select("question,answer,books,rating,timestamp").order("id", desc=True).limit(1000).execute().data or []
+        rows.reverse()
+        return [{"question": r["question"], "answer": r["answer"], "books": r["books"] or [], "rating": r["rating"], "timestamp": r["timestamp"]} for r in rows]
     if not FEEDBACK_FILE.exists():
         return []
     try:
@@ -266,26 +412,32 @@ def load_feedback() -> list:
 
 
 def log_feedback(question: str, answer: str, books: list, rating: str):
+    if _sb:
+        _sb.table("feedback").insert({
+            "question": question,
+            "answer": answer,
+            "books": books,
+            "rating": rating,
+            "timestamp": datetime.utcnow().isoformat(),
+        }).execute()
+        return
     feedback = load_feedback()
-    feedback.append({
-        "question": question,
-        "answer": answer,
-        "books": books,
-        "rating": rating,
-        "timestamp": datetime.utcnow().isoformat(),
-    })
+    feedback.append({"question": question, "answer": answer, "books": books, "rating": rating, "timestamp": datetime.utcnow().isoformat()})
     if len(feedback) > 1000:
         feedback = feedback[-1000:]
     FEEDBACK_FILE.write_text(json.dumps(feedback, ensure_ascii=False), encoding="utf-8")
 
 
 def log_question(question: str, books: list):
+    if _sb:
+        _sb.table("stats").insert({
+            "question": question,
+            "books": books,
+            "timestamp": datetime.utcnow().isoformat(),
+        }).execute()
+        return
     stats = load_stats()
-    stats.append({
-        "question": question,
-        "books": books,
-        "timestamp": datetime.utcnow().isoformat(),
-    })
+    stats.append({"question": question, "books": books, "timestamp": datetime.utcnow().isoformat()})
     if len(stats) > 500:
         stats = stats[-500:]
     STATS_FILE.write_text(json.dumps(stats, ensure_ascii=False), encoding="utf-8")
@@ -334,12 +486,16 @@ def get_courses():
 def reorder_courses():
     err = require_teacher()
     if err: return err
-    data = request.get_json(force=True)
+    data = request.get_json(silent=True) or {}
     raw_order = data.get("order") or []
     if not isinstance(raw_order, list):
         return jsonify({"error": "Order must be a list"}), 400
     order = [str(item)[:MAX_COURSE_NAME_LENGTH] for item in raw_order[:200] if isinstance(item, str)]
-    COURSES_FILE.write_text(json.dumps(order))
+    if _sb:
+        for i, name in enumerate(order):
+            _sb.table("courses").upsert({"name": name, "position": i}).execute()
+    else:
+        COURSES_FILE.write_text(json.dumps(order))
     return jsonify({"success": True})
 
 
@@ -347,18 +503,24 @@ def reorder_courses():
 def create_course():
     err = require_teacher()
     if err: return err
-    data = request.get_json(force=True)
+    data = request.get_json(silent=True) or {}
     name = (data.get("name") or "").strip()[:MAX_COURSE_NAME_LENGTH]
     if not name:
         return jsonify({"error": "Course name is required"}), 400
-    save_course_name(name)
-    return jsonify({"success": True})
+    try:
+        save_course_name(name)
+        return jsonify({"success": True})
+    except Exception as e:
+        log.exception("create_course failed")
+        return jsonify({"error": f"Cursus aanmaken mislukt: {e}"}), 500
 
 
 @app.route("/api/courses/<course_name>", methods=["DELETE"])
 def delete_course(course_name):
     err = require_teacher()
     if err: return err
+    if not _safe_param(course_name):
+        return jsonify({"error": "Invalid course name"}), 400
     try:
         get_rag().delete_course(course_name)
         remove_course_name(course_name)
@@ -372,6 +534,8 @@ def delete_course(course_name):
 def delete_file(course_name, filename):
     err = require_teacher()
     if err: return err
+    if not _safe_param(course_name) or not _safe_param(filename):
+        return jsonify({"error": "Invalid parameters"}), 400
     try:
         get_rag().delete_file(course_name, filename)
         file_meta = load_file_meta()
@@ -442,7 +606,13 @@ def upload():
 
 @app.route("/api/chat", methods=["POST"])
 def chat():
-    data = request.get_json(force=True)
+    ip = _client_ip()
+    limited, wait = _is_chat_limited(ip)
+    if limited:
+        mins = (wait + 59) // 60
+        return jsonify({"error": f"RATE_LIMIT:{mins}"}), 429
+
+    data = request.get_json(silent=True) or {}
     question = (data.get("question") or "").strip()[:MAX_QUESTION_LENGTH]
     raw_books = data.get("books")
     if isinstance(raw_books, list):
@@ -470,6 +640,7 @@ def chat():
 
     try:
         result = get_rag().query(question, books, history, lang=lang)
+        _record_chat(ip)
         log_question(question, books or [])
         # Enrich sources with display_name from file_meta
         file_meta = load_file_meta()
@@ -480,9 +651,28 @@ def chat():
                     src["display_name"] = course_meta[fname].get("display_name", fname)
                     break
         return jsonify(result)
-    except Exception:
+    except Exception as e:
         log.exception("chat failed")
-        return jsonify({"error": "Something went wrong. Please try again."}), 500
+        return jsonify({"error": "Something went wrong. Please try again.", "detail": str(e)}), 500
+
+
+@app.route("/api/extra", methods=["POST"])
+def extra_info():
+    if not _is_authenticated():
+        return jsonify({"error": "Not authenticated"}), 401
+    data = request.get_json(silent=True) or {}
+    question = (data.get("question") or "").strip()[:MAX_QUESTION_LENGTH]
+    lang = data.get("lang", "EN")
+    if lang not in ("NL", "EN"):
+        lang = "EN"
+    if not question:
+        return jsonify({"error": "Question cannot be empty"}), 400
+    try:
+        extra = get_rag().search_online(question, lang)
+        return jsonify({"extra": extra})
+    except Exception as e:
+        log.exception("extra failed")
+        return jsonify({"error": "Could not fetch online info", "detail": str(e)}), 500
 
 
 # Search (teacher)
@@ -491,7 +681,7 @@ def chat():
 def search():
     err = require_teacher()
     if err: return err
-    data = request.get_json(force=True)
+    data = request.get_json(silent=True) or {}
     query = (data.get("query") or "").strip()[:MAX_QUESTION_LENGTH]
     course = (data.get("course") or "").strip()
 
@@ -514,7 +704,7 @@ def search():
 def rename_file():
     err = require_teacher()
     if err: return err
-    data = request.get_json(force=True)
+    data = request.get_json(silent=True) or {}
     course = (data.get("course") or "").strip()[:MAX_COURSE_NAME_LENGTH]
     filename = (data.get("filename") or "").strip()[:200]
     display_name = (data.get("display_name") or "").strip()[:200]
@@ -534,7 +724,7 @@ def rename_file():
 def reorder_files(course_name):
     err = require_teacher()
     if err: return err
-    data = request.get_json(force=True)
+    data = request.get_json(silent=True) or {}
     raw_order = data.get("order") or []
     if not isinstance(raw_order, list):
         return jsonify({"error": "Order must be a list"}), 400
@@ -562,6 +752,10 @@ def get_stats():
             q = entry.get("question", "")
             question_counts[q] = question_counts.get(q, 0) + 1
         top_questions = sorted(question_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+        recent = [
+            {"question": e.get("question", ""), "books": e.get("books", []), "timestamp": e.get("timestamp", "")}
+            for e in reversed(stats[-100:])
+        ]
         feedback = load_feedback()
         thumbs_up = sum(1 for f in feedback if f.get("rating") == "up")
         thumbs_down = sum(1 for f in feedback if f.get("rating") == "down")
@@ -569,6 +763,7 @@ def get_stats():
             "total": total,
             "per_course": per_course,
             "top_questions": [{"question": q, "count": c} for q, c in top_questions],
+            "recent": recent,
             "thumbs_up": thumbs_up,
             "thumbs_down": thumbs_down,
         })
@@ -581,7 +776,7 @@ def get_stats():
 
 @app.route("/api/feedback", methods=["POST"])
 def post_feedback():
-    data = request.get_json(force=True)
+    data = request.get_json(silent=True) or {}
     question = str(data.get("question") or "")[:MAX_QUESTION_LENGTH]
     answer = str(data.get("answer") or "")[:4000]
     raw_books = data.get("books")
@@ -602,7 +797,9 @@ def post_feedback():
 def set_welcome(course):
     err = require_teacher()
     if err: return err
-    data = request.get_json(force=True)
+    if not _safe_param(course):
+        return jsonify({"error": "Invalid course name"}), 400
+    data = request.get_json(silent=True) or {}
     text = str(data.get("text") or "")[:2000]
     file_meta = load_file_meta()
     file_meta.setdefault(course, {})["__welcome__"] = text
@@ -616,6 +813,8 @@ def set_welcome(course):
 def preview_file(course, filename):
     err = require_teacher()
     if err: return err
+    if not _safe_param(course) or not _safe_param(filename):
+        return jsonify({"error": "Invalid parameters"}), 400
     try:
         collection = get_rag().collection
         results = collection.get(

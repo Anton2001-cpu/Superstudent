@@ -15,3 +15,5 @@ seed_pdf.py
 
 # Secrets
 .env
+.vercel
+.env*.local

@@ -10,9 +10,89 @@ import pypdf
 from docx import Document as DocxDocument
 
 
-# ── In-memory vector store (replaces chromadb) ───────────────────────────────
+# ── Supabase vector store ────────────────────────────────────────────────────
 
-class _Collection:
+class _SupabaseCollection:
+    def __init__(self, client):
+        self._sb = client
+
+    def count(self):
+        result = self._sb.table("chunks").select("id", count="exact").execute()
+        return result.count or 0
+
+    def upsert(self, ids, embeddings, documents, metadatas):
+        rows = [
+            {
+                "id": id_,
+                "embedding": emb,
+                "document": doc,
+                "course": meta["course"],
+                "filename": meta["filename"],
+                "location": meta.get("location", ""),
+                "preview": meta.get("preview", ""),
+            }
+            for id_, emb, doc, meta in zip(ids, embeddings, documents, metadatas)
+        ]
+        for i in range(0, len(rows), 100):
+            self._sb.table("chunks").upsert(rows[i:i + 100]).execute()
+
+    def query(self, query_embeddings, n_results=3, where=None, include=None):
+        filter_course = None
+        filter_filenames = None
+        if where:
+            if "$or" in where:
+                filter_filenames = [c["filename"]["$eq"] for c in where["$or"]]
+            elif "filename" in where:
+                filter_filenames = [where["filename"]["$eq"]]
+            elif "course" in where:
+                filter_course = where["course"]["$eq"]
+
+        result = self._sb.rpc("match_chunks", {
+            "query_embedding": query_embeddings[0],
+            "match_count": n_results,
+            "filter_course": filter_course,
+            "filter_filenames": filter_filenames,
+        }).execute()
+
+        rows = result.data or []
+        return {
+            "ids": [[r["id"] for r in rows]],
+            "documents": [[r["document"] for r in rows]],
+            "metadatas": [[{
+                "course": r["course"], "filename": r["filename"],
+                "location": r["location"], "preview": r["preview"],
+            } for r in rows]],
+            "distances": [[1 - r["similarity"] for r in rows]],
+        }
+
+    def get(self, where=None, include=None):
+        q = self._sb.table("chunks").select("id,document,course,filename,location,preview")
+        if where:
+            if "$and" in where:
+                for cond in where["$and"]:
+                    for key, val in cond.items():
+                        q = q.eq(key, val["$eq"])
+            elif "course" in where:
+                q = q.eq("course", where["course"]["$eq"])
+        result = q.execute()
+        rows = result.data or []
+        return {
+            "ids": [r["id"] for r in rows],
+            "documents": [r["document"] for r in rows],
+            "metadatas": [{
+                "course": r["course"], "filename": r["filename"],
+                "location": r["location"], "preview": r["preview"],
+            } for r in rows],
+        }
+
+    def delete(self, ids):
+        for i in range(0, len(ids), 100):
+            self._sb.table("chunks").delete().in_("id", ids[i:i + 100]).execute()
+
+
+# ── In-memory fallback (local dev without Supabase) ─────────────────────────
+
+class _LocalCollection:
     def __init__(self):
         self._ids = []
         self._embeddings = []
@@ -39,21 +119,16 @@ class _Collection:
     def query(self, query_embeddings, n_results=3, where=None, include=None):
         if not self._ids:
             return {"ids": [[]], "documents": [[]], "metadatas": [[]], "distances": [[]]}
-
         q = np.array(query_embeddings[0], dtype=np.float32)
         embs = np.array(self._embeddings, dtype=np.float32)
-
         q_norm = q / (np.linalg.norm(q) + 1e-10)
         embs_norm = embs / (np.linalg.norm(embs, axis=1, keepdims=True) + 1e-10)
         similarities = embs_norm @ q_norm
-
         indices = list(range(len(self._ids)))
         if where:
             indices = [i for i in indices if self._match(self._metadatas[i], where)]
-
         indices.sort(key=lambda i: float(similarities[i]), reverse=True)
         top = indices[:n_results]
-
         return {
             "ids": [[self._ids[i] for i in top]],
             "documents": [[self._documents[i] for i in top]],
@@ -99,10 +174,19 @@ class _Collection:
 class RAGEngine:
     def __init__(self):
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        self.collection = _Collection()
         self.chunk_size = 1200
         self.chunk_overlap = 200
-        self._load_seed_data()
+
+        supabase_url = os.getenv("SUPABASE_URL")
+        supabase_key = os.getenv("SUPABASE_KEY")
+        if supabase_url and supabase_key:
+            from supabase import create_client
+            self._sb = create_client(supabase_url, supabase_key)
+            self.collection = _SupabaseCollection(self._sb)
+        else:
+            self._sb = None
+            self.collection = _LocalCollection()
+            self._load_seed_data()
 
     def _load_seed_data(self):
         seed_file = Path(__file__).parent / "seed_data.json"
@@ -254,7 +338,7 @@ class RAGEngine:
             all_embeddings.extend([item.embedding for item in response.data])
 
         ids = [
-            hashlib.md5(f"{course_name}|{filename}|{i}".encode()).hexdigest()
+            hashlib.sha256(f"{course_name}|{filename}|{i}".encode()).hexdigest()
             for i in range(len(all_chunks))
         ]
 
@@ -358,7 +442,7 @@ class RAGEngine:
             model="gpt-4o-mini",
             messages=messages,
             temperature=0,
-            max_tokens=900,
+            max_tokens=600,
         )
         answer = chat_response.choices[0].message.content.strip()
 
@@ -367,9 +451,34 @@ class RAGEngine:
             answer = answer.replace(fallback_old, "").strip().rstrip("\n").strip()
         no_answer = "couldn't find" in answer.lower() or "kon dit niet vinden" in answer.lower()
 
+        extra = ""
+        if no_answer:
+            reply_lang = "Dutch" if lang == "NL" else "English"
+            try:
+                extra_response = self.client.responses.create(
+                    model="gpt-4o-mini",
+                    tools=[{"type": "web_search_preview"}],
+                    input=(
+                        f"The student asked: \"{question}\". "
+                        "Search online and give a short, helpful answer (2-4 sentences) about this topic. "
+                        f"You MUST respond entirely in {reply_lang}, regardless of the language of the sources you find. "
+                        "Be informative — give real content, not just a list of links."
+                    ),
+                )
+                extra = extra_response.output_text.strip()
+            except Exception:
+                extra = ""
+
+        return {
+            "answer": answer,
+            "extra": extra,
+            "sources": [] if no_answer else sources,
+        }
+
+    def search_online(self, question: str, lang: str = "EN") -> str:
         reply_lang = "Dutch" if lang == "NL" else "English"
         try:
-            extra_response = self.client.responses.create(
+            resp = self.client.responses.create(
                 model="gpt-4o-mini",
                 tools=[{"type": "web_search_preview"}],
                 input=(
@@ -379,15 +488,9 @@ class RAGEngine:
                     "Be informative — give real content, not just a list of links."
                 ),
             )
-            extra = extra_response.output_text.strip()
+            return resp.output_text.strip()
         except Exception:
-            extra = ""
-
-        return {
-            "answer": answer,
-            "extra": extra,
-            "sources": [] if no_answer else sources,
-        }
+            return ""
 
     _FOLLOWUP_PHRASES = [
         "explain better", "explain more", "elaborate", "more detail", "more info",

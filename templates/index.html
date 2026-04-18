@@ -188,7 +188,7 @@
     .sidebar-search-input:focus { border-color: var(--blue); }
     .btn-sort {
       font-family: inherit;
-      font-size: 10px;
+      font-size: 12px;
       font-weight: 600;
       padding: 5px 7px;
       border-radius: 6px;
@@ -225,7 +225,7 @@
       padding: 4px 14px;
     }
     .course-group-name {
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 600;
       color: var(--text-2);
       letter-spacing: 0.01em;
@@ -235,7 +235,7 @@
     }
     .btn-toggle-all {
       font-family: inherit;
-      font-size: 10px;
+      font-size: 12px;
       color: var(--blue);
       background: none;
       border: none;
@@ -368,15 +368,15 @@
       gap: 8px;
       padding: 40px;
     }
-    .qa-empty-title { font-size: 15px; font-weight: 500; color: var(--text); }
-    .qa-empty-sub { font-size: 13px; color: var(--text-2); max-width: 300px; line-height: 1.55; }
+    .qa-empty-title { font-size: 14px; font-weight: 500; color: var(--text-2); }
+    .qa-empty-sub { font-size: 14px; color: var(--text-3); max-width: 300px; line-height: 1.55; }
     .suggestion-chip {
       margin-top: 8px;
       padding: 7px 14px;
       background: var(--blue-dim);
       border: 1px solid var(--blue);
       border-radius: 20px;
-      font-size: 13px;
+      font-size: 14px;
       color: var(--blue);
       cursor: pointer;
       transition: background 0.15s;
@@ -392,7 +392,7 @@
     .result-block:first-child { padding-top: 0; }
 
     .result-question {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 500;
       color: var(--text);
       line-height: 1.4;
@@ -417,6 +417,10 @@
     .result-answer p:last-child { margin-bottom: 0; }
     .result-answer ul { padding-left: 20px; margin: 6px 0; }
     .result-answer li { margin-bottom: 4px; }
+    .result-answer h1, .result-answer h2, .result-answer h3,
+    .result-answer h4, .result-answer h5, .result-answer h6 {
+      font-size: 14px; font-weight: 600; margin-bottom: 6px;
+    }
 
     /* Extra info */
     .extra-toggle {
@@ -447,13 +451,13 @@
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 10px;
-      font-size: 13px;
+      font-size: 14px;
       color: var(--text-2);
       line-height: 1.6;
     }
     .extra-body.open { display: block; }
     .extra-disclaimer {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--text-3);
       margin-bottom: 8px;
       font-style: italic;
@@ -514,7 +518,7 @@
       white-space: nowrap;
     }
     .source-loc {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--blue);
       font-weight: 600;
       background: var(--blue-dim);
@@ -524,10 +528,19 @@
       flex-shrink: 0;
     }
     .source-preview {
-      font-size: 12.5px;
+      font-size: 12px;
       color: var(--text-2);
       line-height: 1.75;
       padding: 10px 14px;
+    }
+    mark.source-highlight {
+      background: rgba(255, 204, 0, 0.28);
+      color: inherit;
+      border-radius: 3px;
+      padding: 0 2px;
+    }
+    [data-theme="dark"] mark.source-highlight {
+      background: rgba(255, 204, 0, 0.18);
     }
 
     /* Streaming cursor */
@@ -542,7 +555,7 @@
 
     /* Loading */
     .loading-block { padding: 22px 0; }
-    .loading-q { font-size: 16px; font-weight: 500; color: var(--text); margin-bottom: 12px; }
+    .loading-q { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 12px; }
     .loading-note { font-size: 12px; color: var(--text-3); margin-bottom: 8px; }
     .dots { display: flex; gap: 5px; }
     .dot {
@@ -587,7 +600,7 @@
     .qa-input:disabled { opacity: 0.45; }
     .btn-ask {
       font-family: inherit;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 500;
       padding: 7px 18px;
       background: var(--blue);
@@ -659,7 +672,7 @@
       flex: 1;
       max-width: 280px;
       font-family: inherit;
-      font-size: 13px;
+      font-size: 14px;
       padding: 6px 10px;
       border: 1px solid var(--border);
       border-radius: 7px;
@@ -720,7 +733,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 13px;
+      font-size: 14px;
       color: var(--text-3);
     }
     #course-detail { display: none; }
@@ -779,7 +792,7 @@
     .search-field {
       flex: 1;
       font-family: inherit;
-      font-size: 13px;
+      font-size: 14px;
       padding: 7px 12px;
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -810,8 +823,8 @@
       border-radius: 8px;
       padding: 10px 12px;
     }
-    .sr-file { font-size: 11px; font-weight: 600; color: var(--text); margin-bottom: 1px; }
-    .sr-loc { font-size: 11px; color: var(--blue); margin-bottom: 6px; }
+    .sr-file { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 1px; }
+    .sr-loc { font-size: 12px; color: var(--blue); margin-bottom: 6px; }
     .sr-text {
       font-size: 12px;
       color: var(--text-2);
@@ -845,8 +858,8 @@
     .drop-zone.uploading .drop-sub {
       animation: upload-pulse 1.4s ease-in-out infinite;
     }
-    .drop-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
-    .drop-sub { font-size: 11px; color: var(--text-2); }
+    .drop-title { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+    .drop-sub { font-size: 12px; color: var(--text-2); }
     .upload-status { font-size: 12px; color: var(--text-2); margin-top: 8px; min-height: 18px; }
     .upload-status.ok { color: var(--green); }
     .upload-status.err { color: var(--red); }
@@ -874,7 +887,7 @@
     }
     .btn-del {
       font-family: inherit;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 500;
       padding: 3px 9px;
       background: transparent;
@@ -926,7 +939,7 @@
     .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
     .btn-cancel {
       font-family: inherit;
-      font-size: 13px;
+      font-size: 12px;
       padding: 8px 16px;
       background: var(--bg);
       border: 1px solid var(--border-2);
@@ -936,7 +949,7 @@
     }
     .btn-confirm {
       font-family: inherit;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 500;
       padding: 8px 16px;
       background: var(--blue);
@@ -961,7 +974,7 @@
       cursor: pointer;
       transition: all 0.15s;
       font-family: inherit;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
       letter-spacing: 0.03em;
     }
@@ -984,7 +997,7 @@
     .f-item.drag-target { border-top: 2px solid var(--blue); }
     .btn-rename {
       font-family: inherit;
-      font-size: 11px;
+      font-size: 12px;
       padding: 3px 8px;
       background: transparent;
       color: var(--blue);
@@ -1010,8 +1023,17 @@
     }
 
     /* Statistics panel */
-    .stats-section { margin-top: 8px; max-height: 420px; overflow-y: auto; }
+    .stats-section { margin-top: 8px; }
     .stats-row { display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
+    .stats-recent-item {
+      display: flex; flex-direction: column; gap: 3px;
+      padding: 8px 10px; background: var(--bg);
+      border-radius: 7px; border: 1px solid var(--border);
+    }
+    .stats-recent-q { color: var(--text); font-size: 13px; }
+    .stats-recent-meta { display: flex; gap: 8px; flex-wrap: wrap; font-size: 11px; }
+    .stats-recent-time { color: var(--text-3); }
+    .stats-recent-course { color: var(--blue); background: var(--blue-dim); padding: 1px 6px; border-radius: 4px; }
     .stats-kpi {
       background: var(--bg);
       border: 1px solid var(--border);
@@ -1022,7 +1044,7 @@
       gap: 2px;
     }
     .stats-kpi-value { font-size: 22px; font-weight: 700; color: var(--text); }
-    .stats-kpi-label { font-size: 11px; color: var(--text-3); }
+    .stats-kpi-label { font-size: 12px; color: var(--text-3); }
     .stats-list { display: flex; flex-direction: column; gap: 6px; }
     .stats-item {
       display: flex;
@@ -1037,7 +1059,7 @@
       border: 1px solid var(--border);
     }
     .stats-count {
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 600;
       color: var(--blue);
       background: var(--blue-dim);
@@ -1056,7 +1078,7 @@
       background: rgba(29,29,31,0.92);
       backdrop-filter: blur(10px);
       color: white;
-      font-size: 13px;
+      font-size: 14px;
       padding: 8px 18px;
       border-radius: 20px;
       z-index: 999;
@@ -1172,7 +1194,7 @@
     .pomodoro-controls { display: flex; gap: 6px; }
     .pomodoro-controls button {
       font-family: inherit;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 500;
       padding: 5px 10px;
       border-radius: 7px;
@@ -1216,7 +1238,7 @@
       flex-shrink: 0;
     }
     .preview-modal-title {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 600;
       color: var(--text);
       overflow: hidden;
@@ -1534,7 +1556,6 @@
         <span style="font-size:12px; color:var(--text-3);">No courses yet.</span>
       </div>
       <button class="btn-new-course" onclick="toggleCreateForm()" data-i18n="newCourse">+ New course</button>
-      <button class="btn-new-course" id="btn-stats" style="display:none" onclick="showStats()" data-i18n="statistics">Statistics</button>
       <button class="btn-new-course" id="btn-delete-course" style="display:none" onclick="deleteActiveCourse()" data-i18n="deleteCourse">Delete course</button>
     </div>
 
@@ -1572,11 +1593,10 @@
             </div>
           </div>
 
-          <!-- Statistics modal card (hidden by default) -->
+          <!-- Statistics card (always visible when course selected) -->
           <div class="t-card" id="stats-card" style="display:none">
-            <div class="t-card-head" style="display:flex;align-items:center;justify-content:space-between;">
+            <div class="t-card-head">
               <div class="t-card-title" data-i18n="statistics">Statistics</div>
-              <button class="btn-cancel-sm" onclick="document.getElementById('stats-card').style.display='none'" data-i18n="close">Close</button>
             </div>
             <div class="t-card-body stats-section" id="stats-body">
               <div style="font-size:12px;color:var(--text-3);" data-i18n="loading">Loading...</div>
@@ -1620,7 +1640,7 @@
     <div class="tour-footer">
       <div class="tour-dots" id="tour-dots"></div>
       <div class="tour-btns">
-        <button class="btn-tour-skip" onclick="endTour()">Overslaan</button>
+        <button class="btn-tour-skip" id="btn-tour-skip" onclick="endTour()">Overslaan</button>
         <button class="btn-tour-next" id="tour-next-btn" onclick="tourNext()">Volgende →</button>
       </div>
     </div>
@@ -1708,6 +1728,15 @@ const TRANSLATIONS = {
     hidePanelTitle: 'Paneel verbergen',
     showMaterialsTitle: 'Materialen tonen',
     sortAlphabeticallyTitle: 'Alfabetisch sorteren',
+    sidebarHint: 'Selecteer hier over welke cursus je een vraag wil stellen.',
+    answerLabel: 'Antwoord',
+    extraOnline: 'Extra informatie online',
+    extraDisclaimer: 'Deze informatie komt van online en staat niet in het cursusmateriaal.',
+    studyingLong: 'Je bent al meer dan 3 uur aan het studeren!',
+    studyingLongSub: 'Veel succes op je examen. Je hebt er hard voor gewerkt.',
+    tourSkip: 'Overslaan',
+    tourNext: 'Volgende',
+    tourDone: 'Klaar',
   },
   EN: {
     uploadBooks: 'Upload books',
@@ -1776,6 +1805,15 @@ const TRANSLATIONS = {
     hidePanelTitle: 'Hide panel',
     showMaterialsTitle: 'Show materials',
     sortAlphabeticallyTitle: 'Sort alphabetically',
+    sidebarHint: 'Select which course you want to ask about. Multiple courses at once are possible.',
+    answerLabel: 'Answer',
+    extraOnline: 'Extra information online',
+    extraDisclaimer: 'This information comes from the internet and is not part of the course material.',
+    studyingLong: "You've been studying for over 3 hours!",
+    studyingLongSub: 'Good luck on your exam. You have worked hard for it.',
+    tourSkip: 'Skip',
+    tourNext: 'Next',
+    tourDone: 'Done',
   }
 };
 
@@ -1809,6 +1847,18 @@ function applyLang(lang) {
   if (btnSort) btnSort.title = t.sortAlphabeticallyTitle;
   const dot = document.getElementById('status-dot');
   if (dot) dot.title = dot.classList.contains('offline') ? t.offline : t.online;
+  const pomodoroResetBtn = document.querySelector('#pomodoro-panel button:not(.primary):not(#pomodoro-playpause)');
+  if (pomodoroResetBtn) pomodoroResetBtn.textContent = t.resetTimer;
+  const pomodoroMode = document.getElementById('pomodoro-mode');
+  if (pomodoroMode && pomodoroMode.dataset.mode !== 'break') pomodoroMode.textContent = t.pomodoroWork;
+  if (pomodoroMode && pomodoroMode.dataset.mode === 'break') pomodoroMode.textContent = t.pomodoroBreak;
+  const tourSkipBtn = document.getElementById('btn-tour-skip');
+  if (tourSkipBtn) tourSkipBtn.textContent = t.tourSkip;
+  const tourNextBtn = document.getElementById('tour-next-btn');
+  if (tourNextBtn) {
+    const isLast = tourNextBtn.dataset.isLast === 'true';
+    tourNextBtn.textContent = isLast ? t.tourDone : t.tourNext + ' →';
+  }
 }
 
 function toggleLang() {
@@ -1907,6 +1957,10 @@ function activateTeacher(btn) {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 async function apiFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = opts.headers || {};
+  const csrf = _getCsrfToken();
+  if (csrf) opts.headers['X-CSRF-Token'] = csrf;
   const res = await fetch(url, opts);
   if (res.status === 401) { window.location.href = '/login'; return null; }
   // Don't intercept 403 on teacher-login itself — let checkPw handle it
@@ -1927,6 +1981,15 @@ function esc(s) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+function escAttr(s) {
+  return esc(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function _getCsrfToken() {
+  const m = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
 }
 
 function trunc(s, n = 35) {
@@ -2027,10 +2090,9 @@ function renderBookList() {
 
   el.innerHTML = displayed.map((c, ci) => `
     <div class="course-group">
-      <div class="sidebar-hint">Selecteer hier over welke cursus je een vraag wil stellen. Meerdere cursussen tegelijk mogelijk.</div>
+      <div class="sidebar-hint">${(TRANSLATIONS[currentLang]||TRANSLATIONS.EN).sidebarHint}</div>
       <div class="course-group-header">
         <span class="course-group-name" title="${esc(c.name)}">${trunc(c.name)}</span>
-        <button class="btn-toggle-all" onclick="toggleCourse(${ci})">${t.selectAll}</button>
       </div>
       ${c.files.map(f => {
         const filename = f.filename || f;
@@ -2074,8 +2136,8 @@ function checkSessionDuration() {
     el.className = 'result-block';
     el.style.cssText = 'text-align:center; padding: 28px 20px;';
     el.innerHTML = `
-      <div style="font-size:15px; font-weight:600; color:var(--text); margin-bottom:6px;">Je bent al meer dan 3 uur aan het studeren!</div>
-      <div style="font-size:13px; color:var(--text-2);">Veel succes op je examen. Je hebt er hard voor gewerkt.</div>`;
+      <div style="font-size:15px; font-weight:600; color:var(--text); margin-bottom:6px;">${(TRANSLATIONS[currentLang]||TRANSLATIONS.EN).studyingLong}</div>
+      <div style="font-size:13px; color:var(--text-2);">${(TRANSLATIONS[currentLang]||TRANSLATIONS.EN).studyingLongSub}</div>`;
     h.appendChild(el);
     h.scrollTop = h.scrollHeight;
   }
@@ -2111,6 +2173,20 @@ async function askQuestion() {
       body: JSON.stringify({ question: q, books, history: chatHistory, lang: currentLang }),
     });
     if (!res) throw new Error('Not authenticated');
+    if (res.status === 429) {
+      const data = await res.json();
+      loading.remove();
+      const mins = data.error?.split(':')[1] || '60';
+      const msg = currentLang === 'NL'
+        ? `Je hebt het maximum van 5 vragen per uur bereikt. Probeer het opnieuw over ${mins} minuten.`
+        : `You've reached the limit of 5 questions per hour. Please try again in ${mins} minutes.`;
+      toast(msg, 8000);
+      busy = false;
+      document.getElementById('ask-btn').disabled = false;
+      input.disabled = false;
+      input.focus();
+      return;
+    }
     const data = await res.json();
     loading.remove();
     if (data.error) {
@@ -2199,7 +2275,7 @@ function buildSourcesHtml(sources, answer = '') {
             <span class="source-file" title="${esc(s.filename)}">${esc(s.display_name || s.filename)}</span>
             ${s.location ? `<span class="source-loc">${esc(s.location)}</span>` : ''}
           </div>
-          <div class="source-preview">${esc(s.preview)}</div>
+          <div class="source-preview">${highlightPreview(s.preview, answer)}</div>
         </div>
       `).join('')}
     </div>`;
@@ -2227,18 +2303,45 @@ function stripCitationLinks(text) {
     .trim();
 }
 
-function buildExtraHtml(extra) {
-  if (!extra) return '';
+function buildExtraHtml(question) {
   const uid = Math.random().toString(36).slice(2);
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
   return `
-    <div class="extra-toggle" onclick="this.classList.toggle('open');document.getElementById('ex-${uid}').classList.toggle('open')">
+    <div class="extra-toggle" id="et-${uid}" onclick="loadExtraInfo('${uid}', this)">
       <svg class="extra-toggle-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9,18 15,12 9,6"/></svg>
-      <span class="extra-toggle-label">Extra informatie online</span>
+      <span class="extra-toggle-label">${t.extraOnline}</span>
     </div>
-    <div class="extra-body" id="ex-${uid}">
-      <div class="extra-disclaimer">Deze informatie komt van online en staat niet in het cursusmateriaal.</div>
-      ${md(stripCitationLinks(extra))}
+    <div class="extra-body" id="ex-${uid}" data-question="${question.replace(/"/g,'&quot;')}" data-loaded="false">
     </div>`;
+}
+
+async function loadExtraInfo(uid, toggleEl) {
+  const body = document.getElementById('ex-' + uid);
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
+  toggleEl.classList.toggle('open');
+  body.classList.toggle('open');
+  if (!body.classList.contains('open')) return;
+  if (body.dataset.loaded === 'true') return;
+  body.dataset.loaded = 'loading';
+  body.innerHTML = '<div class="extra-disclaimer" style="font-style:normal;color:var(--text-3)">Zoekt online...</div>';
+  try {
+    const res = await apiFetch('/api/extra', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: body.dataset.question, lang: currentLang }),
+    });
+    const data = res ? await res.json() : null;
+    if (data && data.extra) {
+      body.innerHTML = '<div class="extra-disclaimer">' + t.extraDisclaimer + '</div>' + md(stripCitationLinks(data.extra));
+      body.dataset.loaded = 'true';
+    } else {
+      body.innerHTML = '<div class="extra-disclaimer" style="color:var(--text-3)">Geen online informatie gevonden.</div>';
+      body.dataset.loaded = 'true';
+    }
+  } catch {
+    body.innerHTML = '<div class="extra-disclaimer" style="color:var(--red)">Kon geen online informatie ophalen.</div>';
+    body.dataset.loaded = 'false';
+  }
 }
 
 // Registry to hold question/answer text for feedback (avoids inline JS escaping issues)
@@ -2252,7 +2355,7 @@ function appendResult(question, answer, sources, extra = '') {
   _feedbackData[uid] = { question, answer };
   el.innerHTML = `
     <div class="result-question">${esc(question)}</div>
-    <div class="result-answer-label">Answer</div>
+    <div class="result-answer-label">${(TRANSLATIONS[currentLang]||TRANSLATIONS.EN).answerLabel}</div>
     <div class="result-answer" id="ans-${uid}">${md(answer)}</div>
     <div class="result-actions">
       <button class="btn-copy" onclick="copyAnswer('${uid}')" title="Copy">
@@ -2265,7 +2368,7 @@ function appendResult(question, answer, sources, extra = '') {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
       </button>
     </div>
-    ${buildExtraHtml(extra)}
+    ${buildExtraHtml(question)}
     ${buildSourcesHtml(sources, answer)}`;
   h.appendChild(el);
   h.scrollTop = h.scrollHeight;
@@ -2361,11 +2464,10 @@ function selectCourse(name) {
   document.getElementById('no-course-msg').style.display = 'none';
   document.getElementById('course-detail').classList.add('active');
   document.getElementById('btn-delete-course').style.display = '';
-  document.getElementById('btn-stats').style.display = '';
   document.getElementById('upload-status').textContent = '';
-  document.getElementById('stats-card').style.display = 'none';
   renderFileList(course.files);
   renderWelcomeEditor(name, course.welcome || '');
+  showStats();
 }
 
 function renderWelcomeEditor(courseName, currentText) {
@@ -2381,7 +2483,7 @@ function renderWelcomeEditor(courseName, currentText) {
     <div class="welcome-editor">
       <label>${t.welcomeText}</label>
       <textarea id="welcome-textarea" placeholder="${t.welcomePlaceholder}">${esc(currentText)}</textarea>
-      <button onclick="saveWelcome('${esc(courseName)}')">${t.saveWelcome}</button>
+      <button onclick="saveWelcome('${escAttr(courseName)}')">${t.saveWelcome}</button>
     </div>`;
 }
 
@@ -2407,7 +2509,7 @@ function hideCourseDetail() {
   document.getElementById('no-course-msg').style.display = '';
   document.getElementById('course-detail').classList.remove('active');
   document.getElementById('btn-delete-course').style.display = 'none';
-  document.getElementById('btn-stats').style.display = 'none';
+  document.getElementById('stats-card').style.display = 'none';
   renderTeacherList();
 }
 
@@ -2455,6 +2557,20 @@ async function showStats() {
               <span class="stats-q" title="${esc(q.question)}">${trunc(q.question, 55)}</span>
               <span class="stats-count">${q.count}×</span>
             </div>`).join('')}
+        </div>` : ''}
+      ${data.recent && data.recent.length ? `
+        <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin:18px 0 6px;">${currentLang === 'NL' ? 'Recente vragen' : 'Recent questions'}</div>
+        <div class="stats-list">
+          ${data.recent.map(q => {
+            const courses = (q.books || []).join(', ');
+            const time = (() => { try { const d = new Date(q.timestamp + (q.timestamp.endsWith('Z') ? '' : 'Z')); return d.toLocaleString(currentLang === 'NL' ? 'nl-BE' : 'en-GB', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); } catch { return ''; } })();
+            return '<div class="stats-recent-item">'
+              + '<span class="stats-recent-q">' + esc(q.question) + '</span>'
+              + '<div class="stats-recent-meta">'
+              + (time ? '<span class="stats-recent-time">' + time + '</span>' : '')
+              + (courses ? '<span class="stats-recent-course">' + esc(courses) + '</span>' : '')
+              + '</div></div>';
+          }).join('')}
         </div>` : ''}`;
   } catch { body.innerHTML = '<div style="color:var(--red);font-size:12px;">Failed to load statistics.</div>'; }
 }
@@ -2492,8 +2608,8 @@ function renderFileList(files) {
       <span class="f-name" title="${esc(filename)}">${trunc(displayName, 30)}</span>
       ${dateStr ? `<span class="f-meta">${esc(dateStr)}</span>` : ''}
       ${sizeStr ? `<span class="f-meta">${esc(sizeStr)}</span>` : ''}
-      <button class="btn-rename" onclick="showFilePreview(activeCourse, '${esc(filename)}')">${t.preview}</button>
-      <button class="btn-rename" onclick="startRename(this, '${esc(filename)}')">${t.rename}</button>
+      <button class="btn-rename" onclick="showFilePreview(activeCourse, '${escAttr(filename)}')">${t.preview}</button>
+      <button class="btn-rename" onclick="startRename(this, '${escAttr(filename)}')">${t.rename}</button>
       <button class="btn-del" onclick="deleteFile(activeCourse, this.closest('.f-item').dataset.file)">${t.remove}</button>
     </div>`;
   }).join('');
@@ -2887,7 +3003,7 @@ function closePreviewModal() {
 }
 
 // ── Onboarding Tour ────────────────────────────────────────────────────────
-const TOUR_STEPS = [
+const TOUR_STEPS_NL = [
   {
     target: null,
     title: 'Welkom bij SuperStudent',
@@ -2896,12 +3012,12 @@ const TOUR_STEPS = [
   {
     target: '#book-sidebar',
     title: 'Kies je vak',
-    msg: 'Hier zie je de beschikbare vakken. "Hybrid Intelligence" is al ingeladen. Vink het aan om het te activeren voordat je een vraag stelt.'
+    msg: 'Hier zie je de beschikbare vakken. Vink het aan om het te activeren voordat je een vraag stelt.'
   },
   {
     target: '.qa-input-bar',
     title: 'Stel een vraag',
-    msg: 'Typ hier je vraag. Je krijgt een antwoord op basis van de cursus, met vermelding van de exacte pagina en extra online uitleg. Probeer: "Wat is hybrid intelligence?"'
+    msg: 'Typ hier je vraag. Je krijgt een antwoord op basis van de cursus, met vermelding van de exacte pagina en extra online uitleg.'
   },
   {
     target: '#tab-teacher',
@@ -2909,6 +3025,31 @@ const TOUR_STEPS = [
     msg: 'Leraren kunnen vakken aanmaken, cursussen uploaden en statistieken bekijken over welke vragen het meest gesteld worden. Klik op "Teacher" om in te loggen.'
   }
 ];
+
+const TOUR_STEPS_EN = [
+  {
+    target: null,
+    title: 'Welcome to SuperStudent',
+    msg: 'SuperStudent is an AI study assistant where answers only come from your course material. No hallucinations — always reliable information based on what your teacher uploaded.'
+  },
+  {
+    target: '#book-sidebar',
+    title: 'Choose your course',
+    msg: 'Here you see the available courses. Check one to activate it before asking a question.'
+  },
+  {
+    target: '.qa-input-bar',
+    title: 'Ask a question',
+    msg: 'Type your question here. You get an answer based on the course material, with the exact page reference and extra online information.'
+  },
+  {
+    target: '#tab-teacher',
+    title: 'Teacher panel',
+    msg: 'Teachers can create courses, upload materials and view statistics about which questions are asked most. Click "Teacher" to log in.'
+  }
+];
+
+const TOUR_STEPS = TOUR_STEPS_NL;
 
 let _tourStep = 0;
 
@@ -2918,14 +3059,23 @@ function _buildTourDots() {
 }
 
 function showTourStep(idx) {
-  const step = TOUR_STEPS[idx];
+  const steps = currentLang === 'NL' ? TOUR_STEPS_NL : TOUR_STEPS_EN;
+  const step = steps[idx];
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
   const spotlight = document.getElementById('tour-spotlight');
   const tooltip = document.getElementById('tour-tooltip');
+  const nextBtn = document.getElementById('tour-next-btn');
+  const isLast = idx === steps.length - 1;
 
-  document.getElementById('tour-badge').textContent = `Stap ${idx + 1} van ${TOUR_STEPS.length}`;
+  document.getElementById('tour-badge').textContent = currentLang === 'NL'
+    ? `Stap ${idx + 1} van ${steps.length}`
+    : `Step ${idx + 1} of ${steps.length}`;
   document.getElementById('tour-title').textContent = step.title;
   document.getElementById('tour-msg').textContent = step.msg;
-  document.getElementById('tour-next-btn').textContent = idx === TOUR_STEPS.length - 1 ? 'Klaar' : 'Volgende';
+  nextBtn.textContent = isLast ? t.tourDone : t.tourNext + ' →';
+  nextBtn.dataset.isLast = isLast ? 'true' : 'false';
+  const skipBtn = document.getElementById('btn-tour-skip');
+  if (skipBtn) skipBtn.textContent = t.tourSkip;
 
   document.querySelectorAll('.tour-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
 
