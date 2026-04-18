@@ -1996,23 +1996,37 @@ async function checkPw() {
 function showTeacherSkeleton() {
   const tabs = document.getElementById('t-course-tabs');
   tabs.innerHTML = [90,110,75].map(w =>
-    `<span class="skel skel-tab" style="width:${w}px"></span>`
+    `<span class="skel skel-tab" style="width:${w}px;border-radius:4px;"></span>`
   ).join('');
-  const detail = document.getElementById('course-detail');
-  detail.style.display = 'block';
+  document.getElementById('course-detail').classList.add('active');
   document.getElementById('no-course-msg').style.display = 'none';
-  document.getElementById('file-list').innerHTML = `
-    <div class="skel-card">
-      <div class="skel skel-line skel-card-title"></div>
-      <div class="skel skel-box"></div>
-      <div class="skel skel-line long" style="margin-top:10px"></div>
-      <div class="skel skel-line med"></div>
-      <div class="skel skel-line short"></div>
-    </div>
-    <div class="skel-card">
-      <div class="skel skel-line skel-card-title"></div>
-      <div class="skel skel-line long"></div>
-      <div class="skel skel-line med"></div>
+
+  // Drop zone: show real structure but shimmer the interior
+  const dropZone = document.getElementById('drop-zone');
+  if (dropZone) {
+    dropZone.style.pointerEvents = 'none';
+    dropZone.innerHTML = `
+      <div class="skel skel-line med" style="margin:0 auto 6px;"></div>
+      <div class="skel skel-line short" style="margin:0 auto;"></div>`;
+  }
+
+  // File list: shimmer rows that look like actual file rows
+  document.getElementById('file-list').innerHTML = [1,2,3].map(() => `
+    <div class="f-item">
+      <div class="skel" style="width:12px;height:12px;border-radius:2px;flex-shrink:0;"></div>
+      <div class="skel skel-line" style="flex:1;margin:0;"></div>
+      <div class="skel" style="width:38px;height:20px;border-radius:4px;flex-shrink:0;"></div>
+      <div class="skel" style="width:38px;height:20px;border-radius:4px;flex-shrink:0;"></div>
+    </div>`).join('');
+
+  // Welcome editor card: shimmer textarea + button
+  document.getElementById('welcome-editor-card').innerHTML = `
+    <div class="t-card">
+      <div class="t-card-head"><div class="skel skel-line" style="width:140px;margin:0;"></div></div>
+      <div class="welcome-editor">
+        <div class="skel" style="width:100%;height:70px;border-radius:4px;"></div>
+        <div class="skel" style="width:80px;height:28px;border-radius:4px;margin-top:7px;"></div>
+      </div>
     </div>`;
 }
 
@@ -2610,8 +2624,9 @@ function _renderStats(data, period) {
   const maxVal = Math.max(...days.map(([,v]) => v), 1);
   const gap = nDays <= 7 ? 4 : nDays <= 30 ? 2 : 1;
 
+  const BAR_MAX_PX = 80;
   const chartBars = days.map(([day, count], i) => {
-    const pct = Math.round(count / maxVal * 100);
+    const barPx = count > 0 ? Math.max(Math.round(count / maxVal * BAR_MAX_PX), 3) : 0;
     let label = '';
     if (nDays === 7) {
       label = new Date(day + 'T00:00:00Z').toLocaleDateString(lang, {weekday:'short'});
@@ -2620,10 +2635,12 @@ function _renderStats(data, period) {
     } else if (nDays === 90 && i % 14 === 0) {
       label = new Date(day + 'T00:00:00Z').toLocaleDateString(lang, {day:'numeric', month:'short'});
     }
-    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0;">
-      <div style="font-size:8px;color:var(--text-3);height:11px;line-height:11px;">${count > 0 && nDays <= 30 ? count : ''}</div>
-      <div style="width:100%;background:var(--blue);border-radius:2px 2px 0 0;height:${Math.max(pct, count ? 3 : 0)}%;opacity:0.85;min-height:${count ? 2 : 0}px;flex-shrink:0;"></div>
-      <div style="font-size:8px;color:var(--text-3);white-space:nowrap;overflow:hidden;width:100%;text-align:center;height:11px;line-height:11px;">${label}</div>
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;min-width:0;">
+      <div style="font-size:8px;color:var(--text-3);height:12px;line-height:12px;text-align:center;">${count > 0 && nDays <= 30 ? count : ''}</div>
+      <div style="flex:1;width:100%;display:flex;align-items:flex-end;">
+        <div style="width:100%;height:${barPx}px;background:var(--blue);border-radius:2px 2px 0 0;opacity:0.85;"></div>
+      </div>
+      <div style="font-size:8px;color:var(--text-3);white-space:nowrap;overflow:hidden;width:100%;text-align:center;height:12px;line-height:12px;">${label}</div>
     </div>`;
   }).join('');
 
