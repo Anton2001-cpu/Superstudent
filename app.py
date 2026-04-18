@@ -763,7 +763,7 @@ def get_stats():
         satisfaction_pct = round(thumbs_up / total_feedback * 100) if total_feedback else None
 
         today = datetime.utcnow().date()
-        per_day = {(today - timedelta(days=i)).isoformat(): 0 for i in range(6, -1, -1)}
+        per_day = {(today - timedelta(days=i)).isoformat(): 0 for i in range(89, -1, -1)}
         for entry in stats:
             ts = entry.get("timestamp", "")
             day = ts[:10] if ts else ""
