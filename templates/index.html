@@ -1286,8 +1286,8 @@
     .preview-modal-box {
       background: var(--card);
       border-radius: 14px;
-      width: min(680px, 94vw);
-      max-height: 80vh;
+      width: min(900px, 96vw);
+      height: 90vh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -2314,38 +2314,84 @@ function appendLoading(q) {
 }
 
 
-const STOP_WORDS = new Set(['this','that','with','from','have','been','they','their','which','these','those','will','would','could','should','when','where','what','there','also','such','more','most','some','into','than','then','used','using','each','both','through','during','before','after','above','below','between','including','about','other','while','were','within','without','however','therefore','because','since','often','many','very','over','under']);
+const STOP_WORDS = new Set(['this','that','with','from','have','been','they','their','which','these','those','will','would','could','should','when','where','what','there','also','such','more','most','some','into','than','then','used','using','each','both','through','during','before','after','above','below','between','including','about','other','while','were','within','without','however','therefore','because','since','often','many','very','over','under','have','were','their']);
 
-function extractKeywords(text) {
-  return [...new Set(
-    text.toLowerCase().replace(/[*_`#[\]()]/g, '').split(/\W+/)
-      .filter(w => w.length > 4 && !STOP_WORDS.has(w))
-  )];
+function _tokens(text) {
+  return text.toLowerCase()
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/[*_`#[\]()"']/g, '')
+    .replace(/[.,;:!?]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 3 && !STOP_WORDS.has(w) && !/^\d+$/.test(w));
+}
+
+function _looksLikeBibliography(s) {
+  const yearHits = (s.match(/\b(?:19|20)\d{2}\b/g) || []).length;
+  const publisherHits = (s.match(/\b(Press|Springer|Wiley|Elsevier|Routledge|Norton|Sage|Nature|Science|Journal|Vol|pp|Cambridge|Oxford|Berlin|Heidelberg|New York)\b/g) || []).length;
+  const initialPatterns = (s.match(/\b[A-Z]{1,2}\b[,.]?/g) || []).length;
+  const doiHit = /\bdoi[:.\s]|https?:\/\//i.test(s);
+  if (yearHits >= 2) return true;
+  if (yearHits >= 1 && publisherHits >= 1) return true;
+  if (publisherHits >= 2) return true;
+  if (yearHits >= 1 && initialPatterns >= 4) return true;
+  if (doiHit && yearHits >= 1) return true;
+  return false;
+}
+
+function _looksLikeTitleBlock(s) {
+  const bulletCount = (s.match(/[•·]/g) || []).length;
+  if (bulletCount >= 2) return true;
+  if (/\b(Received|Accepted|Published online|Corresponding author|Keywords)\s*[:—-]/i.test(s)) return true;
+  if (/\bM\.Sc\.|Ph\.?D\.?|Prof\./.test(s) && bulletCount >= 1) return true;
+  return false;
 }
 
 function highlightPreview(previewText, answerText) {
-  const keywords = extractKeywords(answerText);
-  if (!keywords.length) return esc(previewText);
+  if (!previewText) return '';
   const preview = previewText.slice(0, 900);
+  const suffix = previewText.length > 900 ? '...' : '';
+
+  const answerTokens = _tokens(answerText);
+  if (!answerTokens.length) return esc(preview) + suffix;
+
+  const unigrams = new Set(answerTokens);
+  const bigrams = new Set();
+  for (let i = 0; i < answerTokens.length - 1; i++) {
+    bigrams.add(answerTokens[i] + ' ' + answerTokens[i + 1]);
+  }
+
   const sentences = preview.split(/(?<=[.!?])\s+/);
 
-  // Score each sentence
   const scored = sentences.map((s, i) => {
+    const length = s.trim().length;
+    if (length < 30) return { i, score: -999 };
+    if (_looksLikeBibliography(s)) return { i, score: -999 };
+    if (_looksLikeTitleBlock(s)) return { i, score: -999 };
+
     const lower = s.toLowerCase();
-    return { i, hits: keywords.filter(k => lower.includes(k)).length };
+    let unigramHits = 0;
+    for (const k of unigrams) if (lower.includes(k)) unigramHits++;
+    let bigramHits = 0;
+    for (const bg of bigrams) if (lower.includes(bg)) bigramHits++;
+
+    // Need real substance: at least 2 unigram hits OR 1 bigram hit
+    if (unigramHits < 2 && bigramHits < 1) return { i, score: 0 };
+
+    const score = unigramHits + bigramHits * 5;
+    return { i, score };
   });
 
-  // Pick top 2 sentences with the most keyword hits (minimum 2 hits to qualify)
   const topIndices = new Set(
-    scored.filter(x => x.hits >= 2)
-          .sort((a, b) => b.hits - a.hits)
-          .slice(0, 2)
-          .map(x => x.i)
+    scored
+      .filter(x => x.score >= 3)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 2)
+      .map(x => x.i)
   );
 
   return sentences.map((s, i) =>
     topIndices.has(i) ? `<mark class="source-highlight">${esc(s)}</mark>` : esc(s)
-  ).join(' ') + (previewText.length > 900 ? '...' : '');
+  ).join(' ') + suffix;
 }
 
 function buildSourcesHtml(sources, answer = '') {
@@ -2676,24 +2722,12 @@ function _renderStats(data, period) {
     return `<div style="flex:1;text-align:center;font-size:8px;color:var(--text-3);white-space:nowrap;overflow:hidden;">${label}</div>`;
   }).join('');
 
-  const chartSvg = `
-    <div style="position:relative;">
-      <svg viewBox="0 0 ${CW} ${CH}" preserveAspectRatio="none" style="width:100%;height:${CH}px;display:block;overflow:visible;">
-        ${gridLines}
-        <line x1="0" y1="${CH - PAD}" x2="${CW}" y2="${CH - PAD}" stroke="currentColor" stroke-opacity="0.2" stroke-width="0.6"/>
-        <path d="${area}" fill="var(--blue)" fill-opacity="0.07"/>
-        <path d="${linePath}" stroke="var(--blue)" fill="none" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
-      </svg>
-      <div class="chart-dots-layer">${htmlDots}</div>
-    </div>
-    <div style="display:flex;margin-top:3px;">${dayLabels}</div>`;
-
   const periodBtn = (p, label) => `<button onclick="_renderStats(_statsData,'${p}')" style="font-family:inherit;font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;border:1px solid ${p===period?'var(--blue)':'var(--border-2)'};background:${p===period?'var(--blue)':'transparent'};color:${p===period?'white':'var(--text-2)'};cursor:pointer;">${label}</button>`;
 
   const kpi = (val, lbl, color='') => `
-    <div style="flex:1;min-width:90px;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;display:flex;flex-direction:column;gap:3px;">
-      <div style="font-size:22px;font-weight:700;color:${color||'var(--text)'};">${val}</div>
-      <div style="font-size:11px;color:var(--text-3);">${lbl}</div>
+    <div style="text-align:center;">
+      <div style="font-size:20px;font-weight:700;line-height:1.1;color:${color||'var(--text)'};">${val}</div>
+      <div style="font-size:10px;color:var(--text-3);margin-top:2px;">${lbl}</div>
     </div>`;
 
   const perCourseEntries = Object.entries(data.per_course).sort((a, b) => b[1] - a[1]);
@@ -2704,21 +2738,30 @@ function _renderStats(data, period) {
       : (currentLang === 'NL' ? 'Afgelopen 3 maanden' : 'Last 3 months');
 
   body.innerHTML = `
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
-      ${kpi(data.total, t.totalQuestions)}
-      ${kpi(data.avg_per_day ?? 0, currentLang === 'NL' ? 'Gem. per dag' : 'Avg / day')}
-      ${kpi(data.thumbs_up ?? 0, t.thumbsUp)}
-      ${kpi(data.thumbs_down ?? 0, t.thumbsDown)}
-      ${data.satisfaction_pct != null ? kpi(data.satisfaction_pct + '%', currentLang === 'NL' ? 'Tevredenheid' : 'Satisfaction', 'var(--green,#22c55e)') : ''}
-    </div>
-    <div style="margin-bottom:20px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <div style="font-size:12px;font-weight:600;color:var(--text-3);">${periodTitle}</div>
-        <div style="display:flex;gap:4px;">
-          ${periodBtn('7d','7D')}${periodBtn('30d','30D')}${periodBtn('3m','3M')}
-        </div>
+    <div style="display:grid;grid-template-columns:110px 1fr;gap:20px;align-items:stretch;margin-bottom:20px;">
+      <div style="display:flex;flex-direction:column;justify-content:space-evenly;align-items:center;padding:6px 0;border-right:1px solid var(--border);">
+        ${kpi(data.total, t.totalQuestions)}
+        ${kpi(data.avg_per_day ?? 0, currentLang === 'NL' ? 'Gem. per dag' : 'Avg / day')}
+        ${kpi(data.thumbs_up ?? 0, t.thumbsUp)}
+        ${kpi(data.thumbs_down ?? 0, t.thumbsDown)}
+        ${data.satisfaction_pct != null ? kpi(data.satisfaction_pct + '%', currentLang === 'NL' ? 'Tevredenheid' : 'Satisfaction', 'var(--green,#22c55e)') : ''}
       </div>
-      ${chartSvg}
+      <div style="display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-shrink:0;">
+          <div style="font-size:11px;font-weight:600;color:var(--text-3);">${periodTitle}</div>
+          <div style="display:flex;gap:4px;">${periodBtn('7d','7D')}${periodBtn('30d','30D')}${periodBtn('3m','3M')}</div>
+        </div>
+        <div style="position:relative;flex:1;min-height:90px;">
+          <svg viewBox="0 0 ${CW} ${CH}" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible;">
+            ${gridLines}
+            <line x1="0" y1="${CH-PAD}" x2="${CW}" y2="${CH-PAD}" stroke="currentColor" stroke-opacity="0.2" stroke-width="0.6"/>
+            <path d="${area}" fill="var(--blue)" fill-opacity="0.07"/>
+            <path d="${linePath}" stroke="var(--blue)" fill="none" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+          </svg>
+          <div class="chart-dots-layer">${htmlDots}</div>
+        </div>
+        <div style="display:flex;margin-top:4px;flex-shrink:0;">${dayLabels}</div>
+      </div>
     </div>
     ${perCourseEntries.length ? `
       <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">${t.perFile}</div>
@@ -3158,7 +3201,7 @@ async function showFilePreview(course, filename) {
   const title = document.getElementById('preview-modal-title');
   const body = document.getElementById('preview-modal-body');
   title.textContent = filename;
-  body.innerHTML = '<div style="font-size:12px;color:var(--text-3);padding:8px 0;">Loading...</div>';
+  body.innerHTML = '<div style="font-size:12px;color:var(--text-3);padding:8px 0;">Laden...</div>';
   modal.classList.add('open');
   try {
     const res = await apiFetch(`/api/courses/${encodeURIComponent(course)}/files/${encodeURIComponent(filename)}/preview`);
@@ -3168,16 +3211,12 @@ async function showFilePreview(course, filename) {
       body.innerHTML = `<div style="color:var(--red);font-size:13px;padding:8px 0;">${esc(data.error)}</div>`;
       return;
     }
-    const chunks = Array.isArray(data) ? data : [];
-    if (!chunks.length) {
-      body.innerHTML = `<div style="font-size:13px;color:var(--text-2);padding:8px 0;">${currentLang === 'NL' ? 'Geen inhoud gevonden. Mogelijk is dit bestand nog niet verwerkt.' : 'No content found. The file may not have been processed yet.'}</div>`;
+    if (data && data.url) {
+      body.style.padding = '0';
+      body.innerHTML = `<iframe src="${data.url}" style="width:100%;height:100%;border:none;display:block;"></iframe>`;
       return;
     }
-    body.innerHTML = chunks.map(ch => `
-      <div class="preview-chunk">
-        <div class="preview-chunk-loc">${esc(ch.location || '')}</div>
-        <div class="preview-chunk-text">${esc(ch.text || '')}</div>
-      </div>`).join('');
+    body.innerHTML = `<div style="font-size:13px;color:var(--text-2);padding:8px 0;">Bestand niet beschikbaar.</div>`;
   } catch (e) {
     body.innerHTML = `<div style="color:var(--red);font-size:13px;">Fout: ${esc(String(e))}</div>`;
   }
