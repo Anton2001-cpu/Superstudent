@@ -840,17 +840,27 @@ def preview_file(course, filename):
     if not _safe_param(course) or not _safe_param(filename):
         return jsonify({"error": "Invalid parameters"}), 400
     try:
-        collection = get_rag().collection
-        results = collection.get(
-            where={"$and": [{"course": {"$eq": course}}, {"filename": {"$eq": filename}}]},
-            include=["documents", "metadatas"],
-        )
-        docs = results.get("documents") or []
-        metas = results.get("metadatas") or []
-        chunks = [
-            {"location": m.get("location", ""), "text": d[:600]}
-            for d, m in sorted(zip(docs, metas), key=lambda x: x[1].get("location", ""))
-        ]
+        if _sb:
+            rows = _sb.table("chunks") \
+                .select("document,location,preview") \
+                .eq("course", course) \
+                .eq("filename", filename) \
+                .order("location") \
+                .limit(500) \
+                .execute().data or []
+            chunks = [{"location": r.get("location", ""), "text": (r.get("document") or "")[:600]} for r in rows]
+        else:
+            collection = get_rag().collection
+            results = collection.get(
+                where={"$and": [{"course": {"$eq": course}}, {"filename": {"$eq": filename}}]},
+                include=["documents", "metadatas"],
+            )
+            docs = results.get("documents") or []
+            metas = results.get("metadatas") or []
+            chunks = [
+                {"location": m.get("location", ""), "text": d[:600]}
+                for d, m in sorted(zip(docs, metas), key=lambda x: x[1].get("location", ""))
+            ]
         return jsonify(chunks)
     except Exception:
         log.exception("preview_file failed")
