@@ -2633,7 +2633,7 @@ function _renderStats(data, period) {
   const days = allDays.slice(-nDays);
   const maxVal = Math.max(...days.map(([,v]) => v), 1);
   // SVG line chart
-  const CH = 80, CW = 100, PAD = 5;
+  const CH = 110, CW = 100, PAD = 6;
   const pts = days.map(([, count], i) => {
     const x = days.length < 2 ? CW / 2 : (i / (days.length - 1)) * CW;
     const y = PAD + (1 - count / maxVal) * (CH - 2 * PAD);
@@ -2690,10 +2690,11 @@ function _renderStats(data, period) {
 
   const periodBtn = (p, label) => `<button onclick="_renderStats(_statsData,'${p}')" style="font-family:inherit;font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;border:1px solid ${p===period?'var(--blue)':'var(--border-2)'};background:${p===period?'var(--blue)':'transparent'};color:${p===period?'white':'var(--text-2)'};cursor:pointer;">${label}</button>`;
 
-  const kpi = (val, lbl, color='') => `<div style="margin-bottom:10px;">
-    <div style="font-size:18px;font-weight:700;color:${color||'var(--text)'};">${val}</div>
-    <div style="font-size:11px;color:var(--text-3);margin-top:1px;">${lbl}</div>
-  </div>`;
+  const kpi = (val, lbl, color='') => `
+    <div style="flex:1;min-width:90px;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;display:flex;flex-direction:column;gap:3px;">
+      <div style="font-size:22px;font-weight:700;color:${color||'var(--text)'};">${val}</div>
+      <div style="font-size:11px;color:var(--text-3);">${lbl}</div>
+    </div>`;
 
   const perCourseEntries = Object.entries(data.per_course).sort((a, b) => b[1] - a[1]);
   const periodTitle = period === '7d'
@@ -2703,23 +2704,21 @@ function _renderStats(data, period) {
       : (currentLang === 'NL' ? 'Afgelopen 3 maanden' : 'Last 3 months');
 
   body.innerHTML = `
-    <div style="display:grid;grid-template-columns:140px 1fr;gap:24px;margin-bottom:18px;align-items:stretch;">
-      <div>
-        ${kpi(data.total, t.totalQuestions)}
-        ${kpi(data.avg_per_day ?? 0, currentLang === 'NL' ? 'Gem. per dag' : 'Avg / day')}
-        ${kpi(data.thumbs_up ?? 0, t.thumbsUp)}
-        ${kpi(data.thumbs_down ?? 0, t.thumbsDown)}
-        ${data.satisfaction_pct != null ? kpi(data.satisfaction_pct + '%', currentLang === 'NL' ? 'Tevredenheid' : 'Satisfaction', 'var(--green,#22c55e)') : ''}
-      </div>
-      <div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-          <div style="font-size:11px;font-weight:600;color:var(--text-3);">${periodTitle}</div>
-          <div style="display:flex;gap:4px;">
-            ${periodBtn('7d','7D')}${periodBtn('30d','30D')}${periodBtn('3m','3M')}
-          </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
+      ${kpi(data.total, t.totalQuestions)}
+      ${kpi(data.avg_per_day ?? 0, currentLang === 'NL' ? 'Gem. per dag' : 'Avg / day')}
+      ${kpi(data.thumbs_up ?? 0, t.thumbsUp)}
+      ${kpi(data.thumbs_down ?? 0, t.thumbsDown)}
+      ${data.satisfaction_pct != null ? kpi(data.satisfaction_pct + '%', currentLang === 'NL' ? 'Tevredenheid' : 'Satisfaction', 'var(--green,#22c55e)') : ''}
+    </div>
+    <div style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-size:12px;font-weight:600;color:var(--text-3);">${periodTitle}</div>
+        <div style="display:flex;gap:4px;">
+          ${periodBtn('7d','7D')}${periodBtn('30d','30D')}${periodBtn('3m','3M')}
         </div>
-        ${chartSvg}
       </div>
+      ${chartSvg}
     </div>
     ${perCourseEntries.length ? `
       <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">${t.perFile}</div>
