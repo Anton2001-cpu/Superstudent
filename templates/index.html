@@ -1973,7 +1973,7 @@ async function apiFetch(url, opts) {
   const res = await fetch(url, opts);
   if (res.status === 401) { window.location.href = '/login'; return null; }
   // Don't intercept 403 on teacher-login itself — let checkPw handle it
-  if (res.status === 403 && url !== '/api/teacher-login') {
+  if (res.status === 403 && url !== '/api/teacher-login' && url !== '/api/feedback') {
     sessionStorage.removeItem('tAuth');
     switchView('student', document.getElementById('tab-student'));
     const msg = currentLang === 'NL'
@@ -2529,11 +2529,35 @@ async function showStats() {
     if (data.error) { body.innerHTML = `<div style="color:var(--red);font-size:12px;">${esc(data.error)}</div>`; return; }
     if (data.total === 0) { body.innerHTML = `<div style="font-size:12px;color:var(--text-3);">${t.noStats}</div>`; return; }
     const perCourseEntries = Object.entries(data.per_course).sort((a, b) => b[1] - a[1]);
+    const satisfactionHtml = data.satisfaction_pct != null
+      ? `<div class="stats-kpi">
+          <div class="stats-kpi-value" style="color:var(--green,#22c55e)">${data.satisfaction_pct}%</div>
+          <div class="stats-kpi-label">${currentLang === 'NL' ? 'Tevredenheid' : 'Satisfaction'}</div>
+        </div>` : '';
+    const perDayEntries = data.per_day ? Object.entries(data.per_day) : [];
+    const maxDay = Math.max(...perDayEntries.map(([,v]) => v), 1);
+    const barChart = perDayEntries.length ? `
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">${currentLang === 'NL' ? 'Vragen afgelopen 7 dagen' : 'Questions last 7 days'}</div>
+      <div style="display:flex;align-items:flex-end;gap:4px;height:52px;margin-bottom:14px;">
+        ${perDayEntries.map(([day, count]) => {
+          const pct = Math.round(count / maxDay * 100);
+          const label = new Date(day + 'T00:00:00Z').toLocaleDateString(currentLang === 'NL' ? 'nl-BE' : 'en-GB', {weekday:'short'});
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <div style="font-size:9px;color:var(--text-3);">${count||''}</div>
+            <div style="width:100%;background:var(--blue);border-radius:3px 3px 0 0;height:${Math.max(pct,count?4:0)}%;opacity:0.8;min-height:${count?3:0}px;"></div>
+            <div style="font-size:9px;color:var(--text-3);white-space:nowrap;">${label}</div>
+          </div>`;
+        }).join('')}
+      </div>` : '';
     body.innerHTML = `
       <div class="stats-row">
         <div class="stats-kpi">
           <div class="stats-kpi-value">${data.total}</div>
           <div class="stats-kpi-label">${t.totalQuestions}</div>
+        </div>
+        <div class="stats-kpi">
+          <div class="stats-kpi-value">${data.avg_per_day ?? 0}</div>
+          <div class="stats-kpi-label">${currentLang === 'NL' ? 'gem. per dag' : 'avg / day'}</div>
         </div>
         <div class="stats-kpi">
           <div class="stats-kpi-value">${data.thumbs_up ?? 0}</div>
@@ -2543,7 +2567,9 @@ async function showStats() {
           <div class="stats-kpi-value">${data.thumbs_down ?? 0}</div>
           <div class="stats-kpi-label">${t.thumbsDown}</div>
         </div>
+        ${satisfactionHtml}
       </div>
+      ${barChart}
       ${perCourseEntries.length ? `
         <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">${t.perFile}</div>
         <div class="stats-list" style="margin-bottom:14px;">

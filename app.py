@@ -7,7 +7,7 @@ import os
 import re
 import secrets
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from flask import Flask, jsonify, make_response, render_template, request, redirect, url_for
@@ -759,6 +759,27 @@ def get_stats():
         feedback = load_feedback()
         thumbs_up = sum(1 for f in feedback if f.get("rating") == "up")
         thumbs_down = sum(1 for f in feedback if f.get("rating") == "down")
+        total_feedback = thumbs_up + thumbs_down
+        satisfaction_pct = round(thumbs_up / total_feedback * 100) if total_feedback else None
+
+        today = datetime.utcnow().date()
+        per_day = {(today - timedelta(days=i)).isoformat(): 0 for i in range(6, -1, -1)}
+        for entry in stats:
+            ts = entry.get("timestamp", "")
+            day = ts[:10] if ts else ""
+            if day in per_day:
+                per_day[day] += 1
+
+        if stats:
+            first_day = stats[0].get("timestamp", "")[:10]
+            try:
+                days_active = max((today - datetime.fromisoformat(first_day).date()).days + 1, 1)
+            except Exception:
+                days_active = 1
+        else:
+            days_active = 1
+        avg_per_day = round(total / days_active, 1)
+
         return jsonify({
             "total": total,
             "per_course": per_course,
@@ -766,6 +787,9 @@ def get_stats():
             "recent": recent,
             "thumbs_up": thumbs_up,
             "thumbs_down": thumbs_down,
+            "satisfaction_pct": satisfaction_pct,
+            "per_day": per_day,
+            "avg_per_day": avg_per_day,
         })
     except Exception:
         log.exception("get_stats failed")
