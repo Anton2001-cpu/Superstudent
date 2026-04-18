@@ -74,7 +74,7 @@ class _SupabaseCollection:
                         q = q.eq(key, val["$eq"])
             elif "course" in where:
                 q = q.eq("course", where["course"]["$eq"])
-        result = q.execute()
+        result = q.limit(500).execute()
         rows = result.data or []
         return {
             "ids": [r["id"] for r in rows],

@@ -641,6 +641,10 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
     }
     .course-tab:hover { border-color: var(--blue); color: var(--text); }
     .course-tab.active { background: var(--blue); color: white; border-color: var(--blue); }
@@ -2565,18 +2569,22 @@ async function showStats() {
         <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">${t.perFile}</div>
         <div class="stats-list" style="margin-bottom:14px;">
           ${perCourseEntries.map(([name, count]) => `
-            <div class="stats-item">
-              <span class="stats-q" title="${esc(name)}">${trunc(name, 45)}</span>
-              <span class="stats-count">${count}</span>
+            <div class="stats-recent-item">
+              <span class="stats-recent-q">${trunc(name, 50)}</span>
+              <div class="stats-recent-meta">
+                <span class="stats-recent-course">${count} ${currentLang === 'NL' ? 'vragen' : 'questions'}</span>
+              </div>
             </div>`).join('')}
         </div>` : ''}
       ${data.top_questions.length ? `
         <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">${t.topQuestions}</div>
-        <div class="stats-list">
+        <div class="stats-list" style="margin-bottom:14px;">
           ${data.top_questions.map(q => `
-            <div class="stats-item">
-              <span class="stats-q" title="${esc(q.question)}">${trunc(q.question, 55)}</span>
-              <span class="stats-count">${q.count}×</span>
+            <div class="stats-recent-item">
+              <span class="stats-recent-q">${trunc(q.question, 60)}</span>
+              <div class="stats-recent-meta">
+                <span class="stats-recent-course">${q.count}× ${currentLang === 'NL' ? 'gesteld' : 'asked'}</span>
+              </div>
             </div>`).join('')}
         </div>` : ''}
       ${data.recent && data.recent.length ? `
@@ -3004,9 +3012,15 @@ async function showFilePreview(course, filename) {
   modal.classList.add('open');
   try {
     const res = await apiFetch(`/api/courses/${encodeURIComponent(course)}/files/${encodeURIComponent(filename)}/preview`);
-    const chunks = await res.json();
-    if (!Array.isArray(chunks) || !chunks.length) {
-      body.innerHTML = '<div style="font-size:12px;color:var(--text-3);padding:8px 0;">No content found.</div>';
+    if (!res) return;
+    const data = await res.json();
+    if (data && data.error) {
+      body.innerHTML = `<div style="color:var(--red);font-size:13px;padding:8px 0;">${esc(data.error)}</div>`;
+      return;
+    }
+    const chunks = Array.isArray(data) ? data : [];
+    if (!chunks.length) {
+      body.innerHTML = `<div style="font-size:13px;color:var(--text-2);padding:8px 0;">${currentLang === 'NL' ? 'Geen inhoud gevonden. Mogelijk is dit bestand nog niet verwerkt.' : 'No content found. The file may not have been processed yet.'}</div>`;
       return;
     }
     body.innerHTML = chunks.map(ch => `
@@ -3014,8 +3028,8 @@ async function showFilePreview(course, filename) {
         <div class="preview-chunk-loc">${esc(ch.location || '')}</div>
         <div class="preview-chunk-text">${esc(ch.text || '')}</div>
       </div>`).join('');
-  } catch {
-    body.innerHTML = '<div style="color:var(--red);font-size:12px;">Failed to load preview.</div>';
+  } catch (e) {
+    body.innerHTML = `<div style="color:var(--red);font-size:13px;">Fout: ${esc(String(e))}</div>`;
   }
 }
 
