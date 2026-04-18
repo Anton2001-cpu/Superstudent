@@ -728,6 +728,11 @@
       background: var(--bg);
       overflow: hidden;
     }
+    /* Teacher view scrolls as a full page */
+    #view-teacher { overflow-y: auto; }
+    #view-teacher .detail-area { overflow: visible; }
+    #view-teacher #course-detail.active { overflow: visible; flex: none; }
+    #view-teacher .detail-body { overflow: visible; flex: none; }
     .panel-placeholder {
       flex: 1;
       display: flex;
@@ -1548,7 +1553,7 @@
 
 <!-- ── Teacher view ── -->
 <div class="view" id="view-teacher">
-  <div style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+  <div style="display:flex; flex-direction:column; flex:1; overflow:visible;">
 
     <!-- Course tabs top bar -->
     <div class="t-topbar">
@@ -1593,7 +1598,10 @@
             </div>
           </div>
 
-          <!-- Statistics card (always visible when course selected) -->
+          <!-- Welcome editor card -->
+          <div id="welcome-editor-card"></div>
+
+          <!-- Statistics card -->
           <div class="t-card" id="stats-card" style="display:none">
             <div class="t-card-head">
               <div class="t-card-title" data-i18n="statistics">Statistics</div>
@@ -1911,6 +1919,7 @@ function switchView(name, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('view-' + name).classList.add('active');
   btn.classList.add('active');
+  document.body.style.overflowY = name === 'teacher' ? 'auto' : 'hidden';
 }
 
 // ── Password gate ──────────────────────────────────────────────────────────
@@ -2472,13 +2481,8 @@ function selectCourse(name) {
 
 function renderWelcomeEditor(courseName, currentText) {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
-  let el = document.getElementById('welcome-editor-card');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'welcome-editor-card';
-    const detail = document.getElementById('course-detail');
-    if (detail) detail.appendChild(el);
-  }
+  const el = document.getElementById('welcome-editor-card');
+  if (!el) return;
   el.innerHTML = `
     <div class="welcome-editor">
       <label>${t.welcomeText}</label>
