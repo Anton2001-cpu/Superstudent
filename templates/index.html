@@ -616,7 +616,7 @@
 
     /* ── Teacher: top course tabs ── */
     .t-topbar {
-      padding: 10px 20px;
+      padding: 10px 44px;
       background: var(--card);
       border-bottom: 1px solid var(--border);
       display: flex;
@@ -769,7 +769,7 @@
     .detail-body {
       flex: 1;
       overflow-y: auto;
-      padding: 16px;
+      padding: 16px 28px;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -1073,6 +1073,25 @@
 
     /* Statistics panel */
     .stats-section { margin-top: 4px; }
+    .chart-dots-layer { position:absolute; inset:0; pointer-events:none; }
+    .chart-dot {
+      position:absolute; transform:translate(-50%,-50%);
+      pointer-events:all; cursor:default;
+    }
+    .chart-dot-inner {
+      width:8px; height:8px; border-radius:50%;
+      background:var(--blue);
+      transition: transform 0.12s;
+    }
+    .chart-dot:hover .chart-dot-inner { transform:scale(1.6); }
+    .chart-dot-tooltip {
+      display:none; position:absolute; bottom:calc(100% + 4px); left:50%;
+      transform:translateX(-50%);
+      background:rgba(0,0,0,0.75); color:#fff;
+      font-size:11px; font-weight:600; padding:2px 6px;
+      border-radius:4px; white-space:nowrap; pointer-events:none;
+    }
+    .chart-dot:hover .chart-dot-tooltip { display:block; }
     .stats-row { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
     .stats-recent-item {
       display: flex; flex-direction: column; gap: 3px;
@@ -2628,9 +2647,14 @@ function _renderStats(data, period) {
     const gy = (PAD + (1 - pct) * (CH - 2 * PAD)).toFixed(2);
     return `<line x1="0" y1="${gy}" x2="${CW}" y2="${gy}" stroke="currentColor" stroke-opacity="0.12" stroke-width="0.6"/>`;
   }).join('');
-  const dots = pts.filter(p => p.count > 0).map(p =>
-    `<circle cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="1.8" fill="var(--blue)"/>`
-  ).join('');
+  const htmlDots = pts.filter(p => p.count > 0).map(p => {
+    const left = (p.x / CW * 100).toFixed(2);
+    const top  = (p.y / CH * 100).toFixed(2);
+    return `<div class="chart-dot" style="left:${left}%;top:${top}%;">
+      <div class="chart-dot-inner"></div>
+      <div class="chart-dot-tooltip">${p.count}</div>
+    </div>`;
+  }).join('');
 
   const dayLabels = days.map(([day], i) => {
     let label = '';
@@ -2641,13 +2665,15 @@ function _renderStats(data, period) {
   }).join('');
 
   const chartSvg = `
-    <svg viewBox="0 0 ${CW} ${CH}" preserveAspectRatio="none" style="width:100%;height:${CH}px;display:block;overflow:visible;">
-      ${gridLines}
-      <line x1="0" y1="${CH - PAD}" x2="${CW}" y2="${CH - PAD}" stroke="currentColor" stroke-opacity="0.2" stroke-width="0.6"/>
-      <path d="${area}" fill="var(--blue)" fill-opacity="0.07"/>
-      <polyline points="${polyline}" stroke="var(--blue)" fill="none" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-      ${dots}
-    </svg>
+    <div style="position:relative;">
+      <svg viewBox="0 0 ${CW} ${CH}" preserveAspectRatio="none" style="width:100%;height:${CH}px;display:block;overflow:visible;">
+        ${gridLines}
+        <line x1="0" y1="${CH - PAD}" x2="${CW}" y2="${CH - PAD}" stroke="currentColor" stroke-opacity="0.2" stroke-width="0.6"/>
+        <path d="${area}" fill="var(--blue)" fill-opacity="0.07"/>
+        <polyline points="${polyline}" stroke="var(--blue)" fill="none" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+      </svg>
+      <div class="chart-dots-layer">${htmlDots}</div>
+    </div>
     <div style="display:flex;margin-top:3px;">${dayLabels}</div>`;
 
   const periodBtn = (p, label) => `<button onclick="_renderStats(_statsData,'${p}')" style="font-family:inherit;font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;border:1px solid ${p===period?'var(--blue)':'var(--border-2)'};background:${p===period?'var(--blue)':'transparent'};color:${p===period?'white':'var(--text-2)'};cursor:pointer;">${label}</button>`;
@@ -2665,7 +2691,7 @@ function _renderStats(data, period) {
       : (currentLang === 'NL' ? 'Afgelopen 3 maanden' : 'Last 3 months');
 
   body.innerHTML = `
-    <div style="display:grid;grid-template-columns:130px 1fr;gap:20px;margin-bottom:18px;align-items:start;">
+    <div style="display:grid;grid-template-columns:140px 1fr;gap:24px;margin-bottom:18px;align-items:stretch;">
       <div>
         ${kpi(data.total, t.totalQuestions)}
         ${kpi(data.avg_per_day ?? 0, currentLang === 'NL' ? 'Gem. per dag' : 'Avg / day')}
