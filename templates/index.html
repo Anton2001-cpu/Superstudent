@@ -9,39 +9,43 @@
 
     /* ── Tokens ── */
     :root {
-      --bg:          #dddde0;
-      --card:        #e6e6e9;
-      --sidebar:     #e2e2e5;
-      --border:      rgba(0,0,0,0.10);
-      --border-2:    rgba(0,0,0,0.18);
-      --text:        #1a1a1a;
-      --text-2:      #5c5c5c;
-      --text-3:      #8a8a8a;
-      --blue:        #0a84ff;
-      --blue-h:      #1a8eff;
-      --blue-dim:    rgba(10,132,255,0.13);
-      --red:         #d63030;
-      --green:       #248a40;
-      --header:      rgba(221,221,224,0.92);
-      --ua-blue:     #0a84ff;
-      --ua-blue-dim: rgba(10,132,255,0.13);
+      --bg:           #f9f9fb;
+      --card:         #ffffff;
+      --sidebar:      #efefef;
+      --border:       rgba(0,0,0,0.07);
+      --border-2:     rgba(0,0,0,0.13);
+      --text:         #1a1a1a;
+      --text-2:       #5c5c5c;
+      --text-3:       #8a8a8a;
+      --blue:         #1e3a8a;
+      --blue-h:       #162d6e;
+      --blue-dim:     rgba(30,58,138,0.09);
+      --red:          #d63030;
+      --green:        #248a40;
+      --header:       rgba(249,249,251,0.92);
+      --ua-blue:      #1e3a8a;
+      --ua-blue-dim:  rgba(30,58,138,0.09);
+      --toggle-on:    #1e3a8a;
+      --accent-grad:  linear-gradient(20deg, #1e3a8a 75%, #fb923c 92%, #1e3a8a 100%);
     }
 
     [data-theme="dark"] {
-      --bg:          #1c1c1e;
-      --card:        #2c2c2e;
-      --sidebar:     #242426;
-      --border:      rgba(255,255,255,0.1);
-      --border-2:    rgba(255,255,255,0.18);
-      --text:        #f5f5f7;
-      --text-2:      #aeaeb2;
-      --text-3:      #6e6e73;
-      --blue:        #0a84ff;
-      --blue-h:      #1a8eff;
-      --blue-dim:    rgba(10,132,255,0.15);
-      --red:         #ff453a;
-      --green:       #30d158;
-      --header:      rgba(28,28,30,0.85);
+      --bg:           #1c1c1e;
+      --card:         #2c2c2e;
+      --sidebar:      #242426;
+      --border:       rgba(255,255,255,0.1);
+      --border-2:     rgba(255,255,255,0.18);
+      --text:         #f5f5f7;
+      --text-2:       #aeaeb2;
+      --text-3:       #6e6e73;
+      --blue:         #4a7fd4;
+      --blue-h:       #3b6ec4;
+      --blue-dim:     rgba(74,127,212,0.15);
+      --red:          #ff453a;
+      --green:        #30d158;
+      --header:       rgba(28,28,30,0.85);
+      --toggle-on:    #4a7fd4;
+      --accent-grad:  linear-gradient(130deg, #4a7fd4 82%, #fb923c 100%);
     }
 
     html, body {
@@ -54,36 +58,31 @@
     }
     body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
-    /* ── Header ── */
-    .header {
-      height: 52px;
-      padding: 0 20px;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      position: relative;
-      background: var(--header);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-      z-index: 100;
-    }
-
-    .logo {
-      position: absolute;
-      left: 20px;
-      top: 50%;
-      transform: translateY(-50%);
+    /* ── Sidebar logo ── */
+    .sidebar-logo {
+      padding: 18px 14px 14px;
       font-size: 15px;
       font-weight: 600;
       letter-spacing: -0.02em;
       color: var(--text);
-      pointer-events: none;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
     }
-    .logo em { font-style: normal; color: var(--blue); }
+    .sidebar-logo em { font-style: normal; color: var(--blue); }
 
-    .header-right { display: flex; align-items: center; gap: 10px; }
+    /* ── Sidebar footer utilities ── */
+    .sidebar-foot {
+      padding: 8px 10px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .sidebar-foot .dark-btn,
+    .sidebar-foot .pomodoro-btn { border: none; background: transparent; width: 28px; height: 28px; }
+    .sidebar-foot .dark-btn:hover,
+    .sidebar-foot .pomodoro-btn:hover { background: var(--bg); }
     .status-dot {
       width: 7px; height: 7px;
       border-radius: 50%;
@@ -98,10 +97,19 @@
     }
 
     .tab-group {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 200;
       display: flex;
       background: rgba(128,128,128,0.12);
-      border-radius: 8px;
-      padding: 2px;
+      border-radius: 11px;
+      padding: 3px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
     }
     .tab {
       font-family: inherit;
@@ -109,16 +117,16 @@
       font-weight: 500;
       padding: 6px 18px;
       border: none;
-      border-radius: 6px;
+      border-radius: 9px;
       cursor: pointer;
       background: transparent;
       color: var(--text-2);
-      transition: all 0.15s ease;
+      transition: all 0.18s ease;
     }
     .tab.active {
       background: var(--card);
       color: var(--text);
-      box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08);
     }
 
     /* Dark mode toggle */
@@ -129,7 +137,7 @@
       align-items: center;
       justify-content: center;
       border: 1px solid var(--border-2);
-      border-radius: 8px;
+      border-radius: 50%;
       background: transparent;
       color: var(--text-2);
       cursor: pointer;
@@ -167,39 +175,33 @@
       color: var(--text-3);
     }
     .sidebar-search {
-      padding: 8px 10px 6px;
+      padding: 7px 10px 6px;
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
-      display: flex;
-      gap: 5px;
-      align-items: center;
     }
+    .sidebar-search-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg);
+      border: 1px solid var(--border-2);
+      border-radius: 20px;
+      padding: 5px 10px;
+      transition: border-color 0.15s;
+    }
+    .sidebar-search-wrap:focus-within { border-color: var(--blue); }
+    .sidebar-search-icon { color: var(--text-3); flex-shrink: 0; display: flex; }
     .sidebar-search-input {
       flex: 1;
       font-family: inherit;
       font-size: 12px;
-      padding: 5px 8px;
-      border-radius: 6px;
-      border: 1px solid var(--border-2);
-      background: var(--bg);
+      border: none;
+      background: transparent;
       color: var(--text);
       outline: none;
+      min-width: 0;
     }
-    .sidebar-search-input:focus { border-color: var(--blue); }
-    .btn-sort {
-      font-family: inherit;
-      font-size: 12px;
-      font-weight: 600;
-      padding: 5px 7px;
-      border-radius: 6px;
-      border: 1px solid var(--border-2);
-      background: var(--bg);
-      color: var(--text-3);
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.12s;
-    }
-    .btn-sort:hover, .btn-sort.active { border-color: var(--blue); color: var(--blue); }
+
     .sidebar-body {
       flex: 1;
       overflow-y: auto;
@@ -256,27 +258,27 @@
 
     /* Toggle switch */
     .toggle {
-      width: 26px;
-      height: 15px;
+      width: 34px;
+      height: 20px;
       background: var(--border-2);
-      border-radius: 8px;
+      border-radius: 10px;
       position: relative;
       flex-shrink: 0;
-      transition: background 0.18s;
-      margin-top: 2px;
+      transition: background 0.22s;
+      margin-top: 1px;
     }
     .toggle::after {
       content: '';
       position: absolute;
-      width: 11px; height: 11px;
+      width: 16px; height: 16px;
       background: white;
       border-radius: 50%;
       top: 2px; left: 2px;
-      transition: transform 0.18s;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+      transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.25);
     }
-    .book-item input:checked ~ .toggle { background: var(--blue); }
-    .book-item input:checked ~ .toggle::after { transform: translateX(11px); }
+    .book-item input:checked ~ .toggle { background: var(--toggle-on); }
+    .book-item input:checked ~ .toggle::after { transform: translateX(14px); }
     .book-label {
       font-size: 12px;
       color: var(--text);
@@ -289,13 +291,13 @@
     }
 
     .sb-collapse-btn {
-      width: 24px;
-      height: 24px;
+      width: 26px;
+      height: 26px;
       display: flex;
       align-items: center;
       justify-content: center;
       border: 1px solid var(--border-2);
-      border-radius: 6px;
+      border-radius: 10px;
       background: transparent;
       color: var(--text-2);
       cursor: pointer;
@@ -326,13 +328,14 @@
       position: absolute;
       left: 10px; top: 12px;
       z-index: 10;
-      width: 28px; height: 28px;
+      width: 30px; height: 30px;
       border: 1px solid var(--border-2);
-      border-radius: 6px;
+      border-radius: 10px;
       background: var(--card);
       color: var(--text-2);
       cursor: pointer;
       transition: all 0.12s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     .sb-expand-btn:hover { color: var(--text); }
     .sb-expand-btn.visible { display: flex; }
@@ -373,23 +376,24 @@
     .suggestion-chip {
       margin-top: 8px;
       padding: 7px 14px;
-      background: var(--blue-dim);
-      border: 1px solid var(--blue);
+      background: linear-gradient(var(--bg), var(--bg)) padding-box, var(--accent-grad) border-box;
+      border: 1.5px solid transparent;
       border-radius: 20px;
       font-size: 14px;
       color: var(--blue);
       cursor: pointer;
       transition: background 0.15s;
     }
-    .suggestion-chip:hover { background: var(--blue); color: #fff; }
+    .suggestion-chip:hover { background: linear-gradient(var(--blue-dim), var(--blue-dim)) padding-box, var(--accent-grad) border-box; }
 
     /* Result block */
     .result-block {
-      padding: 22px 0;
-      border-bottom: 1px solid var(--border);
+      padding: 20px 24px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }
-    .result-block:last-child { border-bottom: none; padding-bottom: 0; }
-    .result-block:first-child { padding-top: 0; }
 
     .result-question {
       font-size: 15px;
@@ -447,10 +451,10 @@
     .extra-body {
       display: none;
       margin-top: 8px;
-      padding: 12px 16px;
+      padding: 14px 18px;
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 14px;
       font-size: 14px;
       color: var(--text-2);
       line-height: 1.6;
@@ -496,7 +500,7 @@
     .source-card {
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 16px;
       overflow: hidden;
     }
     .source-meta {
@@ -522,8 +526,8 @@
       color: var(--blue);
       font-weight: 600;
       background: var(--blue-dim);
-      padding: 2px 8px;
-      border-radius: 5px;
+      padding: 2px 9px;
+      border-radius: 10px;
       white-space: nowrap;
       flex-shrink: 0;
     }
@@ -591,27 +595,29 @@
       color: var(--text);
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 7px 12px;
+      border-radius: 24px;
+      padding: 9px 18px;
       outline: none;
-      transition: border-color 0.15s, background 0.15s;
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
     }
-    .qa-input:focus { border-color: var(--blue); background: var(--card); }
+    .qa-input:focus { background: linear-gradient(var(--card), var(--card)) padding-box, var(--accent-grad) border-box; border-color: transparent; box-shadow: 0 0 0 3px var(--blue-dim); }
     .qa-input:disabled { opacity: 0.45; }
     .btn-ask {
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 500;
-      padding: 7px 18px;
-      background: var(--blue);
-      color: white;
-      border: none;
-      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      background: linear-gradient(var(--card), var(--card)) padding-box, var(--accent-grad) border-box;
+      color: var(--blue);
+      border: 1.5px solid transparent;
+      border-radius: 50%;
       cursor: pointer;
       flex-shrink: 0;
-      transition: background 0.15s;
+      transition: background 0.15s, box-shadow 0.15s;
     }
-    .btn-ask:hover { background: var(--blue-h); }
+    .btn-ask:hover { background: linear-gradient(var(--blue-dim), var(--blue-dim)) padding-box, var(--accent-grad) border-box; }
     .btn-ask:disabled { opacity: 0.4; cursor: default; }
 
     /* ── Teacher: top course tabs ── */
@@ -630,8 +636,8 @@
       font-family: inherit;
       font-size: 13px;
       font-weight: 500;
-      padding: 4px 13px;
-      border-radius: 4px;
+      padding: 5px 14px;
+      border-radius: 10px;
       border: 1px solid var(--border-2);
       background: var(--bg);
       color: var(--text-2);
@@ -647,7 +653,7 @@
       text-align: center;
     }
     .course-tab:hover { border-color: var(--blue); color: var(--text); }
-    .course-tab.active { background: var(--blue); color: white; border-color: var(--blue); }
+    .course-tab.active { background: linear-gradient(var(--blue-dim), var(--blue-dim)) padding-box, var(--accent-grad) border-box; color: var(--blue); border: 1.5px solid transparent; }
     .course-tab.dragging { opacity: 0.4; }
     .course-tab.drag-target { border-color: var(--blue); border-style: dashed; }
     .drag-handle {
@@ -677,9 +683,9 @@
       max-width: 280px;
       font-family: inherit;
       font-size: 13px;
-      padding: 5px 10px;
+      padding: 7px 12px;
       border: 1px solid var(--border);
-      border-radius: 4px;
+      border-radius: 10px;
       outline: none;
       background: var(--bg);
       color: var(--text);
@@ -690,20 +696,20 @@
       font-family: inherit;
       font-size: 13px;
       font-weight: 500;
-      padding: 5px 14px;
-      background: var(--blue);
-      color: white;
-      border: none;
-      border-radius: 4px;
+      padding: 7px 16px;
+      background: linear-gradient(var(--card), var(--card)) padding-box, var(--accent-grad) border-box;
+      color: var(--blue);
+      border: 1.5px solid transparent;
+      border-radius: 10px;
       cursor: pointer;
     }
     .btn-cancel-sm {
       font-family: inherit;
       font-size: 13px;
-      padding: 5px 12px;
+      padding: 7px 14px;
       background: transparent;
       border: 1px solid var(--border-2);
-      border-radius: 4px;
+      border-radius: 10px;
       color: var(--text-2);
       cursor: pointer;
     }
@@ -711,10 +717,10 @@
       font-family: inherit;
       font-size: 13px;
       font-weight: 500;
-      padding: 4px 12px;
+      padding: 5px 14px;
       background: transparent;
       border: 1px solid var(--border-2);
-      border-radius: 4px;
+      border-radius: 10px;
       color: var(--text-2);
       cursor: pointer;
       transition: all 0.12s;
@@ -780,9 +786,10 @@
     /* Cards */
     .t-card {
       background: var(--card);
-      border-radius: 4px;
+      border-radius: 14px;
       border: 1px solid var(--border);
       overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }
     .t-card-head {
       padding: 10px 16px;
@@ -801,9 +808,9 @@
       flex: 1;
       font-family: inherit;
       font-size: 13px;
-      padding: 6px 10px;
+      padding: 7px 12px;
       border: 1px solid var(--border);
-      border-radius: 4px;
+      border-radius: 10px;
       outline: none;
       background: var(--bg);
       color: var(--text);
@@ -814,22 +821,22 @@
       font-family: inherit;
       font-size: 13px;
       font-weight: 500;
-      padding: 6px 14px;
-      background: var(--blue);
-      color: white;
-      border: none;
-      border-radius: 4px;
+      padding: 7px 16px;
+      background: linear-gradient(var(--card), var(--card)) padding-box, var(--accent-grad) border-box;
+      color: var(--blue);
+      border: 1.5px solid transparent;
+      border-radius: 10px;
       cursor: pointer;
       white-space: nowrap;
       transition: background 0.15s;
     }
-    .btn-search:hover { background: var(--blue-h); }
+    .btn-search:hover { background: linear-gradient(var(--blue-dim), var(--blue-dim)) padding-box, var(--accent-grad) border-box; }
     .search-results { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
     .sr-item {
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 9px 12px;
+      border-radius: 12px;
+      padding: 10px 14px;
     }
     .sr-file { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 1px; }
     .sr-loc { font-size: 12px; color: var(--blue); margin-bottom: 6px; }
@@ -844,15 +851,15 @@
     /* Drop zone */
     .drop-zone {
       border: 1.5px dashed var(--border-2);
-      border-radius: 4px;
-      padding: 20px;
+      border-radius: 14px;
+      padding: 22px;
       text-align: center;
       cursor: pointer;
       background: var(--bg);
       transition: border-color 0.15s, background 0.15s;
       user-select: none;
     }
-    .drop-zone:hover, .drop-zone.over { border-color: var(--blue); background: var(--blue-dim); }
+    .drop-zone:hover, .drop-zone.over { border-color: var(--blue); background: var(--blue-dim); border-style: dashed; }
 
     /* ── Skeleton loader ── */
     @keyframes skel-shimmer {
@@ -917,11 +924,11 @@
       font-family: inherit;
       font-size: 12px;
       font-weight: 500;
-      padding: 3px 9px;
+      padding: 4px 10px;
       background: transparent;
       color: var(--red);
       border: 1px solid rgba(255,59,48,0.3);
-      border-radius: 4px;
+      border-radius: 10px;
       cursor: pointer;
       transition: background 0.12s;
       white-space: nowrap;
@@ -943,19 +950,19 @@
     }
     .modal-box {
       background: var(--card);
-      border-radius: 6px;
-      padding: 22px;
+      border-radius: 20px;
+      padding: 26px;
       width: 300px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.22);
     }
     .modal-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 14px; }
     .modal-field {
       width: 100%;
       font-family: inherit;
       font-size: 13px;
-      padding: 8px 10px;
+      padding: 9px 12px;
       border: 1px solid var(--border);
-      border-radius: 4px;
+      border-radius: 12px;
       outline: none;
       background: var(--bg);
       color: var(--text);
@@ -968,10 +975,10 @@
     .btn-cancel {
       font-family: inherit;
       font-size: 13px;
-      padding: 6px 14px;
+      padding: 7px 16px;
       background: var(--bg);
       border: 1px solid var(--border-2);
-      border-radius: 4px;
+      border-radius: 12px;
       cursor: pointer;
       color: var(--text);
     }
@@ -979,24 +986,24 @@
       font-family: inherit;
       font-size: 13px;
       font-weight: 500;
-      padding: 6px 14px;
-      background: var(--blue);
-      color: white;
-      border: none;
-      border-radius: 4px;
+      padding: 7px 16px;
+      background: linear-gradient(var(--card), var(--card)) padding-box, var(--accent-grad) border-box;
+      color: var(--blue);
+      border: 1.5px solid transparent;
+      border-radius: 12px;
       cursor: pointer;
     }
-    .btn-confirm:hover { background: var(--blue-h); }
+    .btn-confirm:hover { background: linear-gradient(var(--blue-dim), var(--blue-dim)) padding-box, var(--accent-grad) border-box; }
 
     /* Language toggle */
     .lang-btn {
-      width: 32px;
+      width: 36px;
       height: 28px;
       display: flex;
       align-items: center;
       justify-content: center;
       border: 1px solid var(--border-2);
-      border-radius: 4px;
+      border-radius: 14px;
       background: transparent;
       color: var(--text-2);
       cursor: pointer;
@@ -1152,7 +1159,7 @@
     }
     .toast.show { transform: translateX(-50%) translateY(0); }
 
-    /* ── Result actions (copy + thumbs) ── */
+    /* ── Result actions (copy) ── */
     .result-actions {
       display: flex;
       align-items: center;
@@ -1160,7 +1167,7 @@
       margin-top: 10px;
       margin-bottom: 4px;
     }
-    .btn-copy, .btn-thumb {
+    .btn-copy {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1173,8 +1180,7 @@
       cursor: pointer;
       transition: all 0.15s;
     }
-    .btn-copy:hover, .btn-thumb:hover { background: var(--bg); color: var(--text-2); }
-    .btn-thumb.voted { border-color: var(--blue); color: var(--blue); background: var(--blue-dim); }
+    .btn-copy:hover { background: var(--bg); color: var(--text-2); }
 
     /* ── Welcome note (student sidebar) ── */
     .welcome-note {
@@ -1197,7 +1203,7 @@
       align-items: center;
       justify-content: center;
       border: 1px solid var(--border-2);
-      border-radius: 8px;
+      border-radius: 50%;
       background: transparent;
       color: var(--text-2);
       cursor: pointer;
@@ -1470,10 +1476,8 @@
 
     /* ── Responsive ── */
     @media (max-width: 700px) {
-      /* Header: tighter, hide lang button */
-      .header { padding: 0 12px; }
-      .logo { left: 12px; font-size: 14px; }
-      .header-right { gap: 6px; }
+      /* Floating nav: shrink on mobile */
+      .floating-utils { right: 8px; }
       .lang-btn { display: none; }
       .tab { padding: 5px 10px; font-size: 11px; }
 
@@ -1519,26 +1523,10 @@
 </head>
 <body>
 
-<!-- Header -->
-<div class="header">
-  <div class="logo">Super<em>Student</em></div>
-  <div class="header-right">
-    <div class="status-dot" id="status-dot" title="Online"></div>
-    <button class="lang-btn" id="lang-btn" onclick="toggleLang()" title="Switch language">EN</button>
-    <button class="pomodoro-btn" id="pomodoro-btn" onclick="togglePomodoroPanel()" title="Pomodoro timer">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-    </button>
-    <button class="dark-btn" onclick="toggleDark()" id="dark-btn" title="Toggle dark mode">
-      <!-- Moon: shown in light mode -->
-      <svg id="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      <!-- Sun: shown in dark mode -->
-      <svg id="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.93" y1="4.93" x2="7.05" y2="7.05"/><line x1="16.95" y1="16.95" x2="19.07" y2="19.07"/><line x1="4.93" y1="19.07" x2="7.05" y2="16.95"/><line x1="16.95" y1="7.05" x2="19.07" y2="4.93"/></svg>
-    </button>
-    <div class="tab-group">
-      <button class="tab active" id="tab-student" onclick="switchView('student', this)" data-i18n="tabStudent">Student</button>
-      <button class="tab" id="tab-teacher" onclick="requirePassword(this)" data-i18n="tabTeacher">Teacher</button>
-    </div>
-  </div>
+<!-- Floating Student/Teacher toggle -->
+<div class="tab-group">
+  <button class="tab active" id="tab-student" onclick="switchView('student', this)" data-i18n="tabStudent">Student</button>
+  <button class="tab" id="tab-teacher" onclick="requirePassword(this)" data-i18n="tabTeacher">Teacher</button>
 </div>
 
 <!-- Password modal -->
@@ -1563,6 +1551,7 @@
 
   <!-- Book selector sidebar -->
   <div class="sidebar" id="book-sidebar">
+    <div class="sidebar-logo">Super<em>Student</em></div>
     <div class="sidebar-head">
       <span class="sidebar-label" data-i18n="studyMaterials">Study materials</span>
       <button class="sb-collapse-btn" onclick="toggleSidebar()" id="sb-collapse-btn" title="Hide panel">
@@ -1570,13 +1559,29 @@
       </button>
     </div>
     <div class="sidebar-search">
-      <input class="sidebar-search-input" type="text" id="book-search"
-             placeholder="Search books..."
-             oninput="renderBookList()">
-      <button class="btn-sort" id="btn-sort" onclick="toggleSort()" title="Sort alphabetically">A-Z</button>
+      <div class="sidebar-search-wrap">
+        <span class="sidebar-search-icon">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <input class="sidebar-search-input" type="text" id="book-search"
+               placeholder="Zoek naar bestanden..."
+               oninput="renderBookList()">
+      </div>
     </div>
     <div class="sidebar-body" id="book-list">
       <div class="sidebar-empty">No materials available.<br>Ask your teacher to upload course content.</div>
+    </div>
+    <div class="sidebar-foot">
+      <div class="status-dot" id="status-dot" title="Online"></div>
+      <div style="flex:1"></div>
+      <button class="lang-btn" id="lang-btn" onclick="toggleLang()" title="Switch language">EN</button>
+      <button class="pomodoro-btn" id="pomodoro-btn" onclick="togglePomodoroPanel()" title="Pomodoro timer">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </button>
+      <button class="dark-btn" onclick="toggleDark()" id="dark-btn" title="Toggle dark mode">
+        <svg id="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg id="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.93" y1="4.93" x2="7.05" y2="7.05"/><line x1="16.95" y1="16.95" x2="19.07" y2="19.07"/><line x1="4.93" y1="19.07" x2="7.05" y2="16.95"/><line x1="16.95" y1="7.05" x2="19.07" y2="4.93"/></svg>
+      </button>
     </div>
   </div>
 
@@ -1598,7 +1603,9 @@
       <input class="qa-input" type="text" id="q-input"
              placeholder="Type here a question"
              onkeydown="if(event.key==='Enter') askQuestion()">
-      <button class="btn-ask" id="ask-btn" onclick="askQuestion()">Ask</button>
+      <button class="btn-ask" id="ask-btn" onclick="askQuestion()" title="Vraag stellen">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
     </div>
   </div>
 
@@ -1739,6 +1746,13 @@ const TRANSLATIONS = {
     topQuestions: 'Top 10 vragen',
     perFile: 'Per bestand',
     noStats: 'Nog geen statistieken beschikbaar.',
+    avgPerDay: 'Gem. per dag',
+    satisfaction: 'Tevredenheid',
+    last7Days: 'Afgelopen 7 dagen',
+    last30Days: 'Afgelopen 30 dagen',
+    last3Months: 'Afgelopen 3 maanden',
+    recentQuestions: 'Recente vragen',
+    questionsShort: 'vragen',
     rename: 'Hernoem',
     remove: 'Verwijder',
     save: 'Opslaan',
@@ -1816,6 +1830,13 @@ const TRANSLATIONS = {
     topQuestions: 'Top 10 questions',
     perFile: 'Per file',
     noStats: 'No statistics available yet.',
+    avgPerDay: 'Avg / day',
+    satisfaction: 'Satisfaction',
+    last7Days: 'Last 7 days',
+    last30Days: 'Last 30 days',
+    last3Months: 'Last 3 months',
+    recentQuestions: 'Recent questions',
+    questionsShort: 'questions',
     rename: 'Rename',
     remove: 'Remove',
     save: 'Save',
@@ -1893,7 +1914,7 @@ function applyLang(lang) {
   const qInput = document.getElementById('q-input');
   if (qInput) qInput.placeholder = t.askPlaceholder;
   const askBtn = document.getElementById('ask-btn');
-  if (askBtn) askBtn.textContent = t.askBtn;
+  if (askBtn) askBtn.title = currentLang === 'NL' ? 'Vraag stellen' : 'Ask a question';
   const langBtn = document.getElementById('lang-btn');
   if (langBtn) langBtn.textContent = lang;
   const pwInput = document.getElementById('pw-input');
@@ -1904,8 +1925,6 @@ function applyLang(lang) {
   if (sbCollapseBtn) sbCollapseBtn.title = t.hidePanelTitle;
   const sbExpandBtn = document.getElementById('sb-expand-btn');
   if (sbExpandBtn) sbExpandBtn.title = t.showMaterialsTitle;
-  const btnSort = document.getElementById('btn-sort');
-  if (btnSort) btnSort.title = t.sortAlphabeticallyTitle;
   const dot = document.getElementById('status-dot');
   if (dot) dot.title = dot.classList.contains('offline') ? t.offline : t.online;
   const pomodoroResetBtn = document.querySelector('#pomodoro-panel button:not(.primary):not(#pomodoro-playpause)');
@@ -1931,6 +1950,18 @@ function toggleLang() {
   document.querySelectorAll('.book-cb').forEach(cb => {
     if (unchecked.has(cb.dataset.filename)) cb.checked = false;
   });
+  // Re-render teacher panel so dynamically built content picks up the new language
+  if (document.getElementById('view-teacher')?.classList.contains('active')) {
+    renderTeacherList();
+    if (activeCourse) {
+      const course = teacherCourses.find(c => c.name === activeCourse);
+      if (course) {
+        renderFileList(course.files);
+        renderWelcomeEditor(activeCourse, course.welcome || '');
+      }
+      if (_statsData) _renderStats(_statsData, _statsPeriod);
+    }
+  }
 }
 
 // ── Dark mode ──────────────────────────────────────────────────────────────
@@ -2133,7 +2164,7 @@ function closeSidebarMobile() {
 
 // ── Books / student sidebar ────────────────────────────────────────────────
 let allCourses = [];
-let sortAlpha = false;
+let sortAlpha = true;
 
 async function loadBooks() {
   try {
@@ -2143,11 +2174,6 @@ async function loadBooks() {
   renderBookList();
 }
 
-function toggleSort() {
-  sortAlpha = !sortAlpha;
-  document.getElementById('btn-sort').classList.toggle('active', sortAlpha);
-  renderBookList();
-}
 
 function renderBookList() {
   const el = document.getElementById('book-list');
@@ -2498,12 +2524,6 @@ function appendResult(question, answer, sources, extra = '') {
       <button class="btn-copy" onclick="copyAnswer('${uid}')" title="Copy">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
       </button>
-      <button class="btn-thumb" id="up-${uid}" onclick="submitFeedback('${uid}','up')" title="Helpful">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
-      </button>
-      <button class="btn-thumb" id="dn-${uid}" onclick="submitFeedback('${uid}','down')" title="Not helpful">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
-      </button>
     </div>
     ${buildExtraHtml(question)}
     ${buildSourcesHtml(sources, answer)}`;
@@ -2731,20 +2751,13 @@ function _renderStats(data, period) {
     </div>`;
 
   const perCourseEntries = Object.entries(data.per_course).sort((a, b) => b[1] - a[1]);
-  const periodTitle = period === '7d'
-    ? (currentLang === 'NL' ? 'Afgelopen 7 dagen' : 'Last 7 days')
-    : period === '30d'
-      ? (currentLang === 'NL' ? 'Afgelopen 30 dagen' : 'Last 30 days')
-      : (currentLang === 'NL' ? 'Afgelopen 3 maanden' : 'Last 3 months');
+  const periodTitle = period === '7d' ? t.last7Days : period === '30d' ? t.last30Days : t.last3Months;
 
   body.innerHTML = `
     <div style="display:grid;grid-template-columns:110px 1fr;gap:20px;align-items:stretch;margin-bottom:20px;">
       <div style="display:flex;flex-direction:column;justify-content:space-evenly;align-items:center;padding:6px 0;border-right:1px solid var(--border);">
         ${kpi(data.total, t.totalQuestions)}
-        ${kpi(data.avg_per_day ?? 0, currentLang === 'NL' ? 'Gem. per dag' : 'Avg / day')}
-        ${kpi(data.thumbs_up ?? 0, t.thumbsUp)}
-        ${kpi(data.thumbs_down ?? 0, t.thumbsDown)}
-        ${data.satisfaction_pct != null ? kpi(data.satisfaction_pct + '%', currentLang === 'NL' ? 'Tevredenheid' : 'Satisfaction', 'var(--green,#22c55e)') : ''}
+        ${kpi(data.avg_per_day ?? 0, t.avgPerDay)}
       </div>
       <div style="display:flex;flex-direction:column;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-shrink:0;">
@@ -2769,7 +2782,7 @@ function _renderStats(data, period) {
         ${perCourseEntries.map(([name, count]) => `
           <div class="stats-recent-item" style="flex-direction:row;align-items:center;justify-content:space-between;">
             <span class="stats-recent-q">${trunc(name, 45)}</span>
-            <span class="stats-recent-course" style="flex-shrink:0;margin-left:8px;">${count} ${currentLang === 'NL' ? 'vr.' : 'q.'}</span>
+            <span class="stats-recent-course" style="flex-shrink:0;margin-left:8px;">${count} ${t.questionsShort}</span>
           </div>`).join('')}
       </div>` : ''}
     ${data.top_questions.length ? `
@@ -2782,7 +2795,7 @@ function _renderStats(data, period) {
           </div>`).join('')}
       </div>` : ''}
     ${data.recent && data.recent.length ? `
-      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">${currentLang === 'NL' ? 'Recente vragen' : 'Recent questions'}</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">${t.recentQuestions}</div>
       <div class="stats-list">
         ${data.recent.map(q => {
           const courses = (q.books || []).join(', ');
@@ -3099,25 +3112,6 @@ function copyAnswer(uid) {
   });
 }
 
-// ── Feedback (thumbs) ──────────────────────────────────────────────────────
-async function submitFeedback(uid, rating) {
-  const upBtn = document.getElementById('up-' + uid);
-  const dnBtn = document.getElementById('dn-' + uid);
-  if (!upBtn || !dnBtn) return;
-  if (upBtn.disabled) return; // already voted
-  upBtn.disabled = true;
-  dnBtn.disabled = true;
-  const voted = rating === 'up' ? upBtn : dnBtn;
-  voted.classList.add('voted');
-  const { question = '', answer = '' } = _feedbackData[uid] || {};
-  try {
-    await apiFetch('/api/feedback', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, answer, books: getSelectedBooks(), rating }),
-    });
-  } catch { /* silent */ }
-}
 
 // ── Pomodoro ───────────────────────────────────────────────────────────────
 const _pom = { running: false, seconds: 25 * 60, mode: 'work', interval: null };
@@ -3214,6 +3208,15 @@ async function showFilePreview(course, filename) {
     if (data && data.url) {
       body.style.padding = '0';
       body.innerHTML = `<iframe src="${data.url}" style="width:100%;height:100%;border:none;display:block;"></iframe>`;
+      return;
+    }
+    if (data && data.chunks) {
+      body.style.padding = '';
+      body.innerHTML = data.chunks.map(ch => `
+        <div class="preview-chunk">
+          <div class="preview-chunk-loc">${esc(ch.location || '')}</div>
+          <div class="preview-chunk-text">${esc(ch.text || '')}</div>
+        </div>`).join('');
       return;
     }
     body.innerHTML = `<div style="font-size:13px;color:var(--text-2);padding:8px 0;">Bestand niet beschikbaar.</div>`;
