@@ -70,19 +70,14 @@
     }
     .sidebar-logo em { font-style: normal; color: var(--blue); }
 
-    /* ── Sidebar footer utilities ── */
+    /* ── Sidebar footer ── */
     .sidebar-foot {
       padding: 8px 10px;
       border-top: 1px solid var(--border);
       display: flex;
       align-items: center;
-      gap: 4px;
       flex-shrink: 0;
     }
-    .sidebar-foot .dark-btn,
-    .sidebar-foot .pomodoro-btn { border: none; background: transparent; width: 28px; height: 28px; }
-    .sidebar-foot .dark-btn:hover,
-    .sidebar-foot .pomodoro-btn:hover { background: var(--bg); }
     .status-dot {
       width: 7px; height: 7px;
       border-radius: 50%;
@@ -96,12 +91,16 @@
       box-shadow: 0 0 0 2px rgba(255,59,48,0.25);
     }
 
-    .tab-group {
+    .top-right-bar {
       position: fixed;
       top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
+      right: 16px;
       z-index: 200;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tab-group {
       display: flex;
       background: rgba(128,128,128,0.12);
       border-radius: 11px;
@@ -137,7 +136,7 @@
       align-items: center;
       justify-content: center;
       border: 1px solid var(--border-2);
-      border-radius: 50%;
+      border-radius: 10px;
       background: transparent;
       color: var(--text-2);
       cursor: pointer;
@@ -154,6 +153,8 @@
       width: 220px;
       flex-shrink: 0;
       background: var(--sidebar);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
@@ -1003,7 +1004,7 @@
       align-items: center;
       justify-content: center;
       border: 1px solid var(--border-2);
-      border-radius: 14px;
+      border-radius: 10px;
       background: transparent;
       color: var(--text-2);
       cursor: pointer;
@@ -1037,7 +1038,7 @@
       background: transparent;
       color: var(--blue);
       border: 1px solid rgba(0,113,227,0.3);
-      border-radius: 4px;
+      border-radius: 10px;
       cursor: pointer;
       transition: background 0.12s;
       white-space: nowrap;
@@ -1048,7 +1049,7 @@
       font-family: inherit;
       font-size: 12px;
       padding: 3px 10px;
-      border-radius: 4px;
+      border-radius: 10px;
       cursor: pointer;
       white-space: nowrap;
       flex-shrink: 0;
@@ -1174,7 +1175,7 @@
       width: 28px;
       height: 28px;
       border: 1px solid var(--border-2);
-      border-radius: 7px;
+      border-radius: 10px;
       background: transparent;
       color: var(--text-3);
       cursor: pointer;
@@ -1203,7 +1204,7 @@
       align-items: center;
       justify-content: center;
       border: 1px solid var(--border-2);
-      border-radius: 50%;
+      border-radius: 10px;
       background: transparent;
       color: var(--text-2);
       cursor: pointer;
@@ -1476,8 +1477,8 @@
 
     /* ── Responsive ── */
     @media (max-width: 700px) {
-      /* Floating nav: shrink on mobile */
-      .floating-utils { right: 8px; }
+      /* Top-right bar: compact on mobile */
+      .top-right-bar { right: 8px; gap: 4px; }
       .lang-btn { display: none; }
       .tab { padding: 5px 10px; font-size: 11px; }
 
@@ -1523,10 +1524,20 @@
 </head>
 <body>
 
-<!-- Floating Student/Teacher toggle -->
-<div class="tab-group">
-  <button class="tab active" id="tab-student" onclick="switchView('student', this)" data-i18n="tabStudent">Student</button>
-  <button class="tab" id="tab-teacher" onclick="requirePassword(this)" data-i18n="tabTeacher">Teacher</button>
+<!-- Top-right bar: tab toggle + utility buttons -->
+<div class="top-right-bar">
+  <div class="tab-group">
+    <button class="tab active" id="tab-student" onclick="switchView('student', this)" data-i18n="tabStudent">Student</button>
+    <button class="tab" id="tab-teacher" onclick="requirePassword(this)" data-i18n="tabTeacher">Teacher</button>
+  </div>
+  <button class="lang-btn" id="lang-btn" onclick="toggleLang()" title="Switch language">EN</button>
+  <button class="pomodoro-btn" id="pomodoro-btn" onclick="togglePomodoroPanel()" title="Pomodoro timer">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+  </button>
+  <button class="dark-btn" onclick="toggleDark()" id="dark-btn" title="Toggle dark mode">
+    <svg id="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    <svg id="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.93" y1="4.93" x2="7.05" y2="7.05"/><line x1="16.95" y1="16.95" x2="19.07" y2="19.07"/><line x1="4.93" y1="19.07" x2="7.05" y2="16.95"/><line x1="16.95" y1="7.05" x2="19.07" y2="4.93"/></svg>
+  </button>
 </div>
 
 <!-- Password modal -->
@@ -1573,15 +1584,6 @@
     </div>
     <div class="sidebar-foot">
       <div class="status-dot" id="status-dot" title="Online"></div>
-      <div style="flex:1"></div>
-      <button class="lang-btn" id="lang-btn" onclick="toggleLang()" title="Switch language">EN</button>
-      <button class="pomodoro-btn" id="pomodoro-btn" onclick="togglePomodoroPanel()" title="Pomodoro timer">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      </button>
-      <button class="dark-btn" onclick="toggleDark()" id="dark-btn" title="Toggle dark mode">
-        <svg id="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        <svg id="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.93" y1="4.93" x2="7.05" y2="7.05"/><line x1="16.95" y1="16.95" x2="19.07" y2="19.07"/><line x1="4.93" y1="19.07" x2="7.05" y2="16.95"/><line x1="16.95" y1="7.05" x2="19.07" y2="4.93"/></svg>
-      </button>
     </div>
   </div>
 
