@@ -38,9 +38,9 @@
       --text:         #f5f5f7;
       --text-2:       #aeaeb2;
       --text-3:       #6e6e73;
-      --blue:         #4a7fd4;
-      --blue-h:       #3b6ec4;
-      --blue-dim:     rgba(74,127,212,0.15);
+      --blue:         #5b9cf6;
+      --blue-h:       #6aabff;
+      --blue-dim:     rgba(91,156,246,0.15);
       --red:          #ff453a;
       --green:        #30d158;
       --header:       rgba(28,28,30,0.85);
@@ -94,55 +94,57 @@
     .top-right-bar {
       position: fixed;
       top: 10px;
-      right: 16px;
+      right: 14px;
       z-index: 200;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 3px;
+      background: rgba(120,120,128,0.14);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 14px;
+      padding: 4px 6px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.10);
     }
     .tab-group {
       display: flex;
-      background: rgba(128,128,128,0.12);
-      border-radius: 11px;
-      padding: 3px;
-      border: 1px solid var(--border);
-      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      border-radius: 9px;
+      padding: 2px;
     }
     .tab {
       font-family: inherit;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 500;
-      padding: 6px 18px;
+      padding: 4px 13px;
       border: none;
-      border-radius: 9px;
+      border-radius: 8px;
       cursor: pointer;
       background: transparent;
       color: var(--text-2);
       transition: all 0.18s ease;
     }
     .tab.active {
-      background: var(--card);
+      background: rgba(255,255,255,0.18);
       color: var(--text);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
     }
 
     /* Dark mode toggle */
     .dark-btn {
-      width: 32px;
-      height: 32px;
+      width: 26px;
+      height: 26px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 1px solid var(--border-2);
-      border-radius: 10px;
+      border: none;
+      border-radius: 50%;
       background: transparent;
       color: var(--text-2);
       cursor: pointer;
       transition: all 0.15s;
     }
-    .dark-btn:hover { background: var(--bg); color: var(--text); }
+    .dark-btn:hover { background: rgba(255,255,255,0.15); color: var(--text); }
 
     /* ── Views ── */
     .view { display: none; flex: 1; overflow: hidden; }
@@ -589,36 +591,47 @@
     }
     #view-student.sb-closed .qa-input-bar { padding-left: 44px; }
     #view-student.sb-closed .qa-history { padding-left: 44px; }
+    .qa-input-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 4px 4px 4px 18px;
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    }
+    .qa-input-wrap:focus-within {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px var(--blue-dim);
+    }
     .qa-input {
       flex: 1;
       font-family: inherit;
       font-size: 14px;
       color: var(--text);
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 9px 18px;
+      background: transparent;
+      border: none;
       outline: none;
-      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+      padding: 5px 0;
     }
-    .qa-input:focus { background: linear-gradient(var(--card), var(--card)) padding-box, var(--accent-grad) border-box; border-color: transparent; box-shadow: 0 0 0 3px var(--blue-dim); }
     .qa-input:disabled { opacity: 0.45; }
     .btn-ask {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 32px;
-      height: 32px;
+      width: 30px;
+      height: 30px;
       padding: 0;
-      background: linear-gradient(var(--card), var(--card)) padding-box, var(--accent-grad) border-box;
-      color: var(--blue);
-      border: 1.5px solid transparent;
+      background: var(--blue);
+      color: white;
+      border: none;
       border-radius: 50%;
       cursor: pointer;
       flex-shrink: 0;
-      transition: background 0.15s, box-shadow 0.15s;
+      transition: background 0.15s;
     }
-    .btn-ask:hover { background: linear-gradient(var(--blue-dim), var(--blue-dim)) padding-box, var(--accent-grad) border-box; }
+    .btn-ask:hover { background: var(--blue-h); }
     .btn-ask:disabled { opacity: 0.4; cursor: default; }
 
     /* ── Teacher: top course tabs ── */
@@ -998,23 +1011,23 @@
 
     /* Language toggle */
     .lang-btn {
-      width: 36px;
-      height: 28px;
+      height: 26px;
+      padding: 0 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 1px solid var(--border-2);
-      border-radius: 10px;
+      border: none;
+      border-radius: 13px;
       background: transparent;
       color: var(--text-2);
       cursor: pointer;
       transition: all 0.15s;
       font-family: inherit;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.03em;
     }
-    .lang-btn:hover { background: var(--bg); color: var(--text); }
+    .lang-btn:hover { background: rgba(255,255,255,0.15); color: var(--text); }
 
     /* File item extended */
     .f-meta { font-size: 10px; color: var(--text-3); white-space: nowrap; flex-shrink: 0; }
@@ -1198,20 +1211,20 @@
 
     /* ── Pomodoro ── */
     .pomodoro-btn {
-      width: 32px;
-      height: 32px;
+      width: 26px;
+      height: 26px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 1px solid var(--border-2);
-      border-radius: 10px;
+      border: none;
+      border-radius: 50%;
       background: transparent;
       color: var(--text-2);
       cursor: pointer;
       transition: all 0.15s;
     }
-    .pomodoro-btn:hover { background: var(--bg); color: var(--text); }
-    .pomodoro-btn.active { border-color: var(--blue); color: var(--blue); background: var(--blue-dim); }
+    .pomodoro-btn:hover { background: rgba(255,255,255,0.15); color: var(--text); }
+    .pomodoro-btn.active { color: var(--blue); background: rgba(10,132,255,0.18); }
 
     .pomodoro-panel {
       position: fixed;
@@ -1602,12 +1615,14 @@
       </div>
     </div>
     <div class="qa-input-bar">
-      <input class="qa-input" type="text" id="q-input"
-             placeholder="Type here a question"
-             onkeydown="if(event.key==='Enter') askQuestion()">
-      <button class="btn-ask" id="ask-btn" onclick="askQuestion()" title="Vraag stellen">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-      </button>
+      <div class="qa-input-wrap">
+        <input class="qa-input" type="text" id="q-input"
+               placeholder="Type here a question"
+               onkeydown="if(event.key==='Enter') askQuestion()">
+        <button class="btn-ask" id="ask-btn" onclick="askQuestion()" title="Vraag stellen">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
     </div>
   </div>
 

@@ -10,11 +10,12 @@
     :root {
       --bg-dark: #1c1c1e;
       --card-bg: rgba(255,255,255,0.05);
-      --primary: #0084ff;
-      --primary-end: #00c6ff;
+      --primary: #4a7fd4;
+      --primary-end: #fb923c;
       --text-main: #ffffff;
       --text-dim: #888;
       --border-color: rgba(255,255,255,0.1);
+      --accent-grad: linear-gradient(130deg, #4a7fd4 82%, #fb923c 100%);
     }
 
     body {
@@ -156,20 +157,21 @@
 
     .btn-primary {
       background: var(--primary);
-      color: white;
+      color: #fff;
       border: none;
-      padding: 11px;
-      border-radius: 8px;
+      padding: 12px;
+      border-radius: 10px;
       font-weight: 600;
-      font-size: 13px;
+      font-size: 14px;
       font-family: inherit;
       cursor: pointer;
-      transition: opacity 0.15s, transform 0.15s;
+      transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
       letter-spacing: 0.01em;
     }
     .btn-primary:hover {
-      opacity: 0.88;
+      background: #3d6fc4;
       transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(74,127,212,0.4);
     }
 
     @media (max-width: 500px) {
@@ -186,9 +188,31 @@
       font-size: 0.82rem;
       color: var(--text-dim);
     }
+
+    /* ── App preview background ── */
+    .app-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      filter: blur(2px) brightness(0.6);
+      opacity: 0.85;
+      transform: scale(1.03);
+    }
+    .app-bg iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
   </style>
 </head>
 <body>
+
+  <!-- Blurred app preview background -->
+  <div class="app-bg">
+    <iframe src="/app-preview" tabindex="-1" aria-hidden="true"></iframe>
+  </div>
 
   <header class="main-header">
     <div class="logo">Super<span>Student</span></div>
