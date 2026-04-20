@@ -60,23 +60,27 @@
     }
 
     .toggle-group {
-      background: rgba(128,128,128,0.12);
-      border-radius: 8px;
-      padding: 2px;
+      background: rgba(128,128,128,0.18);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 20px;
+      padding: 3px;
       display: flex;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.12);
     }
     .toggle-group button {
       background: none; border: none;
-      color: var(--text-dim);
-      padding: 5px 14px; border-radius: 6px;
+      color: rgba(255,255,255,0.55);
+      padding: 5px 16px; border-radius: 16px;
       cursor: pointer; font-family: inherit; font-size: 12px;
       font-weight: 500;
-      transition: background 0.15s, color 0.15s;
+      transition: background 0.22s ease, color 0.22s ease, box-shadow 0.22s ease;
     }
     .toggle-group button.active {
-      background: rgba(255,255,255,0.13);
+      background: rgba(255,255,255,0.18);
       color: white;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+      box-shadow: 0 1px 6px rgba(0,0,0,0.18);
     }
 
     .hero-container {
