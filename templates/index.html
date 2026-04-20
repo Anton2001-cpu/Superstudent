@@ -98,19 +98,25 @@
       z-index: 200;
       display: flex;
       align-items: center;
-      gap: 3px;
-      background: rgba(120,120,128,0.14);
-      backdrop-filter: blur(24px) saturate(180%);
-      -webkit-backdrop-filter: blur(24px) saturate(180%);
-      border: 1px solid rgba(255,255,255,0.16);
+      gap: 2px;
+      background: rgba(120,120,128,0.13);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.18);
       border-radius: 14px;
-      padding: 4px 6px;
+      padding: 4px 5px;
       box-shadow: 0 2px 16px rgba(0,0,0,0.10);
+    }
+    .top-right-bar .divider {
+      width: 1px; height: 16px;
+      background: rgba(128,128,128,0.25);
+      margin: 0 3px; flex-shrink: 0;
     }
     .tab-group {
       display: flex;
       border-radius: 9px;
       padding: 2px;
+      background: rgba(128,128,128,0.10);
     }
     .tab {
       font-family: inherit;
@@ -125,20 +131,20 @@
       transition: all 0.18s ease;
     }
     .tab.active {
-      background: rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.22);
       color: var(--text);
       box-shadow: 0 1px 4px rgba(0,0,0,0.10);
     }
 
     /* Dark mode toggle */
     .dark-btn {
-      width: 26px;
-      height: 26px;
+      width: 28px;
+      height: 28px;
       display: flex;
       align-items: center;
       justify-content: center;
       border: none;
-      border-radius: 50%;
+      border-radius: 8px;
       background: transparent;
       color: var(--text-2);
       cursor: pointer;
@@ -667,7 +673,7 @@
       text-align: center;
     }
     .course-tab:hover { border-color: var(--blue); color: var(--text); }
-    .course-tab.active { background: linear-gradient(var(--blue-dim), var(--blue-dim)) padding-box, var(--accent-grad) border-box; color: var(--blue); border: 1.5px solid transparent; }
+    .course-tab.active { background: linear-gradient(var(--blue-dim), var(--blue-dim)) padding-box, var(--accent-grad) border-box; color: var(--text); border: 1.5px solid transparent; }
     .course-tab.dragging { opacity: 0.4; }
     .course-tab.drag-target { border-color: var(--blue); border-style: dashed; }
     .drag-handle {
@@ -1211,13 +1217,13 @@
 
     /* ── Pomodoro ── */
     .pomodoro-btn {
-      width: 26px;
-      height: 26px;
+      width: 28px;
+      height: 28px;
       display: flex;
       align-items: center;
       justify-content: center;
       border: none;
-      border-radius: 50%;
+      border-radius: 8px;
       background: transparent;
       color: var(--text-2);
       cursor: pointer;
@@ -1543,6 +1549,7 @@
     <button class="tab active" id="tab-student" onclick="switchView('student', this)" data-i18n="tabStudent">Student</button>
     <button class="tab" id="tab-teacher" onclick="requirePassword(this)" data-i18n="tabTeacher">Teacher</button>
   </div>
+  <div class="divider"></div>
   <button class="lang-btn" id="lang-btn" onclick="toggleLang()" title="Switch language">EN</button>
   <button class="pomodoro-btn" id="pomodoro-btn" onclick="togglePomodoroPanel()" title="Pomodoro timer">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
