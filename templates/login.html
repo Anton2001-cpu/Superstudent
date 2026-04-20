@@ -8,19 +8,19 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg-dark: #1c1c1e;
-      --card-bg: rgba(255,255,255,0.05);
-      --primary: #5b9cf6;
+      --bg-light: #f2f2f7;
+      --card-bg: rgba(255,255,255,0.72);
+      --primary: #7aa2cc;
       --primary-end: #fb923c;
-      --text-main: #ffffff;
-      --text-dim: #888;
-      --border-color: rgba(255,255,255,0.1);
-      --accent-grad: linear-gradient(130deg, #4a7fd4 82%, #fb923c 100%);
+      --text-main: #1c1c1e;
+      --text-dim: #6e6e73;
+      --border-color: rgba(0,0,0,0.09);
+      --accent-grad: linear-gradient(130deg, #7aa2cc 82%, #fb923c 100%);
     }
 
     body {
       font-family: 'Inter', -apple-system, sans-serif;
-      background-color: var(--bg-dark);
+      background-color: var(--bg-light);
       color: var(--text-main);
       min-height: 100vh;
       display: flex;
@@ -60,27 +60,27 @@
     }
 
     .toggle-group {
-      background: rgba(128,128,128,0.18);
+      background: rgba(0,0,0,0.07);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255,255,255,0.14);
+      border: 1px solid rgba(0,0,0,0.09);
       border-radius: 20px;
       padding: 3px;
       display: flex;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     }
     .toggle-group button {
       background: none; border: none;
-      color: rgba(255,255,255,0.55);
+      color: rgba(0,0,0,0.4);
       padding: 5px 16px; border-radius: 16px;
       cursor: pointer; font-family: inherit; font-size: 12px;
       font-weight: 500;
       transition: background 0.22s ease, color 0.22s ease, box-shadow 0.22s ease;
     }
     .toggle-group button.active {
-      background: rgba(255,255,255,0.18);
-      color: white;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.18);
+      background: rgba(255,255,255,0.85);
+      color: #1c1c1e;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.1);
     }
 
     .hero-container {
@@ -115,12 +115,9 @@
     }
 
     .login-card {
-      background: var(--card-bg);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 20px;
+      background: none;
+      border: none;
+      padding: 0;
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -129,7 +126,7 @@
 
     .login-card label {
       font-size: 0.7rem;
-      color: rgba(255,255,255,0.9);
+      color: var(--text-dim);
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -137,19 +134,22 @@
 
     input[type="password"] {
       width: 100%;
-      background: rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1px solid var(--border-color);
-      padding: 13px 14px;
-      border-radius: 10px;
-      color: white;
+      padding: 13px 16px;
+      border-radius: 12px;
+      color: #1c1c1e;
       font-size: 1rem;
       font-family: inherit;
       outline: none;
-      transition: border-color 0.15s;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }
     input[type="password"]:focus {
       border-color: var(--primary);
-      background: rgba(0,132,255,0.06);
+      box-shadow: 0 0 0 3px rgba(122,162,204,0.2);
     }
 
     .error {
@@ -160,7 +160,7 @@
     }
 
     .btn-primary {
-      background: #5b9cf6;
+      background: #7aa2cc;
       color: #fff;
       border: none;
       padding: 12px;
@@ -190,7 +190,7 @@
     .footer-note {
       margin-top: 20px;
       font-size: 0.82rem;
-      color: rgba(255,255,255,0.6);
+      color: var(--text-dim);
     }
 
     /* ── App preview background ── */
@@ -199,8 +199,8 @@
       inset: 0;
       z-index: 0;
       pointer-events: none;
-      filter: blur(2px) brightness(0.6);
-      opacity: 0.85;
+      filter: blur(3px);
+      opacity: 0.35;
       transform: scale(1.03);
     }
     .app-bg iframe {
