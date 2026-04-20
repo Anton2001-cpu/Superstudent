@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -38,14 +38,14 @@
       --text:         #f5f5f7;
       --text-2:       #aeaeb2;
       --text-3:       #6e6e73;
-      --blue:         #5b9cf6;
-      --blue-h:       #6aabff;
-      --blue-dim:     rgba(91,156,246,0.15);
+      --blue:         #1e3a8a;
+      --blue-h:       #162d6e;
+      --blue-dim:     rgba(30,58,138,0.18);
       --red:          #ff453a;
       --green:        #30d158;
       --header:       rgba(28,28,30,0.85);
-      --toggle-on:    #4a7fd4;
-      --accent-grad:  linear-gradient(130deg, #4a7fd4 82%, #fb923c 100%);
+      --toggle-on:    #1e3a8a;
+      --accent-grad:  linear-gradient(20deg, #1e3a8a 75%, #fb923c 92%, #1e3a8a 100%);
     }
 
     html, body {
@@ -753,7 +753,7 @@
       overflow: hidden;
     }
     /* Teacher view scrolls as a full page */
-    #view-teacher { overflow-y: auto; }
+    #view-teacher { overflow-y: auto; padding-top: 54px; }
     #view-teacher .detail-area { overflow: visible; }
     #view-teacher #course-detail.active { overflow: visible; flex: none; }
     #view-teacher .detail-body { overflow: visible; flex: none; }
@@ -1993,7 +1993,7 @@ function toggleDark() {
   applyTheme(next);
   localStorage.setItem('theme', next);
 }
-applyTheme(localStorage.getItem('theme') || 'dark');
+applyTheme(localStorage.getItem('theme') || 'light');
 
 // If redirected from login as teacher, skip tour and open teacher view directly
 if (new URLSearchParams(window.location.search).get('teacher') === '1') {
