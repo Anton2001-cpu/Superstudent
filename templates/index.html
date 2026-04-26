@@ -3561,7 +3561,6 @@ function endTour() {
   if (sessionStorage.getItem('openTeacherAfterTour')) {
     sessionStorage.removeItem('openTeacherAfterTour');
     localStorage.setItem('teacherTourDone', '1');
-    activateTeacher(document.getElementById('tab-teacher'));
   }
 }
 
