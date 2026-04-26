@@ -2044,6 +2044,7 @@ applyTheme('light');
 
 // Pre-set teacher auth from server-side email check
 const _serverIsTeacher = {{ is_teacher }};
+const _serverIsStudent = {{ is_student }};
 if (_serverIsTeacher) sessionStorage.setItem('tAuth', '1');
 
 // If redirected from login as teacher: show student tour on first teacher login, then open teacher view
@@ -2080,6 +2081,12 @@ function switchView(name, btn) {
 let pendingBtn = null;
 
 function requirePassword(btn) {
+  if (_serverIsStudent) {
+    toast(currentLang === 'NL'
+      ? 'Studentenaccounts hebben geen toegang tot het lerarenpaneel.'
+      : 'Student accounts cannot access the teacher panel.', 4000);
+    return;
+  }
   if (sessionStorage.getItem('tAuth') === '1') {
     activateTeacher(btn);
     return;

@@ -671,7 +671,11 @@ def log_question(question: str, books: list):
 
 @app.route("/")
 def index():
-    return render_template("index.html", is_teacher="true" if _is_teacher() else "false")
+    user_email = _get_user_email() or ""
+    is_student = bool(user_email) and "student" in user_email.lower()
+    return render_template("index.html",
+                           is_teacher="true" if _is_teacher() else "false",
+                           is_student="true" if is_student else "false")
 
 
 @app.route("/api/ping")
