@@ -174,8 +174,8 @@ class _LocalCollection:
 class RAGEngine:
     def __init__(self):
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        self.chunk_size = 1200
-        self.chunk_overlap = 200
+        self.chunk_size = 800
+        self.chunk_overlap = 100
 
         supabase_url = os.getenv("SUPABASE_URL")
         supabase_key = os.getenv("SUPABASE_KEY")
@@ -385,7 +385,7 @@ class RAGEngine:
             else:
                 where = {"$or": [{"filename": {"$eq": b}} for b in books]}
 
-        n_results = min(3, total)
+        n_results = min(2, total)
 
         results = self.collection.query(query_embeddings=[query_embedding], n_results=n_results, where=where)
 
@@ -403,46 +403,38 @@ class RAGEngine:
         for doc, meta in zip(docs, metas):
             fname = meta.get("filename", "Unknown file")
             loc = meta.get("location", "")
-            context_parts.append(f"[{fname} — {loc}]\n{doc}")
+            context_parts.append(f"[{fname} — {loc}]\n{doc[:700]}")
             sources.append({
                 "filename": fname,
                 "location": loc,
-                "preview": meta.get("preview", doc[:900]),
+                "preview": meta.get("preview", doc[:500]),
             })
 
         context = "\n\n---\n\n".join(context_parts)
 
-        lang_instruction = (
-            "You MUST answer in Dutch (Nederlands). Do not use English under any circumstances."
-            if lang == "NL" else
-            "You MUST answer in English. Do not use Dutch under any circumstances."
-        )
+        lang_instruction = "Answer in Dutch." if lang == "NL" else "Answer in English."
         fallback_phrase = (
             "Ik kon dit niet vinden in je cursusmateriaal, klik hieronder voor relevante informatie online."
             if lang == "NL" else
             "I couldn't find this in your course material, click below to check relevant information online."
         )
         answer_prompt = (
-            f"You are a study assistant for students. {lang_instruction} "
-            "Do not use emojis. "
-            "Give a clear, well-structured answer of 6-10 sentences. Use bullet points when listing multiple items. "
-            "Bold all key terms and important concepts with **term**. "
-            "Answer using ONLY the course material provided below. Do NOT use your own knowledge, do NOT search online, do NOT add links. "
-            f"Either give a substantive answer based strictly on the material, OR say exactly: \"{fallback_phrase}\" "
-            "Never mix an answer with the fallback phrase. "
-            "Structure your answer: start with the core concept in 1-2 sentences, then elaborate with details or examples from the material."
+            f"You are a study assistant. {lang_instruction} "
+            "Answer using ONLY the course material below. No emojis, no links, no outside knowledge. "
+            "Use bullet points for lists. Bold key terms with **term**. 4-8 sentences. "
+            f"If not found, say exactly: \"{fallback_phrase}\""
         )
 
         messages = [{"role": "system", "content": answer_prompt}]
         if history:
-            messages.extend(history)
-        messages.append({"role": "user", "content": f"Course materials:\n\n{context}\n\n---\n\nQuestion: {question}"})
+            messages.extend(history[-4:])
+        messages.append({"role": "user", "content": f"Material:\n{context}\n\nQuestion: {question}"})
 
         chat_response = self.client.chat.completions.create(
             model="gpt-4o-mini",
             messages=messages,
             temperature=0,
-            max_tokens=600,
+            max_tokens=400,
         )
         answer = chat_response.choices[0].message.content.strip()
 
@@ -535,7 +527,7 @@ class RAGEngine:
             else:
                 where = {"$or": [{"filename": {"$eq": b}} for b in books]}
 
-        n_results = min(3, total)
+        n_results = min(2, total)
         results = self.collection.query(query_embeddings=[query_embedding], n_results=n_results, where=where)
 
         docs = results["documents"][0]
@@ -551,34 +543,26 @@ class RAGEngine:
         for doc, meta in zip(docs, metas):
             fname = meta.get("filename", "Unknown file")
             loc = meta.get("location", "")
-            context_parts.append(f"[{fname} — {loc}]\n{doc}")
-            sources.append({"filename": fname, "location": loc, "preview": meta.get("preview", doc[:900])})
+            context_parts.append(f"[{fname} — {loc}]\n{doc[:700]}")
+            sources.append({"filename": fname, "location": loc, "preview": meta.get("preview", doc[:500])})
 
         system_prompt = (
-            "You are a study assistant for students. "
-            "IMPORTANT: Always respond in the same language as the student's question. "
-            "If the question is in Dutch, answer in Dutch. If in English, answer in English. "
-            "Answer the question using ONLY the course material provided below. "
-            "Do NOT use your own knowledge, do NOT search online, do NOT add links or URLs. "
-            "Do not use emojis. "
-            "Either give a complete answer based on the material, OR say exactly (in the student's language): "
-            "\"I couldn't find this in your course materials. Please ask your teacher.\" "
-            "Never do both in the same response. "
-            "Be clear and concise. Use bullet points for lists. Bold key terms with **term**. "
-            "If the student explicitly asks for more info, extra explanation, or more detail (e.g. 'vertel meer', 'meer uitleg', 'tell me more', 'elaborate'), "
-            "give a more detailed answer — still based strictly on the course material, never from outside sources."
+            "You are a study assistant. Answer in the same language as the question (Dutch if Dutch, English if English). "
+            "Answer using ONLY the course material below. No emojis, no links, no outside knowledge. "
+            "Use bullet points for lists. Bold key terms with **term**. Be concise. "
+            "If not found, say exactly: \"I couldn't find this in your course materials. Please ask your teacher.\""
         )
 
         messages = [{"role": "system", "content": system_prompt}]
         if history:
-            messages.extend(history)
-        messages.append({"role": "user", "content": f"Course materials:\n\n{chr(10).join(context_parts)}\n\n---\n\nQuestion: {question}"})
+            messages.extend(history[-4:])
+        messages.append({"role": "user", "content": f"Material:\n{chr(10).join(context_parts)}\n\nQuestion: {question}"})
 
         stream = self.client.chat.completions.create(
             model="gpt-4o-mini",
             messages=messages,
             temperature=0,
-            max_tokens=600,
+            max_tokens=400,
             stream=True,
         )
 
