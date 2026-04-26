@@ -8,236 +8,553 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg-light: #f2f2f7;
-      --card-bg: rgba(255,255,255,0.72);
-      --primary: #1e3a8a;
-      --primary-end: #fb923c;
-      --text-main: #1c1c1e;
-      --text-dim: #6e6e73;
-      --border-color: rgba(0,0,0,0.09);
-      --accent-grad: linear-gradient(130deg, #1e3a8a 82%, #fb923c 100%);
+      --bg:         #f2f2f2;
+      --card:       #ffffff;
+      --border:     rgba(104,126,140,0.28);
+      --border-2:   rgba(104,126,140,0.42);
+      --text:       #0e1826;
+      --text-2:     #2e4959;
+      --text-3:     #687e8c;
+      --accent:     #0084ff;
+      --accent-dim: rgba(0,132,255,0.12);
+      --green:      #1a8a3a;
+      --green-dim:  rgba(52,199,89,0.12);
+      --sidebar-w:  260px;
     }
 
     body {
-      font-family: 'Inter', -apple-system, sans-serif;
-      background-color: var(--bg-light);
-      color: var(--text-main);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── App mockup background ── */
+    .app-mockup {
+      position: fixed;
+      inset: 0;
       display: flex;
       flex-direction: column;
-    }
-
-
-    .main-header {
-      position: relative;
-      z-index: 1;
-      padding: 18px 30px;
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .logo {
-      position: absolute;
-      left: 30px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-weight: 700;
-      font-size: 1.1rem;
-      letter-spacing: -0.02em;
+      opacity: 0.3;
+      filter: blur(1px);
       pointer-events: none;
+      user-select: none;
     }
-    .logo span { color: var(--primary); }
-
-    .header-right { display: flex; align-items: center; gap: 12px; }
-
-    .status-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: #34c759;
-      box-shadow: 0 0 0 2px rgba(52,199,89,0.25);
-      display: inline-block;
-    }
-
-    .toggle-group {
-      background: rgba(0,0,0,0.07);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(0,0,0,0.09);
-      border-radius: 20px;
-      padding: 3px;
+    .mock-topbar {
+      height: 48px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
       display: flex;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-    .toggle-group button {
-      background: none; border: none;
-      color: rgba(0,0,0,0.4);
-      padding: 5px 16px; border-radius: 16px;
-      cursor: pointer; font-family: inherit; font-size: 12px;
-      font-weight: 500;
-      transition: background 0.22s ease, color 0.22s ease, box-shadow 0.22s ease;
-    }
-    .toggle-group button.active {
-      background: rgba(255,255,255,0.85);
-      color: #1c1c1e;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.1);
-    }
-
-    .hero-container {
-      flex: 1;
-      display: flex;
-      justify-content: center;
       align-items: center;
-      padding: 40px 20px;
-      position: relative;
-      z-index: 1;
+      padding: 0 16px;
+      justify-content: space-between;
+      flex-shrink: 0;
     }
-
-    .hero-content {
-      max-width: 420px;
-      width: 100%;
-      text-align: center;
-    }
-
-    h1 {
-      font-size: 1.35rem;
-      font-weight: 700;
-      margin-bottom: 10px;
-      letter-spacing: -0.02em;
-      line-height: 1.25;
-    }
-
-    .hero-sub {
-      color: var(--text-dim);
-      font-size: 0.85rem;
-      line-height: 1.55;
-      margin-bottom: 28px;
-    }
-
-    .login-card {
-      background: none;
-      border: none;
-      padding: 0;
+    .mock-logo { font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+    .mock-logo em { font-style: normal; color: var(--accent); }
+    .mock-tabs { display: flex; background: var(--bg); border-radius: 9px; padding: 3px; gap: 2px; }
+    .mock-tab { font-size: 11px; font-weight: 500; padding: 4px 14px; border-radius: 7px; color: var(--text-3); }
+    .mock-tab.active { background: var(--card); color: var(--text-2); font-weight: 600; }
+    .mock-dot { width: 8px; height: 8px; border-radius: 50%; background: #34c759; }
+    .mock-body { flex: 1; display: flex; overflow: hidden; }
+    .mock-sidebar {
+      width: var(--sidebar-w);
+      background: var(--bg);
+      border-right: 1px solid var(--border);
+      padding: 14px 10px;
+      flex-shrink: 0;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      text-align: left;
+      gap: 2px;
+    }
+    .mock-course-name { font-size: 12px; font-weight: 600; color: var(--text-2); padding: 4px 8px; }
+    .mock-book-item { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 7px; }
+    .mock-toggle { width: 6px; height: 6px; border-radius: 50%; background: var(--border-2); flex-shrink: 0; }
+    .mock-toggle.on { background: var(--accent); }
+    .mock-book-label { font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mock-chat {
+      flex: 1;
+      background: var(--card);
+      display: flex;
+      flex-direction: column;
+      padding: 28px 48px 0;
+      overflow: hidden;
+    }
+    .mock-result { padding: 18px 0; border-bottom: 1px solid var(--border); }
+    .mock-question { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 10px; }
+    .mock-answer-label {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--text-3); margin-bottom: 6px;
+    }
+    .mock-line { height: 9px; background: var(--border); border-radius: 4px; margin-bottom: 5px; }
+    .mock-inputbar {
+      height: 56px;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 48px 0 calc(var(--sidebar-w) + 20px);
+      flex-shrink: 0;
+    }
+    .mock-input {
+      flex: 1;
+      height: 36px;
+      border-radius: 18px;
+      border: 1px solid rgba(0,132,255,0.5);
+      background: var(--card);
     }
 
-    .login-card label {
-      font-size: 0.7rem;
-      color: var(--text-dim);
+    /* ── Login overlay ── */
+    .login-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    .login-card {
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--border-2);
+      border-radius: 18px;
+      padding: 30px 34px 26px;
+      width: 100%;
+      max-width: 360px;
+    }
+
+    /* ── Header ── */
+    .card-logo { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; margin-bottom: 3px; }
+    .card-logo em { font-style: normal; color: var(--accent); }
+    .card-sub { font-size: 12px; color: var(--text-3); margin-bottom: 20px; }
+
+    /* ── Role tabs ── */
+    .tab-group {
+      display: flex;
+      background: var(--bg);
+      border-radius: 9px;
+      padding: 3px;
+      gap: 2px;
+      margin-bottom: 20px;
+    }
+    .tab {
+      flex: 1;
+      border: none;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--text-3);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 0;
+      cursor: default;
+      transition: all 0.15s;
+    }
+    .tab.active {
+      background: var(--card);
+      color: var(--text-2);
+      font-weight: 600;
+      box-shadow: 0 1px 4px rgba(46,73,89,0.12), 0 0 0 1px rgba(46,73,89,0.08);
+    }
+    .tab.tab-disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    /* ── Form inputs ── */
+    .pw-label {
+      font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 6px;
     }
-
+    input[type="email"],
     input[type="password"] {
       width: 100%;
-      background: rgba(255,255,255,0.72);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid var(--border-color);
-      padding: 13px 16px;
+      background: var(--bg);
+      border: 1px solid rgba(0,132,255,0.5);
+      padding: 10px 14px;
       border-radius: 12px;
-      color: #1c1c1e;
-      font-size: 1rem;
+      color: var(--text);
+      font-size: 12px;
       font-family: inherit;
       outline: none;
       transition: border-color 0.15s, box-shadow 0.15s;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      margin-bottom: 10px;
     }
+    input[type="email"]:focus,
     input[type="password"]:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(122,162,204,0.2);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
     }
+    .error { font-size: 11px; color: #d63030; min-height: 16px; margin-bottom: 10px; }
 
-    .error {
-      font-size: 12px;
-      color: #ff453a;
-      min-height: 16px;
-      margin-top: -6px;
-    }
-
+    /* ── Buttons ── */
     .btn-primary {
-      background: #1e3a8a;
+      width: 100%;
+      background: var(--accent);
       color: #fff;
       border: none;
-      padding: 12px;
+      padding: 10px;
       border-radius: 10px;
       font-weight: 600;
-      font-size: 14px;
+      font-size: 12px;
       font-family: inherit;
       cursor: pointer;
-      transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
-      letter-spacing: 0.01em;
+      transition: opacity 0.15s;
     }
-    .btn-primary:hover {
-      background: #4a8de8;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 16px rgba(91,156,246,0.45);
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-back {
+      background: none;
+      border: none;
+      color: var(--text-3);
+      font-size: 11px;
+      font-family: inherit;
+      cursor: pointer;
+      padding: 0;
+      margin-top: 12px;
+      display: inline-block;
+    }
+    .btn-back:hover { color: var(--text-2); }
+
+    /* ── Step-specific elements ── */
+    .step-hidden { display: none !important; }
+
+    .step-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+    }
+    .badge-new      { background: var(--accent-dim); color: var(--accent); }
+    .badge-return   { background: var(--green-dim);  color: var(--green); }
+
+    .step-info {
+      font-size: 12px;
+      color: var(--text-3);
+      margin-bottom: 14px;
+      line-height: 1.55;
     }
 
-    @media (max-width: 500px) {
-      .main-header { padding: 14px 16px; }
-      .logo { left: 16px; font-size: 1rem; }
-      .hero-container { padding: 24px 16px; }
-      .hero-content { max-width: 100%; }
-      h1 { font-size: 1.15rem; }
-      .login-card { padding: 16px; }
+    .email-pill {
+      font-size: 12px;
+      color: var(--text-2);
+      font-weight: 500;
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 6px 10px;
+      margin-bottom: 14px;
+      word-break: break-all;
     }
 
-    .footer-note {
-      margin-top: 20px;
-      font-size: 0.82rem;
-      color: var(--text-dim);
+    /* ── Verify step ── */
+    .verify-wrap { text-align: center; }
+    .verify-icon { font-size: 36px; margin-bottom: 10px; }
+    .verify-title {
+      font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px;
     }
+    .verify-body {
+      font-size: 12px; color: var(--text-3); line-height: 1.6; margin-bottom: 16px;
+    }
+    .verify-body strong { color: var(--text-2); }
 
+    /* ── Footer note ── */
+    .footer-note { margin-top: 14px; font-size: 11px; color: var(--text-3); text-align: center; }
+
+    /* ── Callback error banner ── */
+    .cb-error-banner {
+      background: rgba(214,48,48,0.08);
+      border: 1px solid rgba(214,48,48,0.2);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 11px;
+      color: #d63030;
+      margin-bottom: 14px;
+    }
   </style>
 </head>
 <body>
 
-  <header class="main-header">
-    <div class="logo">Super<span>Student</span></div>
-    <div class="header-right">
-      <span class="status-dot"></span>
-      <div class="toggle-group">
-        <button id="btn-student" class="active" onclick="setMode('student')">Student</button>
-        <button id="btn-teacher" onclick="setMode('teacher')">Teacher</button>
+<!-- App mockup background -->
+<div class="app-mockup">
+  <div class="mock-topbar">
+    <div class="mock-logo">Super<em>Student</em></div>
+    <div class="mock-tabs">
+      <div class="mock-tab active">Student</div>
+      <div class="mock-tab">Leerkracht</div>
+    </div>
+    <div class="mock-dot"></div>
+  </div>
+  <div class="mock-body">
+    <div class="mock-sidebar">
+      <div class="mock-course-name">Wiskunde</div>
+      <div class="mock-book-item"><div class="mock-toggle on"></div><div class="mock-book-label">Hoofdstuk 1 — Algebra</div></div>
+      <div class="mock-book-item"><div class="mock-toggle on"></div><div class="mock-book-label">Hoofdstuk 2 — Functies</div></div>
+      <div class="mock-book-item"><div class="mock-toggle"></div><div class="mock-book-label">Oefeningen bundel</div></div>
+      <div class="mock-course-name" style="margin-top:8px;">Fysica</div>
+      <div class="mock-book-item"><div class="mock-toggle"></div><div class="mock-book-label">Krachten en beweging</div></div>
+      <div class="mock-book-item"><div class="mock-toggle"></div><div class="mock-book-label">Thermodynamica</div></div>
+    </div>
+    <div class="mock-chat">
+      <div class="mock-result">
+        <div class="mock-question">Wat is het verschil tussen een functie en een relatie?</div>
+        <div class="mock-answer-label">Antwoord</div>
+        <div class="mock-line" style="width:94%"></div>
+        <div class="mock-line" style="width:81%"></div>
+        <div class="mock-line" style="width:88%"></div>
+        <div class="mock-line" style="width:57%"></div>
+      </div>
+      <div class="mock-result">
+        <div class="mock-question">Hoe los ik een kwadratische vergelijking op?</div>
+        <div class="mock-answer-label">Antwoord</div>
+        <div class="mock-line" style="width:91%"></div>
+        <div class="mock-line" style="width:76%"></div>
+        <div class="mock-line" style="width:84%"></div>
       </div>
     </div>
-  </header>
+  </div>
+  <div class="mock-inputbar"><div class="mock-input"></div></div>
+</div>
 
-  <main class="hero-container">
-    <div class="hero-content">
+<!-- Login card -->
+<div class="login-overlay">
+  <div class="login-card">
 
-      <h1 id="hero-title">Activeer je cursusmateriaal met AI</h1>
+    <div class="card-logo">Super<em>Student</em></div>
+    <div class="card-sub">Activeer je cursusmateriaal met AI</div>
 
-      <form class="login-card" method="POST">
-        <input type="hidden" name="mode" id="mode-input" value="student">
-        <label for="password" id="pw-label">VOER TOEGANGSCODE IN</label>
-        <input type="password" id="password" name="password"
-               placeholder="••••••••" autofocus autocomplete="current-password">
-        <div class="error">{{ error or "" }}</div>
-        <button class="btn-primary" type="submit">Login</button>
-      </form>
+    {% if cb_error %}
+    <div class="cb-error-banner">De bevestigingslink is verlopen of ongeldig. Vraag een nieuwe aan door je opnieuw te registreren.</div>
+    {% endif %}
 
-      <div class="footer-note" id="footer-note">Vraag je leerkracht om het wachtwoord</div>
-
+    <!-- Role tabs (informational, update based on email) -->
+    <div class="tab-group" id="tab-group">
+      <button class="tab active" id="tab-student" tabindex="-1">Student</button>
+      <button class="tab" id="tab-teacher" tabindex="-1">Leerkracht</button>
     </div>
-  </main>
 
-  <script>
-    function setMode(mode) {
-      document.getElementById('btn-student').classList.toggle('active', mode === 'student');
-      document.getElementById('btn-teacher').classList.toggle('active', mode === 'teacher');
-      document.getElementById('mode-input').value = mode;
-      document.getElementById('pw-label').textContent =
-        mode === 'teacher' ? 'LERAARWACHTWOORD' : 'VOER TOEGANGSCODE IN';
-      document.getElementById('footer-note').textContent =
-        mode === 'teacher' ? 'Voer het leraarspasswoord in om toegang te krijgen' : 'Vraag je leerkracht om het wachtwoord';
+    {% if email_auth %}
+
+    <!-- ── Stap 1: E-mailadres ── -->
+    <div id="step-email">
+      <div class="pw-label">E-mailadres</div>
+      <input type="email" id="email-input"
+             placeholder="voornaam.naam@uantwerpen.be"
+             autocomplete="email">
+      <div class="error" id="email-error"></div>
+      <button class="btn-primary" id="btn-verder" type="button" onclick="goToStep2()">Verder →</button>
+      <div class="footer-note">Gebruik je UAntwerpen e-mailadres</div>
+    </div>
+
+    <!-- ── Stap 2a: Nieuw account (registratie) ── -->
+    <div id="step-register" class="step-hidden">
+      <span class="step-badge badge-new">Nieuw account</span>
+      <div class="step-info">Kies een wachtwoord voor je account. Je ontvangt een bevestigingsmail om je adres te verifiëren.</div>
+      <form method="POST" id="form-register">
+        <input type="hidden" name="email" id="reg-email-h">
+        <input type="hidden" name="mode" value="register">
+        <div class="pw-label">Wachtwoord</div>
+        <input type="password" name="password" id="reg-password"
+               placeholder="Minimaal 8 tekens" autocomplete="new-password">
+        <div class="pw-label">Bevestig wachtwoord</div>
+        <input type="password" name="confirm_password"
+               placeholder="Herhaal wachtwoord" autocomplete="new-password">
+        <div class="error" id="reg-error"></div>
+        <button class="btn-primary" type="submit">Account aanmaken</button>
+      </form>
+      <button class="btn-back" type="button" onclick="goBack()">← Terug</button>
+    </div>
+
+    <!-- ── Stap 2b: Terugkerende gebruiker (login) ── -->
+    <div id="step-login" class="step-hidden">
+      <span class="step-badge badge-return">Welkom terug</span>
+      <div class="email-pill" id="login-email-pill"></div>
+      <form method="POST" id="form-login">
+        <input type="hidden" name="email" id="login-email-h">
+        <input type="hidden" name="mode" value="login">
+        <div class="pw-label">Wachtwoord</div>
+        <input type="password" name="password" id="login-password"
+               placeholder="••••••••" autocomplete="current-password">
+        <div class="error" id="login-error"></div>
+        <button class="btn-primary" type="submit">Aanmelden</button>
+      </form>
+      <button class="btn-back" type="button" onclick="goBack()">← Terug</button>
+    </div>
+
+    <!-- ── Stap 3: Verificatie afwachten ── -->
+    <div id="step-verify" class="step-hidden">
+      <div class="verify-wrap">
+        <div class="verify-icon">✉</div>
+        <div class="verify-title">Controleer je inbox</div>
+        <div class="verify-body">
+          Een bevestigingsmail is verstuurd naar
+          <strong id="verify-email-display"></strong>.
+          Klik op de link om je account te activeren — daarna kan je aanmelden.
+        </div>
+        <button class="btn-back" type="button" onclick="goBack()">← Terug naar aanmelden</button>
+      </div>
+    </div>
+
+    {% else %}
+    <!-- Fallback: wachtwoord-gebaseerde login (geen Supabase) -->
+    <form method="POST" style="display:flex;flex-direction:column;">
+      <div class="pw-label">Wachtwoord</div>
+      <input type="password" name="password" placeholder="••••••••" autofocus autocomplete="current-password">
+      <div class="error">{{ error or "" }}</div>
+      <button class="btn-primary" type="submit">Aanmelden</button>
+    </form>
+    {% endif %}
+
+  </div>
+</div>
+
+{% if email_auth %}
+<script>
+  // ── State geïnjecteerd door de server ──
+  const srvEmail  = {{ prefill_email | tojson }};
+  const srvMode   = {{ prefill_mode  | tojson }};
+  const srvError  = {{ (error or '') | tojson }};
+  const srvVerify = {{ 'true' if verify_pending else 'false' }};
+
+  const STEPS = ['email', 'register', 'login', 'verify'];
+
+  function showStep(name) {
+    STEPS.forEach(s => {
+      document.getElementById('step-' + s).classList.toggle('step-hidden', s !== name);
+    });
+  }
+
+  function updateTabs(email) {
+    const tabS = document.getElementById('tab-student');
+    const tabT = document.getElementById('tab-teacher');
+    if (email.includes('student')) {
+      tabS.classList.add('active');
+      tabT.classList.remove('active');
+      tabT.classList.add('tab-disabled');
+      tabT.title = 'Niet beschikbaar voor studenten';
+    } else if (email.includes('uantwerpen')) {
+      tabT.classList.add('active');
+      tabS.classList.remove('active');
+      tabT.classList.remove('tab-disabled');
+      tabT.title = '';
+    } else {
+      tabS.classList.remove('active');
+      tabT.classList.remove('active', 'tab-disabled');
+      tabT.title = '';
     }
-  </script>
+  }
+
+  function gotoLogin(email) {
+    document.getElementById('login-email-h').value    = email;
+    document.getElementById('login-email-pill').textContent = email;
+    showStep('login');
+    setTimeout(() => document.getElementById('login-password').focus(), 80);
+  }
+
+  function gotoRegister(email) {
+    document.getElementById('reg-email-h').value = email;
+    showStep('register');
+    setTimeout(() => document.getElementById('reg-password').focus(), 80);
+  }
+
+  function goBack() {
+    showStep('email');
+    document.getElementById('email-input').focus();
+  }
+
+  async function goToStep2() {
+    const inp   = document.getElementById('email-input');
+    const email = inp.value.trim().toLowerCase();
+    const errEl = document.getElementById('email-error');
+
+    if (!email.includes('uantwerpen')) {
+      errEl.textContent = 'Gebruik je UAntwerpen e-mailadres (@uantwerpen.be).';
+      inp.focus();
+      return;
+    }
+    errEl.textContent = '';
+    updateTabs(email);
+
+    const btn = document.getElementById('btn-verder');
+    btn.textContent = 'Laden…';
+    btn.disabled = true;
+
+    try {
+      const resp = await fetch('/api/auth/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await resp.json();
+      if (data.status === 'existing') {
+        gotoLogin(email);
+      } else {
+        gotoRegister(email);
+      }
+    } catch (_) {
+      // Netwerk-/serverfout: val terug op loginformulier
+      gotoLogin(email);
+    } finally {
+      btn.textContent = 'Verder →';
+      btn.disabled = false;
+    }
+  }
+
+  // Enter-toets op e-mailinvoer
+  document.getElementById('email-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); goToStep2(); }
+  });
+
+  // Tabs bijwerken terwijl de gebruiker typt
+  document.getElementById('email-input').addEventListener('input', function() {
+    updateTabs(this.value.toLowerCase());
+  });
+
+  // Focusstijl voor alle inputs
+  document.querySelectorAll('input[type="email"], input[type="password"]').forEach(inp => {
+    inp.addEventListener('focus', () => {
+      inp.style.borderColor = 'var(--accent)';
+      inp.style.boxShadow   = '0 0 0 3px var(--accent-dim)';
+    });
+    inp.addEventListener('blur', () => {
+      inp.style.borderColor = 'rgba(0,132,255,0.5)';
+      inp.style.boxShadow   = 'none';
+    });
+  });
+
+  // ── Initialisatie op basis van serverstate ──
+  (function init() {
+    if (srvVerify && srvEmail) {
+      document.getElementById('verify-email-display').textContent = srvEmail;
+      updateTabs(srvEmail);
+      showStep('verify');
+    } else if (srvEmail && srvMode) {
+      document.getElementById('email-input').value = srvEmail;
+      updateTabs(srvEmail);
+      if (srvMode === 'register') {
+        gotoRegister(srvEmail);
+        if (srvError) document.getElementById('reg-error').textContent = srvError;
+      } else {
+        gotoLogin(srvEmail);
+        if (srvError) document.getElementById('login-error').textContent = srvError;
+      }
+    } else {
+      showStep('email');
+      document.getElementById('email-input').focus();
+    }
+  })();
+</script>
+{% endif %}
 
 </body>
 </html>

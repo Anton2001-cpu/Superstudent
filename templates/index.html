@@ -7,45 +7,53 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* ── Tokens ── */
+    /* ── Tokens — GuardBase palette ── */
     :root {
-      --bg:           #f9f9fb;
+      --bg:           #f2f2f2;
       --card:         #ffffff;
-      --sidebar:      #efefef;
-      --border:       rgba(0,0,0,0.07);
-      --border-2:     rgba(0,0,0,0.13);
-      --text:         #1a1a1a;
-      --text-2:       #5c5c5c;
-      --text-3:       #8a8a8a;
-      --blue:         #1e3a8a;
-      --blue-h:       #162d6e;
-      --blue-dim:     rgba(30,58,138,0.09);
+      --sidebar:      #f2f2f2;
+      --border:       rgba(104,126,140,0.28);
+      --border-2:     rgba(104,126,140,0.42);
+      --text:         #0e1826;
+      --text-2:       #2e4959;
+      --text-3:       #687e8c;
+      --blue:         #0084ff;
+      --blue-h:       #006bcc;
+      --blue-dim:     rgba(0,132,255,0.12);
+      --accent:       #0084ff;
+      --accent-dim:   rgba(0,132,255,0.12);
       --red:          #d63030;
       --green:        #248a40;
-      --header:       rgba(249,249,251,0.92);
-      --ua-blue:      #1e3a8a;
-      --ua-blue-dim:  rgba(30,58,138,0.09);
-      --toggle-on:    #1e3a8a;
-      --accent-grad:  linear-gradient(20deg, #1e3a8a 75%, #fb923c 92%, #1e3a8a 100%);
+      --header:       rgba(255,255,255,0.94);
+      --ua-blue:      #2e4959;
+      --ua-blue-dim:  rgba(46,73,89,0.10);
+      --toggle-on:    #0084ff;
+      --gb-mid:       #2e4959;
+      --gb-muted:     #687e8c;
+      --accent-grad:  linear-gradient(135deg, #2e4959, #687e8c);
     }
 
     [data-theme="dark"] {
-      --bg:           #1c1c1e;
-      --card:         #2c2c2e;
-      --sidebar:      #242426;
-      --border:       rgba(255,255,255,0.1);
-      --border-2:     rgba(255,255,255,0.18);
-      --text:         #f5f5f7;
-      --text-2:       #aeaeb2;
-      --text-3:       #6e6e73;
-      --blue:         #1e3a8a;
-      --blue-h:       #162d6e;
-      --blue-dim:     rgba(30,58,138,0.18);
-      --red:          #ff453a;
-      --green:        #30d158;
-      --header:       rgba(28,28,30,0.85);
-      --toggle-on:    #1e3a8a;
-      --accent-grad:  linear-gradient(20deg, #1e3a8a 75%, #fb923c 92%, #1e3a8a 100%);
+      --bg:           #1a1a1a;
+      --card:         #242424;
+      --sidebar:      #1a1a1a;
+      --border:       rgba(255,255,255,0.08);
+      --border-2:     rgba(255,255,255,0.14);
+      --text:         #f5f5f5;
+      --text-2:       #b0b0b0;
+      --text-3:       #6e6e6e;
+      --blue:         #a0a0a0;
+      --blue-h:       #c0c0c0;
+      --blue-dim:     rgba(160,160,160,0.10);
+      --red:          #e05252;
+      --green:        #3da85f;
+      --header:       #1a1a1a;
+      --accent:       #0084ff;
+      --accent-dim:   rgba(0,132,255,0.15);
+      --toggle-on:    #0084ff;
+      --gb-mid:       #707070;
+      --gb-muted:     #909090;
+      --accent-grad:  #707070;
     }
 
     html, body {
@@ -81,6 +89,7 @@
     .status-dot {
       width: 7px; height: 7px;
       border-radius: 50%;
+      margin: 0 5px;
       background: #34c759;
       box-shadow: 0 0 0 2px rgba(52,199,89,0.25);
       transition: background 0.4s, box-shadow 0.4s;
@@ -98,59 +107,60 @@
       z-index: 200;
       display: flex;
       align-items: center;
-      gap: 2px;
-      background: rgba(120,120,128,0.13);
-      backdrop-filter: blur(28px) saturate(180%);
-      -webkit-backdrop-filter: blur(28px) saturate(180%);
-      border: 1px solid rgba(255,255,255,0.18);
+      gap: 6px;
+      background: var(--card);
+      border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 4px 5px;
-      box-shadow: 0 2px 16px rgba(0,0,0,0.10);
+      padding: 5px 8px;
+      box-shadow: 0 2px 12px rgba(1,35,64,0.07);
     }
     .top-right-bar .divider {
-      width: 1px; height: 16px;
-      background: rgba(128,128,128,0.25);
-      margin: 0 3px; flex-shrink: 0;
+      width: 1px; height: 14px;
+      background: var(--border-2);
+      flex-shrink: 0;
     }
     .tab-group {
       display: flex;
+      background: var(--bg);
       border-radius: 9px;
-      padding: 2px;
-      background: rgba(128,128,128,0.10);
+      padding: 3px;
+      gap: 2px;
     }
     .tab {
       font-family: inherit;
       font-size: 12px;
       font-weight: 500;
-      padding: 4px 13px;
+      padding: 4px 14px;
       border: none;
-      border-radius: 8px;
+      border-radius: 7px;
       cursor: pointer;
       background: transparent;
-      color: var(--text-2);
+      color: var(--text-3);
       transition: all 0.18s ease;
     }
+    .tab:hover { color: var(--text-2); }
     .tab.active {
-      background: rgba(255,255,255,0.22);
-      color: var(--text);
-      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+      background: var(--card);
+      color: var(--gb-mid);
+      font-weight: 600;
+      box-shadow: 0 1px 4px rgba(46,73,89,0.12), 0 0 0 1px rgba(46,73,89,0.08);
     }
 
     /* Dark mode toggle */
     .dark-btn {
-      width: 28px;
-      height: 28px;
+      width: 26px;
+      height: 26px;
       display: flex;
       align-items: center;
       justify-content: center;
       border: none;
-      border-radius: 8px;
+      border-radius: 7px;
       background: transparent;
-      color: var(--text-2);
+      color: var(--text-3);
       cursor: pointer;
       transition: all 0.15s;
     }
-    .dark-btn:hover { background: rgba(255,255,255,0.15); color: var(--text); }
+    .dark-btn:hover { background: var(--bg); color: var(--text-2); }
 
     /* ── Views ── */
     .view { display: none; flex: 1; overflow: hidden; }
@@ -160,36 +170,15 @@
     .sidebar {
       width: 220px;
       flex-shrink: 0;
-      background: rgba(245,245,247,0.52);
-      backdrop-filter: blur(48px) saturate(200%) brightness(1.04);
-      -webkit-backdrop-filter: blur(48px) saturate(200%) brightness(1.04);
-      border-right: 1px solid rgba(255,255,255,0.75);
-      box-shadow: 2px 0 32px rgba(0,0,0,0.06), inset -1px 0 0 rgba(255,255,255,0.6);
+      background: var(--sidebar);
+      border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
       overflow: hidden;
     }
     [data-theme="dark"] .sidebar {
-      background: rgba(22,22,24,0.62);
-      backdrop-filter: blur(48px) saturate(180%);
-      -webkit-backdrop-filter: blur(48px) saturate(180%);
-      border-right: 1px solid rgba(255,255,255,0.08);
-      box-shadow: 2px 0 32px rgba(0,0,0,0.28), inset -1px 0 0 rgba(255,255,255,0.05);
-    }
-    .sidebar-head {
-      padding: 13px 14px 10px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-shrink: 0;
-    }
-    .sidebar-label {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-3);
+      background: var(--sidebar);
+      border-right: 1px solid var(--border);
     }
     .sidebar-search {
       padding: 7px 10px 6px;
@@ -200,19 +189,17 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      background: rgba(255,255,255,0.55);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,0.7);
+      background: var(--card);
+      border: 1px solid rgba(104,126,140,0.25);
       border-radius: 20px;
       padding: 5px 10px;
-      transition: border-color 0.15s, box-shadow 0.15s;
+      transition: border-color 0.15s;
     }
     [data-theme="dark"] .sidebar-search-wrap {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.1);
+      background: var(--card);
+      border: 1px solid var(--border-2);
     }
-    .sidebar-search-wrap:focus-within { border-color: var(--blue); }
+    .sidebar-search-wrap:focus-within { border-color: var(--accent); }
     .sidebar-search-icon { color: var(--text-3); flex-shrink: 0; display: flex; }
     .sidebar-search-input {
       flex: 1;
@@ -267,67 +254,59 @@
       cursor: pointer;
       padding: 0;
     }
+    .course-lock-icon {
+      font-size: 10px;
+      opacity: 0.55;
+      margin-left: 3px;
+      flex-shrink: 0;
+    }
+    .course-lock-icon.is-unlocked { opacity: 0.25; }
     .book-item {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 5px 14px 5px 18px;
+      padding: 6px 14px 6px 16px;
       cursor: pointer;
-      transition: background 0.1s;
+      border-left: 2.5px solid transparent;
+      transition: background 0.15s, border-color 0.15s;
       overflow: hidden;
     }
-    .book-item:hover { background: var(--bg); }
+    .book-item:hover { background: rgba(46,73,89,0.05); }
     .book-item input[type="checkbox"] { display: none; }
 
-    /* Toggle switch */
+    /* Dot indicator replaces toggle */
     .toggle {
-      width: 34px;
-      height: 20px;
-      background: var(--border-2);
-      border-radius: 10px;
-      position: relative;
-      flex-shrink: 0;
-      transition: background 0.22s;
-      margin-top: 1px;
-    }
-    .toggle::after {
-      content: '';
-      position: absolute;
-      width: 16px; height: 16px;
-      background: white;
+      width: 6px; height: 6px;
       border-radius: 50%;
-      top: 2px; left: 2px;
-      transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1);
-      box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+      background: var(--border-2);
+      flex-shrink: 0;
+      transition: background 0.2s;
     }
-    .book-item input:checked ~ .toggle { background: var(--toggle-on); }
-    .book-item input:checked ~ .toggle::after { transform: translateX(14px); }
+    .book-item input:checked ~ .toggle {
+      background: var(--accent);
+    }
+    .book-item:has(input:checked) {
+      background: var(--accent-dim);
+    }
+    .book-item:has(input:checked):hover {
+      background: rgba(0,132,255,0.16);
+    }
     .book-label {
       font-size: 12px;
-      color: var(--text);
+      color: var(--text-3);
       line-height: 1.4;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       min-width: 0;
       flex: 1;
+      transition: color 0.15s;
+    }
+    .book-item:has(input:checked) .book-label {
+      color: var(--text);
+      font-weight: 500;
     }
 
-    .sb-collapse-btn {
-      width: 26px;
-      height: 26px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px solid var(--border-2);
-      border-radius: 10px;
-      background: transparent;
-      color: var(--text-2);
-      cursor: pointer;
-      transition: all 0.12s;
-      flex-shrink: 0;
-    }
-    .sb-collapse-btn:hover { background: var(--bg); color: var(--text); }
 
     /* Sidebar slides in/out without reflowing Q&A text */
     #view-student { position: relative; overflow: hidden; }
@@ -338,30 +317,12 @@
       width: 260px;
       transform: translateX(0);
       transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 4px 0 32px rgba(0,0,0,0.07), 1px 0 0 rgba(255,255,255,0.6);
+      border-right: 1px solid var(--border);
     }
     #book-sidebar.collapsed {
       transform: translateX(-100%);
       box-shadow: none;
     }
-    .sb-expand-btn {
-      display: none;
-      align-items: center;
-      justify-content: center;
-      position: absolute;
-      left: 10px; top: 12px;
-      z-index: 10;
-      width: 30px; height: 30px;
-      border: 1px solid var(--border-2);
-      border-radius: 10px;
-      background: var(--card);
-      color: var(--text-2);
-      cursor: pointer;
-      transition: all 0.12s;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    .sb-expand-btn:hover { color: var(--text); }
-    .sb-expand-btn.visible { display: flex; }
 
     /* ── Student: Q&A panel ── */
     .qa-panel {
@@ -378,6 +339,7 @@
       display: flex;
       flex-direction: column;
       gap: 0;
+      background: var(--card);
       transition: padding-left 0.26s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .qa-history::-webkit-scrollbar { width: 4px; }
@@ -395,7 +357,7 @@
       padding: 40px;
     }
     .qa-empty-title { font-size: 14px; font-weight: 500; color: var(--text-2); }
-    .qa-empty-sub { font-size: 14px; color: var(--text-3); max-width: 300px; line-height: 1.55; }
+    .qa-empty-sub { font-size: 13px; color: rgba(104,126,140,0.75); max-width: 320px; line-height: 1.55; }
     .suggestion-chip {
       margin-top: 8px;
       padding: 7px 14px;
@@ -411,22 +373,17 @@
 
     /* Result block */
     .result-block {
-      padding: 20px 24px;
-      background: rgba(255,255,255,0.72);
-      backdrop-filter: blur(24px) saturate(160%);
-      -webkit-backdrop-filter: blur(24px) saturate(160%);
-      border: 1px solid rgba(255,255,255,0.7);
-      border-radius: 18px;
-      box-shadow: 0 2px 16px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+      padding: 20px 0;
+      background: transparent;
+      border: none;
     }
     [data-theme="dark"] .result-block {
-      background: rgba(44,44,46,0.68);
-      border: 1px solid rgba(255,255,255,0.08);
-      box-shadow: 0 2px 16px rgba(0,0,0,0.22), 0 1px 3px rgba(0,0,0,0.14);
+      background: transparent;
+      border: none;
     }
 
     .result-question {
-      font-size: 15px;
+      font-size: 12px;
       font-weight: 500;
       color: var(--text);
       line-height: 1.4;
@@ -442,7 +399,7 @@
       margin-bottom: 8px;
     }
     .result-answer {
-      font-size: 14px;
+      font-size: 12px;
       color: var(--text);
       line-height: 1.65;
       margin-bottom: 20px;
@@ -610,11 +567,8 @@
     /* Input bar — slides with sidebar */
     .qa-input-bar {
       padding: 8px 44px 8px 280px; /* 260px sidebar + 20px gap */
-      border-top: 1px solid rgba(255,255,255,0.45);
-      background: rgba(255,255,255,0.65);
-      backdrop-filter: blur(28px) saturate(180%);
-      -webkit-backdrop-filter: blur(28px) saturate(180%);
-      box-shadow: 0 -1px 20px rgba(0,0,0,0.04);
+      border-top: 1px solid var(--border);
+      background: var(--card);
       display: flex;
       gap: 8px;
       align-items: center;
@@ -624,35 +578,29 @@
     #view-student.sb-closed .qa-input-bar { padding-left: 44px; }
     #view-student.sb-closed .qa-history { padding-left: 44px; }
     [data-theme="dark"] .qa-input-bar {
-      background: rgba(28,28,30,0.75);
-      border-top: 1px solid rgba(255,255,255,0.07);
-      box-shadow: 0 -1px 20px rgba(0,0,0,0.18);
+      background: var(--card);
+      border-top: 1px solid var(--border);
     }
     [data-theme="dark"] .extra-body {
-      background: rgba(36,36,38,0.72);
-      border: 1px solid rgba(255,255,255,0.07);
+      background: var(--card);
+      border: 1px solid var(--border);
     }
     .qa-input-wrap {
       flex: 1;
       display: flex;
       align-items: center;
-      background: rgba(255,255,255,0.68);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,0.7);
+      background: var(--card);
+      border: 1px solid rgba(0,132,255,0.5);
       border-radius: 24px;
       padding: 4px 4px 4px 18px;
-      box-shadow: 0 1px 8px rgba(0,0,0,0.06);
-      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+      transition: border-color 0.15s;
     }
     [data-theme="dark"] .qa-input-wrap {
-      background: rgba(44,44,46,0.72);
-      border: 1px solid rgba(255,255,255,0.09);
+      background: var(--card);
+      border: 1px solid var(--border-2);
     }
-    .qa-input-wrap:focus-within {
-      border-color: var(--blue);
-      box-shadow: 0 0 0 3px var(--blue-dim);
-    }
+    .qa-input-wrap:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+    .qa-input-wrap:focus-within .btn-ask { border-color: var(--accent); color: var(--accent); }
     .qa-input {
       flex: 1;
       font-family: inherit;
@@ -671,25 +619,28 @@
       width: 30px;
       height: 30px;
       padding: 0;
-      background: var(--blue);
-      color: white;
-      border: none;
+      background: transparent;
+      color: var(--gb-muted);
+      border: 1.5px solid var(--border-2);
       border-radius: 50%;
       cursor: pointer;
       flex-shrink: 0;
-      transition: background 0.15s;
+      transition: all 0.15s;
     }
-    .btn-ask:hover { background: var(--blue-h); }
-    .btn-ask:disabled { opacity: 0.4; cursor: default; }
+    .btn-ask:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-ask:active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .btn-ask:disabled { opacity: 0.35; cursor: default; }
 
     /* ── Teacher: top course tabs ── */
     .t-topbar {
       padding: 10px 64px;
-      background: rgba(255,255,255,0.68);
-      backdrop-filter: blur(28px) saturate(180%);
-      -webkit-backdrop-filter: blur(28px) saturate(180%);
-      border-bottom: 1px solid rgba(255,255,255,0.5);
-      box-shadow: 0 1px 16px rgba(0,0,0,0.05);
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 1px 8px rgba(1,35,64,0.04);
       display: flex;
       align-items: center;
       gap: 8px;
@@ -697,9 +648,8 @@
       flex-shrink: 0;
     }
     [data-theme="dark"] .t-topbar {
-      background: rgba(28,28,30,0.72);
-      border-bottom: 1px solid rgba(255,255,255,0.07);
-      box-shadow: 0 1px 16px rgba(0,0,0,0.2);
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
     }
     .t-course-tabs { display: flex; flex-wrap: wrap; gap: 5px; flex: 1; }
     .course-tab {
@@ -722,12 +672,17 @@
       justify-content: center;
       text-align: center;
     }
-    .course-tab:hover { border-color: var(--blue); color: var(--text); }
-    .course-tab.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .course-tab:hover { border-color: var(--accent); color: var(--text); }
+    .course-tab.active {
+      background: transparent;
+      border: 1.5px solid var(--accent);
+      color: var(--accent);
+      font-weight: 600;
+    }
     .course-tab.dragging { opacity: 0.4; }
-    .course-tab.drag-target { border-color: var(--blue); border-style: dashed; }
+    .course-tab.drag-target { border-color: var(--accent); border-style: dashed; }
     .drag-handle {
-      display: inline-block;
+      display: none;
       cursor: grab;
       color: var(--text-3);
       font-size: 10px;
@@ -735,8 +690,8 @@
       user-select: none;
       opacity: 0.5;
     }
+    .course-tab:hover .drag-handle { display: inline-block; }
     .drag-handle:active { cursor: grabbing; }
-    .course-tab.active .drag-handle { color: rgba(255,255,255,0.7); }
 
     /* Create form */
     .create-form {
@@ -750,8 +705,8 @@
       align-items: center;
     }
     [data-theme="dark"] .create-form {
-      background: rgba(32,32,34,0.72);
-      border-bottom: 1px solid rgba(255,255,255,0.07);
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
     }
     .create-form.open { display: flex; }
     .create-input {
@@ -767,17 +722,23 @@
       color: var(--text);
       transition: border-color 0.15s;
     }
-    .create-input:focus { border-color: var(--blue); background: var(--card); }
+    .create-input { border: 1px solid rgba(104,126,140,0.25); }
+    .create-input:focus { border-color: var(--accent); background: var(--card); }
     .btn-add {
       font-family: inherit;
       font-size: 13px;
       font-weight: 500;
       padding: 7px 16px;
-      background: linear-gradient(var(--card), var(--card)) padding-box, var(--accent-grad) border-box;
-      color: var(--blue);
-      border: 1.5px solid transparent;
+      background: transparent;
+      color: var(--accent);
+      border: 1.5px solid var(--accent);
       border-radius: 10px;
       cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-add:active {
+      background: var(--accent);
+      color: #fff;
     }
     .btn-cancel-sm {
       font-family: inherit;
@@ -786,9 +747,11 @@
       background: transparent;
       border: 1px solid var(--border-2);
       border-radius: 10px;
-      color: var(--text-2);
+      color: var(--text-3);
       cursor: pointer;
+      transition: all 0.12s;
     }
+    .btn-cancel-sm:hover { border-color: var(--gb-muted); color: var(--text-2); }
     .btn-new-course {
       font-family: inherit;
       font-size: 13px;
@@ -797,13 +760,18 @@
       background: transparent;
       border: 1px solid var(--border-2);
       border-radius: 10px;
-      color: var(--text-2);
+      color: var(--text-3);
       cursor: pointer;
-      transition: all 0.12s;
+      transition: all 0.15s;
       white-space: nowrap;
       flex-shrink: 0;
     }
-    .btn-new-course:hover { border-color: var(--blue); color: var(--blue); }
+    .btn-new-course:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-new-course:active {
+      background: var(--accent-dim);
+      border: 1.5px solid var(--accent);
+      color: var(--accent);
+    }
     #btn-delete-course:hover { border-color: var(--red); color: var(--red); }
 
     /* ── Teacher: detail area ── */
@@ -846,8 +814,8 @@
       flex-shrink: 0;
     }
     [data-theme="dark"] .detail-head {
-      background: rgba(28,28,30,0.72);
-      border-bottom: 1px solid rgba(255,255,255,0.07);
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
     }
     .detail-course-name {
       font-size: 15px;
@@ -876,9 +844,8 @@
       box-shadow: 0 2px 16px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
     }
     [data-theme="dark"] .t-card {
-      background: rgba(44,44,46,0.68);
-      border: 1px solid rgba(255,255,255,0.08);
-      box-shadow: 0 2px 16px rgba(0,0,0,0.22), 0 1px 3px rgba(0,0,0,0.14);
+      background: var(--card);
+      border: 1px solid var(--border);
     }
     .t-card-head {
       padding: 10px 16px;
@@ -911,15 +878,15 @@
       font-size: 13px;
       font-weight: 500;
       padding: 7px 16px;
-      background: linear-gradient(var(--card), var(--card)) padding-box, var(--accent-grad) border-box;
-      color: var(--blue);
-      border: 1.5px solid transparent;
+      background: transparent;
+      color: var(--accent);
+      border: 1.5px solid var(--accent);
       border-radius: 10px;
       cursor: pointer;
       white-space: nowrap;
-      transition: background 0.15s;
+      transition: all 0.15s;
     }
-    .btn-search:hover { background: linear-gradient(var(--blue-dim), var(--blue-dim)) padding-box, var(--accent-grad) border-box; }
+    .btn-search:hover { background: var(--accent-dim); }
     .search-results { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
     .sr-item {
       background: var(--bg);
@@ -953,7 +920,7 @@
     [data-theme="dark"] .drop-zone {
       background: rgba(36,36,38,0.55);
     }
-    .drop-zone:hover, .drop-zone.over { border-color: var(--blue); background: var(--blue-dim); border-style: dashed; }
+    .drop-zone:hover, .drop-zone.over { border-color: var(--accent); background: var(--accent-dim); border-style: dashed; }
 
     /* ── Skeleton loader ── */
     @keyframes skel-shimmer {
@@ -1063,31 +1030,35 @@
       transition: border-color 0.15s;
       margin-bottom: 8px;
     }
-    .modal-field:focus { border-color: var(--blue); }
+    .modal-field:focus { border-color: var(--accent); }
     .pw-error { font-size: 12px; color: var(--red); min-height: 18px; margin-bottom: 12px; }
     .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
     .btn-cancel {
       font-family: inherit;
       font-size: 13px;
       padding: 7px 16px;
-      background: var(--bg);
+      background: transparent;
       border: 1px solid var(--border-2);
       border-radius: 12px;
       cursor: pointer;
-      color: var(--text);
+      color: var(--text-3);
+      transition: all 0.15s;
     }
+    .btn-cancel:hover { border-color: var(--gb-muted); color: var(--text-2); }
     .btn-confirm {
       font-family: inherit;
       font-size: 13px;
       font-weight: 500;
       padding: 7px 16px;
-      background: linear-gradient(var(--card), var(--card)) padding-box, var(--accent-grad) border-box;
-      color: var(--blue);
-      border: 1.5px solid transparent;
+      background: transparent;
+      color: var(--accent);
+      border: 1.5px solid var(--accent);
       border-radius: 12px;
       cursor: pointer;
+      transition: all 0.15s;
     }
-    .btn-confirm:hover { background: linear-gradient(var(--blue-dim), var(--blue-dim)) padding-box, var(--accent-grad) border-box; }
+    .btn-confirm:hover { background: var(--accent-dim); }
+    .btn-confirm:active { background: var(--accent); color: #fff; }
 
     /* Language toggle */
     .lang-btn {
@@ -1097,17 +1068,17 @@
       align-items: center;
       justify-content: center;
       border: none;
-      border-radius: 13px;
+      border-radius: 7px;
       background: transparent;
       color: var(--text-2);
       cursor: pointer;
       transition: all 0.15s;
       font-family: inherit;
       font-size: 11px;
-      font-weight: 700;
+      font-weight: 600;
       letter-spacing: 0.03em;
     }
-    .lang-btn:hover { background: rgba(255,255,255,0.15); color: var(--text); }
+    .lang-btn:hover { background: var(--bg); color: var(--text); }
 
     /* File item extended */
     .f-meta { font-size: 10px; color: var(--text-3); white-space: nowrap; flex-shrink: 0; }
@@ -1123,21 +1094,21 @@
     }
     .f-drag-handle:active { cursor: grabbing; }
     .f-item.dragging { opacity: 0.4; }
-    .f-item.drag-target { border-top: 2px solid var(--blue); }
+    .f-item.drag-target { border-top: 2px solid var(--accent); }
     .btn-rename {
       font-family: inherit;
       font-size: 12px;
       padding: 3px 8px;
       background: transparent;
-      color: var(--blue);
-      border: 1px solid rgba(0,113,227,0.3);
+      color: var(--accent);
+      border: 1px solid rgba(0,132,255,0.3);
       border-radius: 10px;
       cursor: pointer;
       transition: background 0.12s;
       white-space: nowrap;
       flex-shrink: 0;
     }
-    .btn-rename:hover { background: var(--blue-dim); }
+    .btn-rename:hover { background: var(--accent-dim); }
     .btn-rename-action {
       font-family: inherit;
       font-size: 12px;
@@ -1291,8 +1262,8 @@
 
     /* ── Pomodoro ── */
     .pomodoro-btn {
-      width: 28px;
-      height: 28px;
+      width: 26px;
+      height: 26px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1303,8 +1274,8 @@
       cursor: pointer;
       transition: all 0.15s;
     }
-    .pomodoro-btn:hover { background: rgba(255,255,255,0.15); color: var(--text); }
-    .pomodoro-btn.active { color: var(--blue); background: rgba(10,132,255,0.18); }
+    .pomodoro-btn:hover { background: var(--bg); color: var(--text-2); }
+    .pomodoro-btn.active { color: var(--gb-mid); background: var(--blue-dim); }
 
     .pomodoro-panel {
       position: fixed;
@@ -1492,14 +1463,13 @@
     .sidebar-hint {
       margin: 4px 10px 10px;
       padding: 7px 10px;
-      background: var(--blue-dim);
-      border-left: 3px solid var(--blue);
+      background: var(--accent-dim);
+      border-left: 3px solid var(--accent);
       border-radius: 5px;
       font-size: 11px;
-      color: rgba(255,255,255,0.92);
+      color: var(--text-2);
       line-height: 1.5;
     }
-    [data-theme="light"] .sidebar-hint { color: var(--text); }
 
     /* ── Onboarding Tour ── */
     #tour-overlay { display: none; position: fixed; inset: 0; z-index: 9989; pointer-events: none; }
@@ -1619,6 +1589,7 @@
 
 <!-- Top-right bar: tab toggle + utility buttons -->
 <div class="top-right-bar">
+  <div class="status-dot" id="status-dot" title="Online"></div>
   <div class="tab-group">
     <button class="tab active" id="tab-student" onclick="switchView('student', this)" data-i18n="tabStudent">Student</button>
     <button class="tab" id="tab-teacher" onclick="requirePassword(this)" data-i18n="tabTeacher">Teacher</button>
@@ -1628,11 +1599,6 @@
   <button class="pomodoro-btn" id="pomodoro-btn" onclick="togglePomodoroPanel()" title="Pomodoro timer">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
   </button>
-  <button class="dark-btn" onclick="toggleDark()" id="dark-btn" title="Toggle dark mode">
-    <svg id="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-    <svg id="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.93" y1="4.93" x2="7.05" y2="7.05"/><line x1="16.95" y1="16.95" x2="19.07" y2="19.07"/><line x1="4.93" y1="19.07" x2="7.05" y2="16.95"/><line x1="16.95" y1="7.05" x2="19.07" y2="4.93"/></svg>
-  </button>
-  <div class="status-dot" id="status-dot" title="Online"></div>
 </div>
 
 <!-- Password modal -->
@@ -1649,6 +1615,21 @@
   </div>
 </div>
 
+<!-- Course unlock modal (teacher) -->
+<div class="modal-overlay" id="course-unlock-modal" style="display:none">
+  <div class="modal-box">
+    <div class="modal-title">🔒 <span id="course-unlock-modal-name"></span></div>
+    <div style="font-size:12px;color:var(--text-3);margin-bottom:12px;" id="course-unlock-info">Voer het cursuswachtwoord in om wijzigingen te maken.</div>
+    <input class="modal-field" type="password" id="course-unlock-pw" placeholder="Wachtwoord"
+           onkeydown="if(event.key==='Enter') submitCourseUnlock(); if(event.key==='Escape') closeCourseUnlock()">
+    <div class="pw-error" id="course-unlock-err"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeCourseUnlock()" data-i18n="cancel">Annuleer</button>
+      <button class="btn-confirm" id="course-unlock-submit-btn" onclick="submitCourseUnlock()">Ontgrendelen</button>
+    </div>
+  </div>
+</div>
+
 <!-- Mobile sidebar backdrop -->
 <div class="sb-backdrop" id="sb-backdrop" onclick="closeSidebarMobile()"></div>
 
@@ -1658,12 +1639,6 @@
   <!-- Book selector sidebar -->
   <div class="sidebar" id="book-sidebar">
     <div class="sidebar-logo">Super<em>Student</em></div>
-    <div class="sidebar-head">
-      <span class="sidebar-label" data-i18n="studyMaterials">Study materials</span>
-      <button class="sb-collapse-btn" onclick="toggleSidebar()" id="sb-collapse-btn" title="Hide panel">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15,18 9,12 15,6"/></svg>
-      </button>
-    </div>
     <div class="sidebar-search">
       <div class="sidebar-search-wrap">
         <span class="sidebar-search-icon">
@@ -1683,12 +1658,7 @@
 
   <!-- Q&A panel -->
   <div class="qa-panel">
-    <!-- Expand sidebar button, visible when sidebar is collapsed -->
-    <button class="sb-expand-btn" id="sb-expand-btn" onclick="toggleSidebar()" title="Show materials" >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9,18 15,12 9,6"/></svg>
-    </button>
-
-    <div class="qa-history" id="qa-history">
+<div class="qa-history" id="qa-history">
       <div class="qa-empty" id="qa-empty">
         <div class="qa-empty-title" data-i18n="qaEmptyTitle">Ask a question about your courses</div>
         <div class="qa-empty-sub" data-i18n="qaEmptyText">Select books from the left panel, then type your question below. Only the uploaded course materials will be used, no internet, no guessing.</div>
@@ -1725,6 +1695,9 @@
     <!-- Create course inline form -->
     <div class="create-form" id="create-form">
       <input class="create-input" type="text" id="new-course-name" placeholder="Course name"
+             onkeydown="if(event.key==='Enter') createCourse(); if(event.key==='Escape') toggleCreateForm()">
+      <input class="create-input" type="password" id="new-course-pw"
+             placeholder="Wachtwoord (optioneel)" style="max-width:200px"
              onkeydown="if(event.key==='Enter') createCourse(); if(event.key==='Escape') toggleCreateForm()">
       <button class="btn-add" onclick="createCourse()" data-i18n="add">Add</button>
       <button class="btn-cancel-sm" onclick="toggleCreateForm()" data-i18n="cancel">Cancel</button>
@@ -1879,6 +1852,8 @@ const TRANSLATIONS = {
     noCourses: 'Nog geen cursussen.',
     newCourse: '+ Nieuwe cursus',
     deleteCourse: 'Cursus verwijderen',
+    courseUnlocked: 'Cursus ontgrendeld.',
+    courseLockedErr: 'Geen toegang tot deze cursus. Ontgrendel ze eerst.',
     courseNamePlaceholder: 'Cursusnaam',
     noCourseMsg: 'Maak een cursus aan of selecteer er een hierboven.',
     add: 'Toevoegen',
@@ -1963,6 +1938,8 @@ const TRANSLATIONS = {
     noCourses: 'No courses yet.',
     newCourse: '+ New course',
     deleteCourse: 'Delete course',
+    courseUnlocked: 'Course unlocked.',
+    courseLockedErr: 'No access to this course. Unlock it first.',
     courseNamePlaceholder: 'Course name',
     noCourseMsg: 'Create or select a course above to manage it.',
     add: 'Add',
@@ -2040,13 +2017,13 @@ function applyLang(lang) {
 }
 
 function toggleLang() {
-  const unchecked = new Set([...document.querySelectorAll('.book-cb:not(:checked)')].map(cb => cb.dataset.filename));
+  const checked = new Set([...document.querySelectorAll('.book-cb:checked')].map(cb => cb.dataset.filename));
   const next = currentLang === 'NL' ? 'EN' : 'NL';
   localStorage.setItem('lang', next);
   applyLang(next);
   renderBookList();
   document.querySelectorAll('.book-cb').forEach(cb => {
-    if (unchecked.has(cb.dataset.filename)) cb.checked = false;
+    cb.checked = checked.has(cb.dataset.filename);
   });
   // Re-render teacher panel so dynamically built content picks up the new language
   if (document.getElementById('view-teacher')?.classList.contains('active')) {
@@ -2065,8 +2042,6 @@ function toggleLang() {
 // ── Dark mode ──────────────────────────────────────────────────────────────
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
-  document.getElementById('icon-moon').style.display = theme === 'dark' ? 'none' : '';
-  document.getElementById('icon-sun').style.display  = theme === 'dark' ? '' : 'none';
 }
 function toggleDark() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -2074,7 +2049,11 @@ function toggleDark() {
   applyTheme(next);
   localStorage.setItem('theme', next);
 }
-applyTheme(localStorage.getItem('theme') || 'light');
+applyTheme('light');
+
+// Pre-set teacher auth from server-side email check
+const _serverIsTeacher = {{ is_teacher }};
+if (_serverIsTeacher) sessionStorage.setItem('tAuth', '1');
 
 // If redirected from login as teacher, skip tour and open teacher view directly
 if (new URLSearchParams(window.location.search).get('teacher') === '1') {
@@ -2305,7 +2284,6 @@ function renderBookList() {
 
   el.innerHTML = displayed.map((c, ci) => `
     <div class="course-group">
-      <div class="sidebar-hint">${(TRANSLATIONS[currentLang]||TRANSLATIONS.EN).sidebarHint}</div>
       <div class="course-group-header">
         <span class="course-group-name" title="${esc(c.name)}">${trunc(c.name)}</span>
       </div>
@@ -2314,13 +2292,22 @@ function renderBookList() {
         const label = f.display_name || filename;
         return `
         <label class="book-item">
-          <input type="checkbox" class="book-cb" data-ci="${ci}" data-filename="${esc(filename)}" checked>
+          <input type="checkbox" class="book-cb" data-ci="${ci}" data-filename="${esc(filename)}" ${ci === 0 ? 'checked' : ''}>
           <div class="toggle"></div>
           <span class="book-label" title="${esc(label)}">${trunc(label)}</span>
         </label>`;
       }).join('')}
     </div>
   `).join('');
+
+  document.querySelectorAll('.book-cb').forEach(cb => {
+    cb.addEventListener('change', () => {
+      if (!cb.checked) return;
+      document.querySelectorAll('.book-cb').forEach(other => {
+        if (other.dataset.ci !== cb.dataset.ci) other.checked = false;
+      });
+    });
+  });
 }
 
 function selectAllBooks(checked) {
@@ -2633,6 +2620,65 @@ function appendResult(question, answer, sources, extra = '') {
 let teacherCourses = [];
 let activeCourse = null;
 
+// ── Course token management (session-only, persists across page refreshes) ─
+function _getCourseTokens() {
+  try { return JSON.parse(sessionStorage.getItem('courseTokens') || '{}'); } catch { return {}; }
+}
+function getCourseToken(courseName) { return _getCourseTokens()[courseName] || ''; }
+function setCourseToken(courseName, token) {
+  const t = _getCourseTokens(); t[courseName] = token;
+  sessionStorage.setItem('courseTokens', JSON.stringify(t));
+}
+function isCourseUnlocked(courseName) { return !!_getCourseTokens()[courseName]; }
+
+// ── Course unlock modal ────────────────────────────────────────────────────
+let _unlockPendingCourse = null;
+
+function openCourseUnlock(courseName) {
+  _unlockPendingCourse = courseName;
+  document.getElementById('course-unlock-modal-name').textContent = courseName;
+  document.getElementById('course-unlock-pw').value = '';
+  document.getElementById('course-unlock-err').textContent = '';
+  document.getElementById('course-unlock-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('course-unlock-pw').focus(), 80);
+}
+
+function closeCourseUnlock() {
+  document.getElementById('course-unlock-modal').style.display = 'none';
+  _unlockPendingCourse = null;
+}
+
+async function submitCourseUnlock() {
+  if (!_unlockPendingCourse) return;
+  const pw = document.getElementById('course-unlock-pw').value;
+  const errEl = document.getElementById('course-unlock-err');
+  const btn = document.getElementById('course-unlock-submit-btn');
+  btn.disabled = true;
+  errEl.textContent = '';
+  try {
+    const res = await apiFetch(`/api/courses/${encodeURIComponent(_unlockPendingCourse)}/unlock`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw }),
+    });
+    const data = await res.json();
+    if (data.token) {
+      const name = _unlockPendingCourse;
+      setCourseToken(name, data.token);
+      closeCourseUnlock();
+      renderTeacherList();
+      showCourseDetail(name);
+      toast((TRANSLATIONS[currentLang] || TRANSLATIONS.EN).courseUnlocked);
+    } else {
+      errEl.textContent = data.error || (currentLang === 'NL' ? 'Onjuist wachtwoord.' : 'Incorrect password.');
+    }
+  } catch {
+    errEl.textContent = currentLang === 'NL' ? 'Fout. Probeer opnieuw.' : 'Error. Please try again.';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 async function loadTeacherCourses() {
   try {
     const r = await apiFetch('/api/courses');
@@ -2643,7 +2689,8 @@ async function loadTeacherCourses() {
     const still = teacherCourses.find(c => c.name === activeCourse);
     if (still) selectCourse(activeCourse); else hideCourseDetail();
   } else if (teacherCourses.length) {
-    selectCourse(teacherCourses[0].name);
+    const firstOpen = teacherCourses.find(c => !c.has_password || isCourseUnlocked(c.name));
+    selectCourse((firstOpen || teacherCourses[0]).name);
   }
 }
 
@@ -2653,13 +2700,18 @@ function renderTeacherList() {
     el.innerHTML = `<span style="font-size:12px; color:var(--text-3);">${(TRANSLATIONS[currentLang] || TRANSLATIONS.EN).noCourses}</span>`;
     return;
   }
-  el.innerHTML = teacherCourses.map(c => `
+  el.innerHTML = teacherCourses.map(c => {
+    const locked = c.has_password && !isCourseUnlocked(c.name);
+    const lockIcon = c.has_password
+      ? `<span class="course-lock-icon${locked ? '' : ' is-unlocked'}" title="${locked ? (currentLang === 'NL' ? 'Beveiligd — klik om te ontgrendelen' : 'Protected — click to unlock') : (currentLang === 'NL' ? 'Ontgrendeld' : 'Unlocked')}">🔒</span>`
+      : '';
+    return `
     <button class="course-tab ${activeCourse === c.name ? 'active' : ''}"
             data-course="${esc(c.name)}"
             onclick="selectCourse(this.dataset.course)">
-      <span class="drag-handle" title="Drag to reorder"><svg width="10" height="14" viewBox="0 0 10 14" fill="none" style="opacity:.4"><circle cx="3" cy="3" r="1.3" fill="currentColor"/><circle cx="7" cy="3" r="1.3" fill="currentColor"/><circle cx="3" cy="7" r="1.3" fill="currentColor"/><circle cx="7" cy="7" r="1.3" fill="currentColor"/><circle cx="3" cy="11" r="1.3" fill="currentColor"/><circle cx="7" cy="11" r="1.3" fill="currentColor"/></svg></span><span title="${esc(c.name)}">${trunc(c.name)}</span>
-    </button>
-  `).join('');
+      <span class="drag-handle" title="Drag to reorder"><svg width="10" height="14" viewBox="0 0 10 14" fill="none" style="opacity:.4"><circle cx="3" cy="3" r="1.3" fill="currentColor"/><circle cx="7" cy="3" r="1.3" fill="currentColor"/><circle cx="3" cy="7" r="1.3" fill="currentColor"/><circle cx="7" cy="7" r="1.3" fill="currentColor"/><circle cx="3" cy="11" r="1.3" fill="currentColor"/><circle cx="7" cy="11" r="1.3" fill="currentColor"/></svg></span><span title="${esc(c.name)}">${trunc(c.name)}</span>${lockIcon}
+    </button>`;
+  }).join('');
   initDragDrop();
 }
 
@@ -2706,9 +2758,18 @@ async function saveOrder(order) {
 }
 
 function selectCourse(name) {
+  const course = teacherCourses.find(c => c.name === name);
+  if (!course) return;
+  if (course.has_password && !isCourseUnlocked(name)) {
+    openCourseUnlock(name);
+    return;
+  }
+  showCourseDetail(name);
+}
+
+function showCourseDetail(name) {
   activeCourse = name;
 
-  // Update active tab without rebuilding the whole list
   document.querySelectorAll('.course-tab').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.course === name);
   });
@@ -2745,7 +2806,7 @@ async function saveWelcome(courseName) {
     const res = await apiFetch(`/api/courses/${encodeURIComponent(courseName)}/welcome`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text, course_token: getCourseToken(courseName) }),
     });
     const data = await res.json();
     if (data.error) { toast(data.error); return; }
@@ -2775,7 +2836,8 @@ async function showStats() {
   card.style.display = '';
   body.innerHTML = `<div style="font-size:12px;color:var(--text-3);">${t.loading}</div>`;
   try {
-    const res = await apiFetch('/api/stats');
+    const url = activeCourse ? `/api/stats?course=${encodeURIComponent(activeCourse)}` : '/api/stats';
+    const res = await apiFetch(url);
     const data = await res.json();
     if (data.error) { body.innerHTML = `<div style="color:var(--red);font-size:12px;">${esc(data.error)}</div>`; return; }
     if (data.total === 0) { body.innerHTML = `<div style="font-size:12px;color:var(--text-3);">${t.noStats}</div>`; return; }
@@ -2840,7 +2902,7 @@ function _renderStats(data, period) {
     return `<div style="flex:1;text-align:center;font-size:8px;color:var(--text-3);white-space:nowrap;overflow:hidden;">${label}</div>`;
   }).join('');
 
-  const periodBtn = (p, label) => `<button onclick="_renderStats(_statsData,'${p}')" style="font-family:inherit;font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;border:1px solid ${p===period?'var(--blue)':'var(--border-2)'};background:${p===period?'var(--blue)':'transparent'};color:${p===period?'white':'var(--text-2)'};cursor:pointer;">${label}</button>`;
+  const periodBtn = (p, label) => `<button onclick="_statsPeriod='${p}';showStats()" style="font-family:inherit;font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;border:1px solid ${p===period?'var(--blue)':'var(--border-2)'};background:${p===period?'var(--blue)':'transparent'};color:${p===period?'white':'var(--text-2)'};cursor:pointer;">${label}</button>`;
 
   const kpi = (val, lbl, color='') => `
     <div style="text-align:center;">
@@ -2989,7 +3051,7 @@ async function doRename(filename, displayName, cleanup) {
     const res = await apiFetch('/api/file-meta/rename', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ course: activeCourse, filename, display_name: displayName }),
+      body: JSON.stringify({ course: activeCourse, filename, display_name: displayName, course_token: getCourseToken(activeCourse) }),
     });
     const data = await res.json();
     if (data.error) { toast(data.error); cleanup(); return; }
@@ -3037,7 +3099,7 @@ async function saveFileOrder(order) {
   await apiFetch(`/api/courses/${encodeURIComponent(activeCourse)}/files/reorder`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ order }),
+    body: JSON.stringify({ order, course_token: getCourseToken(activeCourse) }),
   });
 }
 
@@ -3047,26 +3109,42 @@ function toggleCreateForm() {
   const open = form.classList.toggle('open');
   if (open) {
     document.getElementById('new-course-name').value = '';
+    document.getElementById('new-course-pw').value = '';
     setTimeout(() => document.getElementById('new-course-name').focus(), 50);
   }
 }
 
 async function createCourse() {
   const name = document.getElementById('new-course-name').value.trim();
+  const password = document.getElementById('new-course-pw').value;
   if (!name) return;
   try {
     const res = await apiFetch('/api/courses', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, password }),
     });
     const data = await res.json();
     if (data.error) { toast(data.error); return; }
+    // If a password was set, immediately store the unlock token so the creator has access
+    if (password) setCourseToken(name, await fetchCourseToken(name, password));
     document.getElementById('create-form').classList.remove('open');
     await loadTeacherCourses();
-    selectCourse(name);
+    showCourseDetail(name);
     toast(currentLang === 'NL' ? `Cursus aangemaakt: ${name}` : `Course created: ${name}`);
   } catch { toast((TRANSLATIONS[currentLang] || TRANSLATIONS.EN).failedCreateCourse); }
+}
+
+async function fetchCourseToken(courseName, password) {
+  try {
+    const res = await apiFetch(`/api/courses/${encodeURIComponent(courseName)}/unlock`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    const data = await res.json();
+    return data.token || '';
+  } catch { return ''; }
 }
 
 async function deleteActiveCourse() {
@@ -3075,7 +3153,9 @@ async function deleteActiveCourse() {
     ? `Cursus "${activeCourse}" en al het materiaal verwijderen?`
     : `Delete course "${activeCourse}" and all its materials?`;
   if (!confirm(_confirmMsg)) return;
-  await apiFetch(`/api/courses/${encodeURIComponent(activeCourse)}`, { method: 'DELETE' });
+  const tok = getCourseToken(activeCourse);
+  const qs = tok ? `?course_token=${encodeURIComponent(tok)}` : '';
+  await apiFetch(`/api/courses/${encodeURIComponent(activeCourse)}${qs}`, { method: 'DELETE' });
   toast((TRANSLATIONS[currentLang] || TRANSLATIONS.EN).courseDeleted);
   hideCourseDetail();
   loadTeacherCourses();
@@ -3087,7 +3167,9 @@ async function deleteFile(course, filename) {
     ? `"${filename}" verwijderen uit ${course}?`
     : `Remove "${filename}" from ${course}?`;
   if (!confirm(_removeMsg)) return;
-  await apiFetch(`/api/courses/${encodeURIComponent(course)}/files/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+  const _delTok = getCourseToken(course);
+  const _delQs = _delTok ? `?course_token=${encodeURIComponent(_delTok)}` : '';
+  await apiFetch(`/api/courses/${encodeURIComponent(course)}/files/${encodeURIComponent(filename)}${_delQs}`, { method: 'DELETE' });
   toast(currentLang === 'NL' ? `Verwijderd: ${filename}` : `Removed: ${filename}`);
   await loadTeacherCourses();
   selectCourse(course);
@@ -3123,6 +3205,8 @@ async function uploadFiles(files) {
     const fd = new FormData();
     fd.append('file', file);
     fd.append('course', activeCourse);
+    const _upTok = getCourseToken(activeCourse);
+    if (_upTok) fd.append('course_token', _upTok);
     try {
       const res = await apiFetch('/api/upload', { method: 'POST', body: fd });
       const data = await res.json();
