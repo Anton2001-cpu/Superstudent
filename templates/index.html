@@ -2046,16 +2046,15 @@ applyTheme('light');
 const _serverIsTeacher = {{ is_teacher }};
 if (_serverIsTeacher) sessionStorage.setItem('tAuth', '1');
 
-// If redirected from login as teacher, show student tour first (if not seen), then open teacher view
+// If redirected from login as teacher: show student tour on first teacher login, then open teacher view
 if (new URLSearchParams(window.location.search).get('teacher') === '1') {
   history.replaceState({}, '', '/');
   sessionStorage.setItem('tAuth', '1');
-  if (localStorage.getItem('tourDone')) {
-    window.addEventListener('DOMContentLoaded', () => {
-      activateTeacher(document.getElementById('tab-teacher'));
-    });
+  if (localStorage.getItem('teacherTourDone')) {
+    setTimeout(() => activateTeacher(document.getElementById('tab-teacher')), 50);
   } else {
     sessionStorage.setItem('openTeacherAfterTour', '1');
+    localStorage.removeItem('tourDone');
   }
 }
 
@@ -2157,7 +2156,7 @@ async function apiFetch(url, opts) {
   const res = await fetch(url, opts);
   if (res.status === 401) { window.location.href = '/login'; return null; }
   // Don't intercept 403 on teacher-login itself — let checkPw handle it
-  if (res.status === 403 && url !== '/api/teacher-login' && url !== '/api/feedback') {
+  if (res.status === 403 && url !== '/api/teacher-login' && url !== '/api/feedback' && !url.includes('/unlock')) {
     sessionStorage.removeItem('tAuth');
     switchView('student', document.getElementById('tab-student'));
     const msg = currentLang === 'NL'
@@ -2756,7 +2755,7 @@ async function saveOrder(order) {
 function selectCourse(name) {
   const course = teacherCourses.find(c => c.name === name);
   if (!course) return;
-  if (course.has_password && !isCourseUnlocked(name)) {
+  if (course.has_password && !isCourseUnlocked(name) && !_serverIsTeacher) {
     openCourseUnlock(name);
     return;
   }
@@ -3554,6 +3553,7 @@ function endTour() {
   document.getElementById('tour-spotlight').classList.remove('visible');
   if (sessionStorage.getItem('openTeacherAfterTour')) {
     sessionStorage.removeItem('openTeacherAfterTour');
+    localStorage.setItem('teacherTourDone', '1');
     activateTeacher(document.getElementById('tab-teacher'));
   }
 }
