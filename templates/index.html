@@ -2762,10 +2762,6 @@ async function saveOrder(order) {
 function selectCourse(name) {
   const course = teacherCourses.find(c => c.name === name);
   if (!course) return;
-  if (course.has_password && !isCourseUnlocked(name) && !_serverIsTeacher) {
-    openCourseUnlock(name);
-    return;
-  }
   showCourseDetail(name);
 }
 
