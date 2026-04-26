@@ -157,9 +157,6 @@ def _check_course_access(course_name: str):
     pw_hash = _get_course_password_hash(course_name)
     if not pw_hash:
         return None
-    # Any authenticated teacher bypasses course password
-    if _is_teacher():
-        return None
     token = _get_course_token_from_request()
     if token and hmac.compare_digest(token, _make_course_token(course_name)):
         return None
