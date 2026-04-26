@@ -2625,12 +2625,12 @@ let activeCourse = null;
 
 // ── Course token management (session-only, persists across page refreshes) ─
 function _getCourseTokens() {
-  try { return JSON.parse(sessionStorage.getItem('courseTokens') || '{}'); } catch { return {}; }
+  try { return JSON.parse(localStorage.getItem('courseTokens') || '{}'); } catch { return {}; }
 }
 function getCourseToken(courseName) { return _getCourseTokens()[courseName] || ''; }
 function setCourseToken(courseName, token) {
   const t = _getCourseTokens(); t[courseName] = token;
-  sessionStorage.setItem('courseTokens', JSON.stringify(t));
+  localStorage.setItem('courseTokens', JSON.stringify(t));
 }
 function isCourseUnlocked(courseName) { return !!_getCourseTokens()[courseName]; }
 
@@ -2706,7 +2706,7 @@ function renderTeacherList() {
   el.innerHTML = teacherCourses.map(c => {
     const locked = c.has_password && !isCourseUnlocked(c.name);
     const lockIcon = c.has_password
-      ? `<span class="course-lock-icon${locked ? '' : ' is-unlocked'}" title="${locked ? (currentLang === 'NL' ? 'Beveiligd — klik om te ontgrendelen' : 'Protected — click to unlock') : (currentLang === 'NL' ? 'Ontgrendeld' : 'Unlocked')}">🔒</span>`
+      ? `<span class="course-lock-icon${locked ? '' : ' is-unlocked'}" title="${locked ? (currentLang === 'NL' ? 'Beveiligd — klik om te ontgrendelen' : 'Protected — click to unlock') : (currentLang === 'NL' ? 'Ontgrendeld' : 'Unlocked')}"><svg width="11" height="13" viewBox="0 0 11 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="5.5" width="9" height="7" rx="1.5"/><path d="M3 5.5V3.5a2.5 2.5 0 0 1 5 0v2"/></svg></span>`
       : '';
     return `
     <button class="course-tab ${activeCourse === c.name ? 'active' : ''}"
