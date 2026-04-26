@@ -2055,14 +2055,17 @@ applyTheme('light');
 const _serverIsTeacher = {{ is_teacher }};
 if (_serverIsTeacher) sessionStorage.setItem('tAuth', '1');
 
-// If redirected from login as teacher, skip tour and open teacher view directly
+// If redirected from login as teacher, show student tour first (if not seen), then open teacher view
 if (new URLSearchParams(window.location.search).get('teacher') === '1') {
   history.replaceState({}, '', '/');
-  localStorage.setItem('tourDone', '1');
-  window.addEventListener('DOMContentLoaded', () => {
-    sessionStorage.setItem('tAuth', '1');
-    activateTeacher(document.getElementById('tab-teacher'));
-  });
+  sessionStorage.setItem('tAuth', '1');
+  if (localStorage.getItem('tourDone')) {
+    window.addEventListener('DOMContentLoaded', () => {
+      activateTeacher(document.getElementById('tab-teacher'));
+    });
+  } else {
+    sessionStorage.setItem('openTeacherAfterTour', '1');
+  }
 }
 
 // ── Toast ──────────────────────────────────────────────────────────────────
@@ -3556,6 +3559,10 @@ function endTour() {
   localStorage.setItem('tourDone', '1');
   document.getElementById('tour-overlay').classList.remove('active');
   document.getElementById('tour-spotlight').classList.remove('visible');
+  if (sessionStorage.getItem('openTeacherAfterTour')) {
+    sessionStorage.removeItem('openTeacherAfterTour');
+    activateTeacher(document.getElementById('tab-teacher'));
+  }
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────
