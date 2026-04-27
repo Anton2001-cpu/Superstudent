@@ -506,7 +506,7 @@ class RAGEngine:
                     return msg["content"]
         return question
 
-    def stream_query(self, question: str, books: list = None, history: list = None):
+    def stream_query(self, question: str, books: list = None, history: list = None, lang: str = "EN"):
         total = self.collection.count()
         if total == 0:
             yield {"type": "token", "text": "I couldn't find anything — no course materials have been uploaded yet. Please ask your teacher."}
@@ -546,11 +546,17 @@ class RAGEngine:
             context_parts.append(f"[{fname} — {loc}]\n{doc[:700]}")
             sources.append({"filename": fname, "location": loc, "preview": meta.get("preview", doc[:500])})
 
+        lang_instruction = "Answer in Dutch." if lang == "NL" else "Answer in English."
+        fallback_phrase = (
+            "Ik kon dit niet vinden in je cursusmateriaal, klik hieronder voor relevante informatie online."
+            if lang == "NL" else
+            "I couldn't find this in your course material, click below to check relevant information online."
+        )
         system_prompt = (
-            "You are a study assistant. Answer in the same language as the question (Dutch if Dutch, English if English). "
+            f"You are a study assistant. {lang_instruction} "
             "Answer using ONLY the course material below. No emojis, no links, no outside knowledge. "
             "Use bullet points for lists. Bold key terms with **term**. Be concise. "
-            "If not found, say exactly: \"I couldn't find this in your course materials. Please ask your teacher.\""
+            f"If not found, say exactly: \"{fallback_phrase}\""
         )
 
         messages = [{"role": "system", "content": system_prompt}]
@@ -573,7 +579,7 @@ class RAGEngine:
                 full_answer += token
                 yield {"type": "token", "text": token}
 
-        no_answer = "couldn't find" in full_answer.lower()
+        no_answer = "couldn't find" in full_answer.lower() or "kon dit niet vinden" in full_answer.lower()
         yield {"type": "done", "sources": [] if no_answer else sources}
 
     # ── Search (teacher) ──────────────────────────────────────────────────

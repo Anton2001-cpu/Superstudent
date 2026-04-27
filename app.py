@@ -942,6 +942,65 @@ def chat():
         return jsonify({"error": "Something went wrong. Please try again.", "detail": str(e)}), 500
 
 
+@app.route("/api/chat/stream", methods=["POST"])
+def chat_stream():
+    from flask import Response as FlaskResponse
+    ip = _client_ip()
+    limited, wait = _is_chat_limited(ip)
+    if limited:
+        mins = (wait + 59) // 60
+        return jsonify({"error": f"RATE_LIMIT:{mins}"}), 429
+
+    data = request.get_json(silent=True) or {}
+    question = (data.get("question") or "").strip()[:MAX_QUESTION_LENGTH]
+    raw_books = data.get("books")
+    if isinstance(raw_books, list):
+        books = [str(b)[:200] for b in raw_books[:50] if isinstance(b, str)] or None
+    else:
+        books = None
+    raw_history = data.get("history") or []
+    history = []
+    if isinstance(raw_history, list):
+        for entry in raw_history[-10:]:
+            if isinstance(entry, dict) and entry.get("role") in ("user", "assistant"):
+                history.append({"role": entry["role"], "content": str(entry.get("content", ""))[:MAX_QUESTION_LENGTH]})
+    lang = data.get("lang", "EN")
+    if lang not in ("NL", "EN"):
+        lang = "EN"
+    if not question:
+        return jsonify({"error": "Question cannot be empty"}), 400
+
+    def generate():
+        try:
+            full_answer = ""
+            sources = []
+            for chunk in get_rag().stream_query(question, books, history, lang=lang):
+                if chunk.get("type") == "token":
+                    full_answer += chunk["text"]
+                elif chunk.get("type") == "done":
+                    sources = chunk.get("sources", [])
+                    # Enrich sources with display_name
+                    file_meta = load_file_meta()
+                    for src in sources:
+                        fname = src.get("filename", "")
+                        for course_meta in file_meta.values():
+                            if isinstance(course_meta, dict) and fname in course_meta:
+                                src["display_name"] = course_meta[fname].get("display_name", fname)
+                                break
+                    no_answer = "couldn't find" in full_answer.lower() or "kon dit niet vinden" in full_answer.lower()
+                    chunk["sources"] = sources
+                    chunk["no_answer"] = no_answer
+                yield f"data: {json.dumps(chunk)}\n\n"
+            _record_chat(ip)
+            log_question(question, books or [])
+        except Exception:
+            log.exception("stream_query failed")
+            yield f"data: {json.dumps({'type': 'error', 'text': 'Something went wrong.'})}\n\n"
+
+    return FlaskResponse(generate(), mimetype="text/event-stream",
+                         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
 @app.route("/api/extra", methods=["POST"])
 def extra_info():
     if not _is_authenticated():

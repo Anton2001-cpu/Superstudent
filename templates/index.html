@@ -2368,13 +2368,16 @@ async function askQuestion() {
   document.getElementById('ask-btn').disabled = true;
   input.disabled = true;
 
+  const csrf = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('csrf_token='))?.split('=')[1] || '';
+
   try {
-    const res = await apiFetch('/api/chat', {
+    const res = await fetch('/api/chat/stream', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
       body: JSON.stringify({ question: q, books, history: chatHistory, lang: currentLang }),
     });
-    if (!res) throw new Error('Not authenticated');
+
+    if (res.status === 401) { window.location.href = '/login'; return; }
     if (res.status === 429) {
       const data = await res.json();
       loading.remove();
@@ -2389,16 +2392,93 @@ async function askQuestion() {
       input.focus();
       return;
     }
-    const data = await res.json();
+
+    // Create streaming result block
     loading.remove();
-    if (data.error) {
-      appendResult(q, data.error, []);
-    } else {
-      appendResult(q, data.answer, data.sources || [], data.extra || '');
-      chatHistory.push({ role: 'user', content: q });
-      chatHistory.push({ role: 'assistant', content: data.answer });
-      if (chatHistory.length > 10) chatHistory.splice(0, 2);
+    const h = document.getElementById('qa-history');
+    const uid = Math.random().toString(36).slice(2, 9);
+    const el = document.createElement('div');
+    el.className = 'result-block';
+    el.innerHTML = `
+      <div class="result-question">${esc(q)}</div>
+      <div class="result-answer-label">${(TRANSLATIONS[currentLang]||TRANSLATIONS.EN).answerLabel}</div>
+      <div class="result-answer streaming-answer" id="ans-${uid}"></div>`;
+    h.appendChild(el);
+    h.scrollTop = h.scrollHeight;
+
+    const answerDiv = document.getElementById(`ans-${uid}`);
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+    let sources = [];
+    let noAnswer = false;
+    let buf = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const chunk = JSON.parse(line.slice(6));
+          if (chunk.type === 'token') {
+            fullText += chunk.text;
+            answerDiv.textContent = fullText;
+            h.scrollTop = h.scrollHeight;
+          } else if (chunk.type === 'done') {
+            sources = chunk.sources || [];
+            noAnswer = chunk.no_answer || false;
+          } else if (chunk.type === 'error') {
+            fullText = chunk.text;
+          }
+        } catch {}
+      }
     }
+
+    // Finalize: render markdown, add sources & actions
+    answerDiv.classList.remove('streaming-answer');
+    answerDiv.innerHTML = md(fullText);
+    _feedbackData[uid] = { question: q, answer: fullText };
+    el.innerHTML = `
+      <div class="result-question">${esc(q)}</div>
+      <div class="result-answer-label">${(TRANSLATIONS[currentLang]||TRANSLATIONS.EN).answerLabel}</div>
+      <div class="result-answer" id="ans-${uid}">${md(fullText)}</div>
+      <div class="result-actions">
+        <button class="btn-copy" onclick="copyAnswer('${uid}')" title="Copy">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+      </div>
+      ${buildExtraHtml(q)}
+      ${buildSourcesHtml(sources, fullText)}`;
+    h.scrollTop = h.scrollHeight;
+
+    chatHistory.push({ role: 'user', content: q });
+    chatHistory.push({ role: 'assistant', content: fullText });
+    if (chatHistory.length > 10) chatHistory.splice(0, 2);
+
+    // If no answer found, auto-fetch online info
+    if (noAnswer) {
+      const extraEl = el.querySelector('.extra-body');
+      if (extraEl) {
+        extraEl.classList.add('open');
+        extraEl.innerHTML = `<div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+        try {
+          const er = await apiFetch('/api/extra', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question: q, lang: currentLang }),
+          });
+          if (er) {
+            const ed = await er.json();
+            extraEl.innerHTML = ed.extra ? md(ed.extra) : '';
+          }
+        } catch { extraEl.innerHTML = ''; }
+      }
+    }
+
   } catch {
     loading.remove();
     appendResult(q, 'Could not connect to the server. Make sure the app is running.', []);
