@@ -124,43 +124,22 @@ def _make_user_token(email: str) -> str:
     return hmac.new(_SECRET.encode(), f"user:{email.lower()}".encode(), hashlib.sha256).hexdigest()
 
 
-def _make_course_token(course_name: str) -> str:
-    return hmac.new(_SECRET.encode(), f"course_unlock:{course_name}".encode(), hashlib.sha256).hexdigest()
-
-
-def _get_course_password_hash(course_name: str) -> str | None:
+def _check_course_ownership(course_name: str):
+    """Returns None if the current teacher owns this course, or a 403 response if not."""
     if not _sb:
         return None
+    email = _get_user_email()
+    if not email:
+        return None
     try:
-        result = _sb.table("courses").select("password_hash").eq("name", course_name).execute()
+        result = _sb.table("courses").select("teacher_id").eq("name", course_name).execute()
         if result.data:
-            return result.data[0].get("password_hash")
+            owner = result.data[0].get("teacher_id")
+            if owner and owner != email:
+                return jsonify({"error": "Je kunt alleen je eigen cursussen bewerken."}), 403
     except Exception:
         pass
     return None
-
-
-def _get_course_token_from_request() -> str:
-    if request.content_type and "application/json" in request.content_type:
-        data = request.get_json(silent=True) or {}
-        tok = str(data.get("course_token") or "")[:128]
-        if tok:
-            return tok
-    tok = request.form.get("course_token", "")[:128]
-    if tok:
-        return tok
-    return request.args.get("course_token", "")[:128]
-
-
-def _check_course_access(course_name: str):
-    """Returns None if OK, or a JSON 403 response tuple when the course is password-locked."""
-    pw_hash = _get_course_password_hash(course_name)
-    if not pw_hash:
-        return None
-    token = _get_course_token_from_request()
-    if token and hmac.compare_digest(token, _make_course_token(course_name)):
-        return None
-    return jsonify({"error": "COURSE_LOCKED"}), 403
 
 
 def _get_user_email() -> str | None:
@@ -686,13 +665,14 @@ def ping():
 def get_courses():
     try:
         rag_courses = {c["name"]: c["files"] for c in get_rag().get_courses()}
+        current_email = _get_user_email()
         if _sb:
-            courses_rows = _sb.table("courses").select("name,password_hash").order("position").execute().data or []
+            courses_rows = _sb.table("courses").select("name,teacher_id").order("position").execute().data or []
             saved = [r["name"] for r in courses_rows]
-            pw_map = {r["name"]: bool(r.get("password_hash")) for r in courses_rows}
+            owner_map = {r["name"]: r.get("teacher_id") for r in courses_rows}
         else:
             saved = load_course_names()
-            pw_map = {}
+            owner_map = {}
         extra = sorted(n for n in rag_courses if n not in saved)
         all_names = saved + extra
         meta = load_file_meta()
@@ -710,7 +690,7 @@ def get_courses():
                 "name": n,
                 "files": files,
                 "welcome": meta.get(n, {}).get("__welcome__", ""),
-                "has_password": pw_map.get(n, False),
+                "is_mine": owner_map.get(n) == current_email,
             })
         return jsonify(result)
     except Exception:
@@ -741,10 +721,8 @@ def create_course():
     if err: return err
     data = request.get_json(silent=True) or {}
     name = (data.get("name") or "").strip()[:MAX_COURSE_NAME_LENGTH]
-    password = (data.get("password") or "").strip()[:256]
     if not name:
         return jsonify({"error": "Course name is required"}), 400
-    password_hash = hmac.new(_SECRET.encode(), password.encode(), hashlib.sha256).hexdigest() if password else None
     try:
         if _sb:
             existing = [r["name"] for r in (_sb.table("courses").select("name").execute().data or [])]
@@ -752,7 +730,7 @@ def create_course():
                 _sb.table("courses").insert({
                     "name": name,
                     "position": len(existing),
-                    "password_hash": password_hash,
+                    "teacher_id": _get_user_email(),
                 }).execute()
         else:
             save_course_name(name)
@@ -762,27 +740,6 @@ def create_course():
         return jsonify({"error": f"Cursus aanmaken mislukt: {e}"}), 500
 
 
-@app.route("/api/courses/<course_name>/unlock", methods=["POST"])
-def unlock_course(course_name):
-    err = require_teacher()
-    if err: return err
-    if not _safe_param(course_name):
-        return jsonify({"error": "Invalid course name"}), 400
-    ip = _client_ip()
-    if _is_rate_limited(ip):
-        return jsonify({"error": "Te veel pogingen. Probeer later opnieuw."}), 429
-    data = request.get_json(silent=True) or {}
-    password = str(data.get("password") or "")[:256]
-    pw_hash = _get_course_password_hash(course_name)
-    if not pw_hash:
-        return jsonify({"error": "Deze cursus heeft geen wachtwoord."}), 400
-    expected = hmac.new(_SECRET.encode(), password.encode(), hashlib.sha256).hexdigest()
-    if not hmac.compare_digest(expected, pw_hash):
-        _record_failure(ip)
-        return jsonify({"error": "Onjuist wachtwoord."}), 403
-    _clear_failures(ip)
-    return jsonify({"token": _make_course_token(course_name)})
-
 
 @app.route("/api/courses/<course_name>", methods=["DELETE"])
 def delete_course(course_name):
@@ -790,7 +747,7 @@ def delete_course(course_name):
     if err: return err
     if not _safe_param(course_name):
         return jsonify({"error": "Invalid course name"}), 400
-    access_err = _check_course_access(course_name)
+    access_err = _check_course_ownership(course_name)
     if access_err: return access_err
     try:
         get_rag().delete_course(course_name)
@@ -807,7 +764,7 @@ def delete_file(course_name, filename):
     if err: return err
     if not _safe_param(course_name) or not _safe_param(filename):
         return jsonify({"error": "Invalid parameters"}), 400
-    access_err = _check_course_access(course_name)
+    access_err = _check_course_ownership(course_name)
     if access_err: return access_err
     try:
         get_rag().delete_file(course_name, filename)
@@ -841,7 +798,7 @@ def upload():
         return jsonify({"error": "No file selected"}), 400
     if not course_name:
         return jsonify({"error": "Course name is required"}), 400
-    access_err = _check_course_access(course_name)
+    access_err = _check_course_ownership(course_name)
     if access_err: return access_err
     if not allowed(file.filename):
         return jsonify({"error": "Only PDF, Word (.docx), and .txt files are supported"}), 400
@@ -1055,7 +1012,7 @@ def rename_file():
     display_name = (data.get("display_name") or "").strip()[:200]
     if not course or not filename or not display_name:
         return jsonify({"error": "course, filename and display_name are required"}), 400
-    access_err = _check_course_access(course)
+    access_err = _check_course_ownership(course)
     if access_err: return access_err
     file_meta = load_file_meta()
     if course not in file_meta or filename not in file_meta[course]:
@@ -1071,7 +1028,7 @@ def rename_file():
 def reorder_files(course_name):
     err = require_teacher()
     if err: return err
-    access_err = _check_course_access(course_name)
+    access_err = _check_course_ownership(course_name)
     if access_err: return access_err
     data = request.get_json(silent=True) or {}
     raw_order = data.get("order") or []
@@ -1183,7 +1140,7 @@ def set_welcome(course):
     if err: return err
     if not _safe_param(course):
         return jsonify({"error": "Invalid course name"}), 400
-    access_err = _check_course_access(course)
+    access_err = _check_course_ownership(course)
     if access_err: return access_err
     data = request.get_json(silent=True) or {}
     text = str(data.get("text") or "")[:2000]

@@ -260,7 +260,6 @@
       margin-left: 3px;
       flex-shrink: 0;
     }
-    .course-lock-icon.is-unlocked { opacity: 0.25; }
     .book-item {
       display: flex;
       align-items: center;
@@ -1606,20 +1605,6 @@
   </div>
 </div>
 
-<!-- Course unlock modal (teacher) -->
-<div class="modal-overlay" id="course-unlock-modal" style="display:none">
-  <div class="modal-box">
-    <div class="modal-title"><svg width="14" height="16" viewBox="0 0 11 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><rect x="1" y="5.5" width="9" height="7" rx="1.5"/><path d="M3 5.5V3.5a2.5 2.5 0 0 1 5 0v2"/></svg><span id="course-unlock-modal-name"></span></div>
-    <div style="font-size:12px;color:var(--text-3);margin-bottom:12px;" id="course-unlock-info">Voer het cursuswachtwoord in om wijzigingen te maken.</div>
-    <input class="modal-field" type="password" id="course-unlock-pw" placeholder="Wachtwoord"
-           onkeydown="if(event.key==='Enter') submitCourseUnlock(); if(event.key==='Escape') closeCourseUnlock()">
-    <div class="pw-error" id="course-unlock-err"></div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeCourseUnlock()" data-i18n="cancel">Annuleer</button>
-      <button class="btn-confirm" id="course-unlock-submit-btn" onclick="submitCourseUnlock()">Ontgrendelen</button>
-    </div>
-  </div>
-</div>
 
 <!-- Mobile sidebar backdrop -->
 <div class="sb-backdrop" id="sb-backdrop" onclick="closeSidebarMobile()"></div>
@@ -1686,9 +1671,6 @@
     <!-- Create course inline form -->
     <div class="create-form" id="create-form">
       <input class="create-input" type="text" id="new-course-name" placeholder="Course name"
-             onkeydown="if(event.key==='Enter') createCourse(); if(event.key==='Escape') toggleCreateForm()">
-      <input class="create-input" type="password" id="new-course-pw"
-             placeholder="Wachtwoord (optioneel)" style="max-width:200px"
              onkeydown="if(event.key==='Enter') createCourse(); if(event.key==='Escape') toggleCreateForm()">
       <button class="btn-add" onclick="createCourse()" data-i18n="add">Add</button>
       <button class="btn-cancel-sm" onclick="toggleCreateForm()" data-i18n="cancel">Cancel</button>
@@ -2700,64 +2682,6 @@ function appendResult(question, answer, sources, extra = '') {
 let teacherCourses = [];
 let activeCourse = null;
 
-// ── Course token management (session-only, persists across page refreshes) ─
-function _getCourseTokens() {
-  try { return JSON.parse(localStorage.getItem('courseTokens') || '{}'); } catch { return {}; }
-}
-function getCourseToken(courseName) { return _getCourseTokens()[courseName] || ''; }
-function setCourseToken(courseName, token) {
-  const t = _getCourseTokens(); t[courseName] = token;
-  localStorage.setItem('courseTokens', JSON.stringify(t));
-}
-function isCourseUnlocked(courseName) { return !!_getCourseTokens()[courseName]; }
-
-// ── Course unlock modal ────────────────────────────────────────────────────
-let _unlockPendingCourse = null;
-
-function openCourseUnlock(courseName) {
-  _unlockPendingCourse = courseName;
-  document.getElementById('course-unlock-modal-name').textContent = courseName;
-  document.getElementById('course-unlock-pw').value = '';
-  document.getElementById('course-unlock-err').textContent = '';
-  document.getElementById('course-unlock-modal').style.display = 'flex';
-  setTimeout(() => document.getElementById('course-unlock-pw').focus(), 80);
-}
-
-function closeCourseUnlock() {
-  document.getElementById('course-unlock-modal').style.display = 'none';
-  _unlockPendingCourse = null;
-}
-
-async function submitCourseUnlock() {
-  if (!_unlockPendingCourse) return;
-  const pw = document.getElementById('course-unlock-pw').value;
-  const errEl = document.getElementById('course-unlock-err');
-  const btn = document.getElementById('course-unlock-submit-btn');
-  btn.disabled = true;
-  errEl.textContent = '';
-  try {
-    const res = await apiFetch(`/api/courses/${encodeURIComponent(_unlockPendingCourse)}/unlock`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pw }),
-    });
-    const data = await res.json();
-    if (data.token) {
-      const name = _unlockPendingCourse;
-      setCourseToken(name, data.token);
-      closeCourseUnlock();
-      renderTeacherList();
-      showCourseDetail(name);
-      toast((TRANSLATIONS[currentLang] || TRANSLATIONS.EN).courseUnlocked);
-    } else {
-      errEl.textContent = data.error || (currentLang === 'NL' ? 'Onjuist wachtwoord.' : 'Incorrect password.');
-    }
-  } catch {
-    errEl.textContent = currentLang === 'NL' ? 'Fout. Probeer opnieuw.' : 'Error. Please try again.';
-  } finally {
-    btn.disabled = false;
-  }
-}
 
 async function loadTeacherCourses() {
   try {
@@ -2769,8 +2693,7 @@ async function loadTeacherCourses() {
     const still = teacherCourses.find(c => c.name === activeCourse);
     if (still) selectCourse(activeCourse); else hideCourseDetail();
   } else if (teacherCourses.length) {
-    const firstOpen = teacherCourses.find(c => !c.has_password || isCourseUnlocked(c.name));
-    selectCourse((firstOpen || teacherCourses[0]).name);
+    selectCourse(teacherCourses[0].name);
   }
 }
 
@@ -2781,16 +2704,16 @@ function renderTeacherList() {
     return;
   }
   el.innerHTML = teacherCourses.map(c => {
-    const locked = c.has_password && !isCourseUnlocked(c.name);
-    const lockIcon = c.has_password
-      ? `<span class="course-lock-icon${locked ? '' : ' is-unlocked'}" title="${locked ? (currentLang === 'NL' ? 'Beveiligd — klik om te ontgrendelen' : 'Protected — click to unlock') : (currentLang === 'NL' ? 'Ontgrendeld' : 'Unlocked')}"><svg width="9" height="11" viewBox="0 0 11 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="5.5" width="9" height="7" rx="1.5"/><path d="M3 5.5V3.5a2.5 2.5 0 0 1 5 0v2"/></svg></span>`
+    const notMine = c.is_mine === false;
+    const badge = notMine
+      ? `<span style="font-size:9px;opacity:.5;margin-left:3px;" title="${currentLang === 'NL' ? 'Cursus van een andere leerkracht' : 'Another teacher\'s course'}">👁</span>`
       : '';
     return `
     <button class="course-tab ${activeCourse === c.name ? 'active' : ''}"
             data-course="${esc(c.name)}"
-            draggable="true"
+            draggable="${c.is_mine !== false}"
             onclick="if(!_wasDragged)selectCourse(this.dataset.course)">
-      <span title="${esc(c.name)}">${trunc(c.name)}</span>${lockIcon}
+      <span title="${esc(c.name)}">${trunc(c.name)}</span>${badge}
     </button>`;
   }).join('');
   initDragDrop();
@@ -2842,10 +2765,6 @@ async function saveOrder(order) {
 function selectCourse(name) {
   const course = teacherCourses.find(c => c.name === name);
   if (!course) return;
-  if (course.has_password && !isCourseUnlocked(name)) {
-    openCourseUnlock(name);
-    return;
-  }
   showCourseDetail(name);
 }
 
@@ -2859,16 +2778,32 @@ function showCourseDetail(name) {
   const course = teacherCourses.find(c => c.name === name);
   if (!course) return;
 
+  const isMine = course.is_mine !== false;
   document.getElementById('no-course-msg').style.display = 'none';
   document.getElementById('course-detail').classList.add('active');
-  document.getElementById('btn-delete-course').style.display = '';
+  document.getElementById('btn-delete-course').style.display = isMine ? '' : 'none';
   document.getElementById('upload-status').textContent = '';
-  renderFileList(course.files);
-  renderWelcomeEditor(name, course.welcome || '');
+  const dropZoneEl = document.getElementById('drop-zone');
+  if (dropZoneEl) dropZoneEl.style.display = isMine ? '' : 'none';
+  renderFileList(course.files, isMine);
+  renderWelcomeEditor(name, course.welcome || '', isMine);
+  if (!isMine) {
+    const readonlyBanner = document.getElementById('readonly-banner');
+    if (!readonlyBanner) {
+      const banner = document.createElement('div');
+      banner.id = 'readonly-banner';
+      banner.style.cssText = 'font-size:12px;color:var(--text-3);padding:6px 0 10px;';
+      banner.textContent = currentLang === 'NL' ? 'Dit is de cursus van een andere leerkracht. Je kunt de inhoud bekijken maar niet bewerken.' : 'This course belongs to another teacher. You can view the content but not edit it.';
+      document.getElementById('course-detail').querySelector('.detail-body').prepend(banner);
+    }
+  } else {
+    const b = document.getElementById('readonly-banner');
+    if (b) b.remove();
+  }
   showStats();
 }
 
-function renderWelcomeEditor(courseName, currentText) {
+function renderWelcomeEditor(courseName, currentText, isMine = true) {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
   const el = document.getElementById('welcome-editor-card');
   if (!el) return;
@@ -2876,8 +2811,8 @@ function renderWelcomeEditor(courseName, currentText) {
     <div class="t-card">
       <div class="t-card-head"><div class="t-card-title">${t.welcomeText}</div></div>
       <div class="welcome-editor">
-        <textarea id="welcome-textarea" placeholder="${t.welcomePlaceholder}">${esc(currentText)}</textarea>
-        <button onclick="saveWelcome('${escAttr(courseName)}')">${t.saveWelcome}</button>
+        <textarea id="welcome-textarea" placeholder="${t.welcomePlaceholder}" ${isMine ? '' : 'readonly style="opacity:.6"'}>${esc(currentText)}</textarea>
+        ${isMine ? `<button onclick="saveWelcome('${escAttr(courseName)}')">${t.saveWelcome}</button>` : ''}
       </div>
     </div>`;
 }
@@ -2888,7 +2823,7 @@ async function saveWelcome(courseName) {
     const res = await apiFetch(`/api/courses/${encodeURIComponent(courseName)}/welcome`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, course_token: getCourseToken(courseName) }),
+      body: JSON.stringify({ text }),
     });
     const data = await res.json();
     if (data.error) { toast(data.error); return; }
@@ -3067,7 +3002,7 @@ function formatSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function renderFileList(files) {
+function renderFileList(files, isMine = true) {
   const el = document.getElementById('file-list');
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
   if (!files.length) {
@@ -3081,16 +3016,16 @@ function renderFileList(files) {
     const sizeStr = formatSize(f.file_size || 0);
     return `
     <div class="f-item" data-file="${esc(filename)}">
-      <span class="f-drag-handle" title="Drag to reorder"><svg width="10" height="14" viewBox="0 0 10 14" fill="none" style="opacity:.4"><circle cx="3" cy="3" r="1.3" fill="currentColor"/><circle cx="7" cy="3" r="1.3" fill="currentColor"/><circle cx="3" cy="7" r="1.3" fill="currentColor"/><circle cx="7" cy="7" r="1.3" fill="currentColor"/><circle cx="3" cy="11" r="1.3" fill="currentColor"/><circle cx="7" cy="11" r="1.3" fill="currentColor"/></svg></span>
+      ${isMine ? `<span class="f-drag-handle" title="Drag to reorder"><svg width="10" height="14" viewBox="0 0 10 14" fill="none" style="opacity:.4"><circle cx="3" cy="3" r="1.3" fill="currentColor"/><circle cx="7" cy="3" r="1.3" fill="currentColor"/><circle cx="3" cy="7" r="1.3" fill="currentColor"/><circle cx="7" cy="7" r="1.3" fill="currentColor"/><circle cx="3" cy="11" r="1.3" fill="currentColor"/><circle cx="7" cy="11" r="1.3" fill="currentColor"/></svg></span>` : ''}
       <span class="f-name" title="${esc(filename)}">${trunc(displayName, 30)}</span>
       ${dateStr ? `<span class="f-meta">${esc(dateStr)}</span>` : ''}
       ${sizeStr ? `<span class="f-meta">${esc(sizeStr)}</span>` : ''}
       <button class="btn-rename" onclick="showFilePreview(activeCourse, '${escAttr(filename)}')">${t.preview}</button>
-      <button class="btn-rename" onclick="startRename(this, '${escAttr(filename)}')">${t.rename}</button>
-      <button class="btn-del" onclick="deleteFile(activeCourse, this.closest('.f-item').dataset.file)">${t.remove}</button>
+      ${isMine ? `<button class="btn-rename" onclick="startRename(this, '${escAttr(filename)}')">${t.rename}</button>` : ''}
+      ${isMine ? `<button class="btn-del" onclick="deleteFile(activeCourse, this.closest('.f-item').dataset.file)">${t.remove}</button>` : ''}
     </div>`;
   }).join('');
-  initFileDragDrop();
+  if (isMine) initFileDragDrop();
 }
 
 function startRename(btn, filename) {
@@ -3133,7 +3068,7 @@ async function doRename(filename, displayName, cleanup) {
     const res = await apiFetch('/api/file-meta/rename', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ course: activeCourse, filename, display_name: displayName, course_token: getCourseToken(activeCourse) }),
+      body: JSON.stringify({ course: activeCourse, filename, display_name: displayName }),
     });
     const data = await res.json();
     if (data.error) { toast(data.error); cleanup(); return; }
@@ -3181,7 +3116,7 @@ async function saveFileOrder(order) {
   await apiFetch(`/api/courses/${encodeURIComponent(activeCourse)}/files/reorder`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ order, course_token: getCourseToken(activeCourse) }),
+    body: JSON.stringify({ order }),
   });
 }
 
@@ -3191,42 +3126,26 @@ function toggleCreateForm() {
   const open = form.classList.toggle('open');
   if (open) {
     document.getElementById('new-course-name').value = '';
-    document.getElementById('new-course-pw').value = '';
     setTimeout(() => document.getElementById('new-course-name').focus(), 50);
   }
 }
 
 async function createCourse() {
   const name = document.getElementById('new-course-name').value.trim();
-  const password = document.getElementById('new-course-pw').value;
   if (!name) return;
   try {
     const res = await apiFetch('/api/courses', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, password }),
+      body: JSON.stringify({ name }),
     });
     const data = await res.json();
     if (data.error) { toast(data.error); return; }
-    // If a password was set, immediately store the unlock token so the creator has access
-    if (password) setCourseToken(name, await fetchCourseToken(name, password));
     document.getElementById('create-form').classList.remove('open');
     await loadTeacherCourses();
     showCourseDetail(name);
     toast(currentLang === 'NL' ? `Cursus aangemaakt: ${name}` : `Course created: ${name}`);
   } catch { toast((TRANSLATIONS[currentLang] || TRANSLATIONS.EN).failedCreateCourse); }
-}
-
-async function fetchCourseToken(courseName, password) {
-  try {
-    const res = await apiFetch(`/api/courses/${encodeURIComponent(courseName)}/unlock`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password }),
-    });
-    const data = await res.json();
-    return data.token || '';
-  } catch { return ''; }
 }
 
 async function deleteActiveCourse() {
@@ -3235,9 +3154,7 @@ async function deleteActiveCourse() {
     ? `Cursus "${activeCourse}" en al het materiaal verwijderen?`
     : `Delete course "${activeCourse}" and all its materials?`;
   if (!confirm(_confirmMsg)) return;
-  const tok = getCourseToken(activeCourse);
-  const qs = tok ? `?course_token=${encodeURIComponent(tok)}` : '';
-  await apiFetch(`/api/courses/${encodeURIComponent(activeCourse)}${qs}`, { method: 'DELETE' });
+  await apiFetch(`/api/courses/${encodeURIComponent(activeCourse)}`, { method: 'DELETE' });
   toast((TRANSLATIONS[currentLang] || TRANSLATIONS.EN).courseDeleted);
   hideCourseDetail();
   loadTeacherCourses();
@@ -3249,9 +3166,7 @@ async function deleteFile(course, filename) {
     ? `"${filename}" verwijderen uit ${course}?`
     : `Remove "${filename}" from ${course}?`;
   if (!confirm(_removeMsg)) return;
-  const _delTok = getCourseToken(course);
-  const _delQs = _delTok ? `?course_token=${encodeURIComponent(_delTok)}` : '';
-  await apiFetch(`/api/courses/${encodeURIComponent(course)}/files/${encodeURIComponent(filename)}${_delQs}`, { method: 'DELETE' });
+  await apiFetch(`/api/courses/${encodeURIComponent(course)}/files/${encodeURIComponent(filename)}`, { method: 'DELETE' });
   toast(currentLang === 'NL' ? `Verwijderd: ${filename}` : `Removed: ${filename}`);
   await loadTeacherCourses();
   selectCourse(course);
@@ -3287,8 +3202,6 @@ async function uploadFiles(files) {
     const fd = new FormData();
     fd.append('file', file);
     fd.append('course', activeCourse);
-    const _upTok = getCourseToken(activeCourse);
-    if (_upTok) fd.append('course_token', _upTok);
     try {
       const res = await apiFetch('/api/upload', { method: 'POST', body: fd });
       const data = await res.json();
@@ -3508,12 +3421,12 @@ const TOUR_STEPS_NL = [
   {
     target: '.qa-input-bar',
     title: 'Stel een vraag',
-    msg: 'Typ hier je vraag. Je krijgt een antwoord op basis van de cursus, met vermelding van de exacte pagina en extra online uitleg.'
+    msg: 'Typ hier je vraag en krijg een antwoord op basis van de cursus, met de exacte paginaverwijzing. Probeer bijvoorbeeld: "Wat is een design structure matrix?"'
   },
   {
     target: '#tab-teacher',
     title: 'Teacher-paneel',
-    msg: 'Leraren kunnen vakken aanmaken, cursussen uploaden en statistieken bekijken over welke vragen het meest gesteld worden. Klik op "Teacher" om in te loggen.'
+    msg: 'Leraren kunnen vakken aanmaken, cursussen uploaden en statistieken bekijken. Enkel leerkrachten met een leraarsaccount kunnen naar dit paneel overschakelen via hun login.'
   }
 ];
 
@@ -3531,12 +3444,12 @@ const TOUR_STEPS_EN = [
   {
     target: '.qa-input-bar',
     title: 'Ask a question',
-    msg: 'Type your question here. You get an answer based on the course material, with the exact page reference and extra online information.'
+    msg: 'Type your question here and get an answer based on the course material, with the exact page reference. Try for example: "What is a design structure matrix?"'
   },
   {
     target: '#tab-teacher',
     title: 'Teacher panel',
-    msg: 'Teachers can create courses, upload materials and view statistics about which questions are asked most. Click "Teacher" to log in.'
+    msg: 'Teachers can create courses, upload materials and view statistics. Only teachers with a teacher account can switch to this panel via their login.'
   }
 ];
 
