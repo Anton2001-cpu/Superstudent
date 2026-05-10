@@ -108,11 +108,6 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 5px 8px;
-      box-shadow: 0 2px 12px rgba(1,35,64,0.07);
     }
     .top-right-bar .divider {
       width: 1px; height: 14px;
@@ -137,6 +132,8 @@
       background: transparent;
       color: var(--text-3);
       transition: all 0.18s ease;
+      position: relative;
+      outline: none;
     }
     .tab:hover { color: var(--text-2); }
     .tab.active {
@@ -144,6 +141,21 @@
       color: var(--gb-mid);
       font-weight: 600;
       box-shadow: 0 1px 4px rgba(46,73,89,0.12), 0 0 0 1px rgba(46,73,89,0.08);
+    }
+    @keyframes tab-spin { to { transform: translateY(-50%) rotate(360deg); } }
+    .tab-loading { pointer-events: none; padding-right: 24px; }
+    .tab-loading::after {
+      content: '';
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 8px;
+      height: 8px;
+      border: 1.5px solid var(--text-3);
+      border-top-color: var(--gb-mid);
+      border-radius: 50%;
+      animation: tab-spin 0.6s linear infinite;
     }
 
     /* Dark mode toggle */
@@ -159,12 +171,22 @@
       color: var(--text-3);
       cursor: pointer;
       transition: all 0.15s;
+      outline: none;
     }
     .dark-btn:hover { background: var(--bg); color: var(--text-2); }
 
     /* ── Views ── */
     .view { display: none; flex: 1; overflow: hidden; }
     .view.active { display: flex; }
+    @keyframes view-enter {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    #view-teacher.active { animation: view-enter 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+    @keyframes skel-card-enter {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
 
     /* ── Shared sidebar ── */
     .sidebar {
@@ -386,7 +408,13 @@
       font-weight: 500;
       color: var(--text);
       line-height: 1.4;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 12px;
+      display: inline-block;
+      max-width: 90%;
     }
 
     .result-answer-label {
@@ -436,16 +464,16 @@
     .extra-toggle.open .extra-toggle-chevron { transform: rotate(90deg); }
     .extra-body {
       display: none;
-      margin-top: 8px;
-      padding: 14px 18px;
+      margin-top: 6px;
+      padding: 10px 14px;
       background: rgba(255,255,255,0.55);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(255,255,255,0.6);
-      border-radius: 14px;
-      font-size: 14px;
+      border-radius: 10px;
+      font-size: 12px;
       color: var(--text-2);
-      line-height: 1.6;
+      line-height: 1.55;
     }
     .extra-body.open { display: block; }
     .extra-disclaimer {
@@ -453,6 +481,38 @@
       color: var(--text-3);
       margin-bottom: 8px;
       font-style: italic;
+    }
+
+    /* Slide images */
+    .slide-images-section {
+      margin-top: 12px;
+      margin-bottom: 4px;
+    }
+    .slide-images-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 8px;
+    }
+    .slide-images {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .slide-image {
+      max-width: 100%;
+      max-height: 280px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      cursor: zoom-in;
+      transition: opacity 0.15s, box-shadow 0.15s;
+      object-fit: contain;
+    }
+    .slide-image:hover {
+      opacity: 0.9;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.12);
     }
 
     /* Sources */
@@ -590,7 +650,7 @@
       align-items: center;
       background: var(--card);
       border: 1px solid rgba(0,132,255,0.5);
-      border-radius: 24px;
+      border-radius: 10px;
       padding: 4px 4px 4px 18px;
       transition: border-color 0.15s;
     }
@@ -621,7 +681,7 @@
       background: transparent;
       color: var(--gb-muted);
       border: 1.5px solid var(--border-2);
-      border-radius: 50%;
+      border-radius: 10px;
       cursor: pointer;
       flex-shrink: 0;
       transition: all 0.15s;
@@ -1052,13 +1112,14 @@
 
     /* Language toggle */
     .lang-btn {
-      height: 26px;
-      padding: 0 8px;
+      width: 28px;
+      height: 28px;
+      padding: 0;
       display: flex;
       align-items: center;
       justify-content: center;
       border: none;
-      border-radius: 7px;
+      border-radius: 50%;
       background: transparent;
       color: var(--text-2);
       cursor: pointer;
@@ -1067,6 +1128,7 @@
       font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.03em;
+      outline: none;
     }
     .lang-btn:hover { background: var(--bg); color: var(--text); }
 
@@ -1252,13 +1314,13 @@
 
     /* ── Pomodoro ── */
     .pomodoro-btn {
-      width: 26px;
-      height: 26px;
+      width: 28px;
+      height: 28px;
       display: flex;
       align-items: center;
       justify-content: center;
       border: none;
-      border-radius: 8px;
+      border-radius: 50%;
       background: transparent;
       color: var(--text-2);
       cursor: pointer;
@@ -1266,6 +1328,20 @@
     }
     .pomodoro-btn:hover { background: var(--bg); color: var(--text-2); }
     .pomodoro-btn.active { color: var(--gb-mid); background: var(--blue-dim); }
+    .logout-btn {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--text-3);
+      cursor: pointer;
+      transition: all 0.15s;
+      text-decoration: none;
+    }
+    .logout-btn:hover { background: rgba(214,48,48,0.10); color: var(--red); }
 
     .pomodoro-panel {
       position: fixed;
@@ -1332,6 +1408,55 @@
     .pomodoro-controls button:hover { border-color: var(--blue); color: var(--blue); }
     .pomodoro-controls button.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
     .pomodoro-controls button.primary:hover { background: var(--blue-h); }
+    .pomodoro-adjust { display: flex; align-items: center; gap: 8px; }
+    .pomodoro-adjust span { font-size: 11px; color: var(--text-3); min-width: 38px; text-align: center; }
+    .pomodoro-adjust button {
+      width: 24px; height: 24px;
+      border-radius: 6px;
+      border: 1px solid var(--border-2);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 15px;
+      line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.12s;
+      font-family: inherit;
+    }
+    .pomodoro-adjust button:hover:not(:disabled) { border-color: var(--blue); color: var(--blue); }
+    .pomodoro-adjust button:disabled { opacity: 0.3; cursor: default; }
+
+    /* ── Teacher loading overlay ── */
+    #teacher-loader {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 80px 0;
+      min-height: 280px;
+    }
+    #teacher-loader.visible { display: flex; }
+    .tl-ring {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border-2);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: tl-spin 0.72s linear infinite;
+    }
+    .tl-label {
+      font-size: 12px;
+      color: var(--text-3);
+      animation: tl-fade 1.4s ease-in-out infinite alternate;
+    }
+    @keyframes tl-spin { to { transform: rotate(360deg); } }
+    @keyframes tl-fade { from { opacity: 0.4; } to { opacity: 1; } }
+    @keyframes teacher-reveal {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: none; }
+    }
+    .teacher-reveal { animation: teacher-reveal 0.3s ease both; }
 
     /* ── Preview modal ── */
     .preview-modal {
@@ -1579,16 +1704,19 @@
 
 <!-- Top-right bar: tab toggle + utility buttons -->
 <div class="top-right-bar">
-  <div class="status-dot" id="status-dot" title="Online"></div>
   <div class="tab-group">
     <button class="tab active" id="tab-student" onclick="switchView('student', this)" data-i18n="tabStudent">Student</button>
-    <button class="tab" id="tab-teacher" onclick="requirePassword(this)" data-i18n="tabTeacher">Teacher</button>
+    <button class="tab" id="tab-teacher" onclick="requirePassword(this)"><span data-i18n="tabTeacher">Teacher</span> <svg id="teacher-lock" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5;vertical-align:middle;margin-left:1px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path id="teacher-lock-shackle" d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></button>
   </div>
-  <div class="divider"></div>
   <button class="lang-btn" id="lang-btn" onclick="toggleLang()" title="Switch language">EN</button>
   <button class="pomodoro-btn" id="pomodoro-btn" onclick="togglePomodoroPanel()" title="Pomodoro timer">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
   </button>
+  <div class="status-dot" id="status-dot" title="Online"></div>
+  <div class="divider"></div>
+  <a href="/logout" class="logout-btn" title="Afmelden">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+  </a>
 </div>
 
 <!-- Password modal -->
@@ -1678,6 +1806,10 @@
 
     <!-- Detail area -->
     <div class="detail-area">
+      <div id="teacher-loader">
+        <div class="tl-ring"></div>
+        <span class="tl-label" id="tl-label">Laden…</span>
+      </div>
       <div class="panel-placeholder" id="no-course-msg" data-i18n="noCourseMsg">
         Create or select a course above to manage it.
       </div>
@@ -1686,7 +1818,7 @@
         <div class="detail-body">
 
           <!-- Upload card -->
-          <div class="t-card">
+          <div class="t-card" id="upload-card">
             <div class="t-card-head">
               <div class="t-card-title" data-i18n="uploadBooks">Upload books</div>
             </div>
@@ -1726,7 +1858,8 @@
 
 <!-- Pomodoro panel -->
 <div class="pomodoro-panel" id="pomodoro-panel">
-  <div class="pomodoro-mode" id="pomodoro-mode">WORK</div>
+  <div class="pomodoro-mode" id="pomodoro-mode" style="display:none;"></div>
+  <button onclick="togglePomodoroPanel()" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:var(--text-3);font-size:18px;line-height:1;padding:2px 6px;border-radius:4px;" title="Sluiten">×</button>
   <div class="pomodoro-ring" id="pomodoro-ring">
     <svg width="80" height="80" viewBox="0 0 80 80">
       <circle class="bg" cx="40" cy="40" r="35"/>
@@ -1735,9 +1868,14 @@
     </svg>
     <div class="pomodoro-time" id="pomodoro-time">25:00</div>
   </div>
+  <div class="pomodoro-adjust">
+    <button onclick="pomodoroAdjust(-1)">−</button>
+    <span id="pomodoro-duration">25 min</span>
+    <button onclick="pomodoroAdjust(1)">+</button>
+  </div>
   <div class="pomodoro-controls">
     <button class="primary" id="pomodoro-playpause" onclick="pomodoroStartPause()">Start</button>
-    <button onclick="pomodoroReset()">Reset</button>
+    <button id="pomodoro-reset" onclick="pomodoroReset()">Reset</button>
   </div>
 </div>
 
@@ -1825,6 +1963,7 @@ const TRANSLATIONS = {
     noCourses: 'Nog geen cursussen.',
     newCourse: '+ Nieuwe cursus',
     deleteCourse: 'Cursus verwijderen',
+    logout: 'Afmelden',
     courseUnlocked: 'Cursus ontgrendeld.',
     courseLockedErr: 'Geen toegang tot deze cursus. Ontgrendel ze eerst.',
     courseNamePlaceholder: 'Cursusnaam',
@@ -1911,6 +2050,7 @@ const TRANSLATIONS = {
     noCourses: 'No courses yet.',
     newCourse: '+ New course',
     deleteCourse: 'Delete course',
+    logout: 'Sign out',
     courseUnlocked: 'Course unlocked.',
     courseLockedErr: 'No access to this course. Unlock it first.',
     courseNamePlaceholder: 'Course name',
@@ -1948,6 +2088,8 @@ const TRANSLATIONS = {
 };
 
 let currentLang = localStorage.getItem('lang') || 'NL';
+const _SUPABASE_URL = {{ supabase_url | tojson }};
+const _SUPABASE_KEY = {{ supabase_key | tojson }};
 
 function applyLang(lang) {
   currentLang = lang;
@@ -1975,7 +2117,7 @@ function applyLang(lang) {
   if (sbExpandBtn) sbExpandBtn.title = t.showMaterialsTitle;
   const dot = document.getElementById('status-dot');
   if (dot) dot.title = dot.classList.contains('offline') ? t.offline : t.online;
-  const pomodoroResetBtn = document.querySelector('#pomodoro-panel button:not(.primary):not(#pomodoro-playpause)');
+  const pomodoroResetBtn = document.getElementById('pomodoro-reset');
   if (pomodoroResetBtn) pomodoroResetBtn.textContent = t.resetTimer;
   const pomodoroMode = document.getElementById('pomodoro-mode');
   if (pomodoroMode && pomodoroMode.dataset.mode !== 'break') pomodoroMode.textContent = t.pomodoroWork;
@@ -2026,10 +2168,11 @@ applyTheme('light');
 
 // Pre-set teacher auth from server-side email check
 const _serverIsTeacher = {{ is_teacher }};
+if (_serverIsTeacher) { const _ts = document.getElementById('teacher-lock-shackle'); if (_ts) _ts.setAttribute('d', 'M7 11V7a5 5 0 0 1 9.9-1'); }
 const _serverIsStudent = {{ is_student }};
 if (_serverIsTeacher) sessionStorage.setItem('tAuth', '1');
 
-// If redirected from login as teacher: show student tour on first teacher login, then open teacher view
+// If redirected from login as teacher: show student tour on first login, then open teacher view
 if (new URLSearchParams(window.location.search).get('teacher') === '1') {
   history.replaceState({}, '', '/');
   sessionStorage.setItem('tAuth', '1');
@@ -2039,6 +2182,9 @@ if (new URLSearchParams(window.location.search).get('teacher') === '1') {
     sessionStorage.setItem('openTeacherAfterTour', '1');
     localStorage.removeItem('tourDone');
   }
+} else if (_serverIsTeacher && localStorage.getItem('teacherTourDone')) {
+  // Teacher visiting the page directly (not via ?teacher=1): auto-open teacher view
+  setTimeout(() => activateTeacher(document.getElementById('tab-teacher')), 50);
 }
 
 // ── Toast ──────────────────────────────────────────────────────────────────
@@ -2063,6 +2209,7 @@ function switchView(name, btn) {
 let pendingBtn = null;
 
 function requirePassword(btn) {
+  btn.classList.remove('tab-loading');
   if (_serverIsStudent) {
     toast(currentLang === 'NL'
       ? 'Studentenaccounts hebben geen toegang tot het lerarenpaneel.'
@@ -2104,24 +2251,35 @@ async function checkPw() {
 
 function showTeacherSkeleton() {
   const tabs = document.getElementById('t-course-tabs');
-  tabs.innerHTML = [90,110,75].map(w =>
-    `<span class="skel skel-tab" style="width:${w}px;border-radius:4px;"></span>`
+  tabs.innerHTML = [90,110,75].map((w, i) =>
+    `<span class="skel skel-tab" style="width:${w}px;border-radius:4px;animation-delay:${i*0.05}s"></span>`
   ).join('');
   document.getElementById('course-detail').classList.add('active');
   document.getElementById('no-course-msg').style.display = 'none';
 
-  // File list: shimmer rows that look like actual file rows
-  document.getElementById('file-list').innerHTML = [1,2,3].map(() => `
-    <div class="f-item">
-      <div class="skel" style="width:12px;height:12px;border-radius:2px;flex-shrink:0;"></div>
-      <div class="skel skel-line" style="flex:1;margin:0;"></div>
-      <div class="skel" style="width:38px;height:20px;border-radius:4px;flex-shrink:0;"></div>
-      <div class="skel" style="width:38px;height:20px;border-radius:4px;flex-shrink:0;"></div>
-    </div>`).join('');
+  // Upload card — file-list and upload-status live inside upload-card, so include
+  // their skeletons here rather than querying them after innerHTML replaces them.
+  document.getElementById('upload-card').innerHTML = `
+    <div style="animation:skel-card-enter 0.28s ease both 0.04s">
+      <div class="t-card-head"><div class="skel skel-line" style="width:120px;margin:0;"></div></div>
+      <div class="t-card-body">
+        <div class="skel" style="width:100%;height:90px;border-radius:10px;"></div>
+        <div id="file-list" class="file-list" style="margin-top:10px;animation:skel-card-enter 0.28s ease both 0.1s">
+          ${[1,2,3].map(() => `
+            <div class="f-item">
+              <div class="skel" style="width:12px;height:12px;border-radius:2px;flex-shrink:0;"></div>
+              <div class="skel skel-line" style="flex:1;margin:0;"></div>
+              <div class="skel" style="width:38px;height:20px;border-radius:4px;flex-shrink:0;"></div>
+              <div class="skel" style="width:38px;height:20px;border-radius:4px;flex-shrink:0;"></div>
+            </div>`).join('')}
+        </div>
+        <div id="upload-status" class="upload-status"></div>
+      </div>
+    </div>`;
 
-  // Welcome editor card: shimmer textarea + button
+  // Welcome editor card
   document.getElementById('welcome-editor-card').innerHTML = `
-    <div class="t-card">
+    <div class="t-card" style="animation:skel-card-enter 0.28s ease both 0.16s">
       <div class="t-card-head"><div class="skel skel-line" style="width:140px;margin:0;"></div></div>
       <div class="welcome-editor">
         <div class="skel" style="width:100%;height:70px;border-radius:4px;"></div>
@@ -2131,9 +2289,32 @@ function showTeacherSkeleton() {
 }
 
 function activateTeacher(btn) {
-  switchView('teacher', btn);
-  showTeacherSkeleton();
-  loadTeacherCourses();
+  btn.classList.add('tab-loading');
+  const shackle = document.getElementById('teacher-lock-shackle');
+  if (shackle) shackle.setAttribute('d', 'M7 11V7a5 5 0 0 1 9.9-1');
+  try {
+    switchView('teacher', btn);
+    // Skeleton tabs
+    const tabs = document.getElementById('t-course-tabs');
+    tabs.innerHTML = [90,110,75].map((w, i) =>
+      `<span class="skel skel-tab" style="width:${w}px;border-radius:4px;animation-delay:${i*0.05}s"></span>`
+    ).join('');
+    // Hide content, show spinner
+    document.getElementById('course-detail').classList.remove('active');
+    document.getElementById('no-course-msg').style.display = 'none';
+    const lbl = document.getElementById('tl-label');
+    if (lbl) lbl.textContent = currentLang === 'NL' ? 'Laden…' : 'Loading…';
+    document.getElementById('teacher-loader').classList.add('visible');
+    loadTeacherCourses()
+      .catch(() => {})
+      .finally(() => {
+        document.getElementById('teacher-loader').classList.remove('visible');
+        btn.classList.remove('tab-loading');
+      });
+  } catch(e) {
+    document.getElementById('teacher-loader').classList.remove('visible');
+    btn.classList.remove('tab-loading');
+  }
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -2310,6 +2491,7 @@ function getSelectedBooks() {
 let busy = false;
 let sessionStart = null;
 let successWished = false;
+let sessionQueries = 0;
 
 function checkSessionDuration() {
   if (successWished || !sessionStart) return;
@@ -2344,6 +2526,7 @@ async function askQuestion() {
   input.value = '';
   document.getElementById('qa-empty')?.remove();
   if (!sessionStart) sessionStart = Date.now();
+  sessionQueries++;
 
   const loading = appendLoading(q);
   busy = true;
@@ -2393,6 +2576,7 @@ async function askQuestion() {
     const decoder = new TextDecoder();
     let fullText = '';
     let sources = [];
+    let images = [];
     let noAnswer = false;
     let buf = '';
 
@@ -2412,6 +2596,7 @@ async function askQuestion() {
             h.scrollTop = h.scrollHeight;
           } else if (chunk.type === 'done') {
             sources = chunk.sources || [];
+            images = chunk.images || [];
             noAnswer = chunk.no_answer || false;
           } else if (chunk.type === 'error') {
             fullText = chunk.text;
@@ -2430,9 +2615,10 @@ async function askQuestion() {
       <div class="result-answer" id="ans-${uid}">${md(fullText)}</div>
       <div class="result-actions">
         <button class="btn-copy" onclick="copyAnswer('${uid}')" title="Copy">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2 2v1"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         </button>
       </div>
+      ${buildImagesHtml(images)}
       ${buildExtraHtml(q)}
       ${buildSourcesHtml(sources, fullText)}`;
     h.scrollTop = h.scrollHeight;
@@ -2591,6 +2777,18 @@ function buildSourcesHtml(sources, answer = '') {
     </div>`;
 }
 
+function buildImagesHtml(images) {
+  if (!images || !images.length) return '';
+  const label = currentLang === 'NL' ? 'Afbeeldingen uit de slides' : 'Images from slides';
+  return `
+    <div class="slide-images-section">
+      <div class="slide-images-label">${label}</div>
+      <div class="slide-images">
+        ${images.map(url => `<img class="slide-image" src="${escAttr(url)}" alt="Slide image" loading="lazy" onclick="window.open(this.src,'_blank')">`).join('')}
+      </div>
+    </div>`;
+}
+
 function toggleSources(uid) {
   const list = document.getElementById('src-' + uid);
   const btn  = list?.previousElementSibling;
@@ -2657,7 +2855,7 @@ async function loadExtraInfo(uid, toggleEl) {
 // Registry to hold question/answer text for feedback (avoids inline JS escaping issues)
 const _feedbackData = {};
 
-function appendResult(question, answer, sources, extra = '') {
+function appendResult(question, answer, sources, extra = '', images = []) {
   const h = document.getElementById('qa-history');
   const el = document.createElement('div');
   el.className = 'result-block';
@@ -2672,6 +2870,7 @@ function appendResult(question, answer, sources, extra = '') {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
       </button>
     </div>
+    ${buildImagesHtml(images)}
     ${buildExtraHtml(question)}
     ${buildSourcesHtml(sources, answer)}`;
   h.appendChild(el);
@@ -2768,8 +2967,35 @@ function selectCourse(name) {
   showCourseDetail(name);
 }
 
+function _restoreUploadCard() {
+  const card = document.getElementById('upload-card');
+  if (!card || document.getElementById('drop-zone')) return; // already restored
+  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
+  card.innerHTML = `
+    <div class="t-card-head">
+      <div class="t-card-title" data-i18n="uploadBooks">${t.uploadBooks}</div>
+    </div>
+    <div class="t-card-body">
+      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <div class="drop-title" data-i18n="dropTitle">${t.dropTitle}</div>
+        <div class="drop-sub" data-i18n="dropSub">${t.dropSub}</div>
+      </div>
+      <input type="file" id="file-input" multiple accept=".pdf,.docx,.doc,.txt" style="display:none">
+      <div class="upload-status" id="upload-status"></div>
+      <div class="file-list" id="file-list"></div>
+    </div>`;
+  // Re-attach drop zone event listeners
+  const dz = document.getElementById('drop-zone');
+  const fi = document.getElementById('file-input');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+  dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); uploadFiles([...e.dataTransfer.files]); });
+  fi.addEventListener('change', () => { uploadFiles([...fi.files]); fi.value = ''; });
+}
+
 function showCourseDetail(name) {
   activeCourse = name;
+  _restoreUploadCard();
 
   document.querySelectorAll('.course-tab').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.course === name);
@@ -2780,7 +3006,10 @@ function showCourseDetail(name) {
 
   const isMine = course.is_mine !== false;
   document.getElementById('no-course-msg').style.display = 'none';
-  document.getElementById('course-detail').classList.add('active');
+  const _cd = document.getElementById('course-detail');
+  _cd.classList.remove('teacher-reveal');
+  void _cd.offsetWidth;
+  _cd.classList.add('active', 'teacher-reveal');
   document.getElementById('btn-delete-course').style.display = isMine ? '' : 'none';
   document.getElementById('upload-status').textContent = '';
   const dropZoneEl = document.getElementById('drop-zone');
@@ -2919,7 +3148,7 @@ function _renderStats(data, period) {
     return `<div style="flex:1;text-align:center;font-size:8px;color:var(--text-3);white-space:nowrap;overflow:hidden;">${label}</div>`;
   }).join('');
 
-  const periodBtn = (p, label) => `<button onclick="_statsPeriod='${p}';showStats()" style="font-family:inherit;font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;border:1px solid ${p===period?'var(--blue)':'var(--border-2)'};background:${p===period?'var(--blue)':'transparent'};color:${p===period?'white':'var(--text-2)'};cursor:pointer;">${label}</button>`;
+  const periodBtn = (p, label) => `<button onclick="event.preventDefault();_statsPeriod='${p}';const _sb=document.getElementById('stats-body');const _sy=_sb?_sb.scrollTop:0;_renderStats(_statsData,'${p}');if(_sb)_sb.scrollTop=_sy;" style="font-family:inherit;font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;border:1px solid ${p===period?'var(--blue)':'var(--border-2)'};background:${p===period?'var(--blue)':'transparent'};color:${p===period?'white':'var(--text-2)'};cursor:pointer;">${label}</button>`;
 
   const kpi = (val, lbl, color='') => `
     <div style="text-align:center;">
@@ -2984,7 +3213,26 @@ function _renderStats(data, period) {
             + (courses ? '<span class="stats-recent-course">' + esc(courses) + '</span>' : '')
             + '</div></div>';
         }).join('')}
-      </div>` : ''}`;
+      </div>` : ''}
+    <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
+      <div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">
+        ${currentLang === 'NL' ? 'AI-impact deze sessie' : 'AI impact this session'}
+      </div>
+      <div style="display:flex;gap:8px;">
+        <div style="flex:1;background:rgba(0,132,255,0.08);border-radius:10px;padding:8px 6px;text-align:center;">
+          <div style="font-size:14px;font-weight:700;color:var(--blue);line-height:1;">${(sessionQueries * 0.5).toFixed(1)}L</div>
+          <div style="font-size:9px;color:var(--text-3);margin-top:2px;">${currentLang === 'NL' ? 'water' : 'water'}</div>
+        </div>
+        <div style="flex:1;background:rgba(52,199,89,0.1);border-radius:10px;padding:8px 6px;text-align:center;">
+          <div style="font-size:14px;font-weight:700;color:var(--green);line-height:1;">${(sessionQueries * 0.1).toFixed(1)}g</div>
+          <div style="font-size:9px;color:var(--text-3);margin-top:2px;">CO₂</div>
+        </div>
+        <div style="flex:1;background:rgba(104,126,140,0.08);border-radius:10px;padding:8px 6px;text-align:center;">
+          <div style="font-size:14px;font-weight:700;color:var(--text-2);line-height:1;">${sessionQueries}</div>
+          <div style="font-size:9px;color:var(--text-3);margin-top:2px;">${currentLang === 'NL' ? 'vragen' : 'queries'}</div>
+        </div>
+      </div>
+    </div>`;
 }
 
 function formatDate(iso) {
@@ -3196,15 +3444,60 @@ async function uploadFiles(files) {
     status.className = 'upload-status';
     const _tu = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
     status.textContent = currentLang === 'NL' ? `Verwerken ${file.name}...` : `Processing ${file.name}...`;
-    dropZone.classList.add('uploading');
-    dropZone.querySelector('.drop-title').textContent = _tu.processing;
-    dropZone.querySelector('.drop-sub').textContent = file.name;
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('course', activeCourse);
+    const dz = document.getElementById('drop-zone');
+    if (dz) {
+      dz.classList.add('uploading');
+      dz.querySelector('.drop-title').textContent = _tu.processing;
+      dz.querySelector('.drop-sub').textContent = file.name;
+    }
+
+    const VERCEL_LIMIT = 4 * 1024 * 1024; // 4 MB — Vercel serverless body limit
+    const useDirect = file.size > VERCEL_LIMIT;
+
     try {
-      const res = await apiFetch('/api/upload', { method: 'POST', body: fd });
-      const data = await res.json();
+      let data;
+      if (useDirect) {
+        // Large file: get a signed upload URL from the server, then upload directly
+        // to Supabase Storage from the browser (bypasses Vercel 4.5 MB body limit).
+        // The anon key has no storage write permissions, so we need a signed URL.
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+
+        status.textContent = currentLang === 'NL' ? 'Upload-URL aanmaken...' : 'Creating upload URL...';
+        const urlRes = await apiFetch('/api/upload-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: safeName, course: activeCourse }),
+        });
+        if (!urlRes) throw new Error('Upload-URL aanmaken mislukt.');
+        const urlData = await urlRes.json();
+        if (urlData.error) throw new Error(urlData.error);
+        const { signed_url: signedUrl, path: storagePath } = urlData;
+
+        status.textContent = currentLang === 'NL'
+          ? `Groot bestand (${(file.size/1024/1024).toFixed(1)} MB) — uploaden...`
+          : `Large file (${(file.size/1024/1024).toFixed(1)} MB) — uploading...`;
+
+        const storageRes = await fetch(signedUrl, { method: 'PUT', body: file });
+        if (!storageRes.ok) {
+          const errBody = await storageRes.text();
+          throw new Error(`Storage upload mislukt (${storageRes.status}): ${errBody}`);
+        }
+
+        status.textContent = currentLang === 'NL' ? 'Verwerken met AI...' : 'Processing with AI...';
+        const procRes = await apiFetch('/api/process-upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: storagePath, filename: safeName, course: activeCourse, size: file.size }),
+        });
+        data = await procRes.json();
+      } else {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('course', activeCourse);
+        const res = await apiFetch('/api/upload', { method: 'POST', body: fd });
+        data = await res.json();
+      }
+
       if (data.error) {
         status.className = 'upload-status err';
         status.textContent = data.error;
@@ -3215,14 +3508,17 @@ async function uploadFiles(files) {
         selectCourse(activeCourse);
         loadBooks();
       }
-    } catch {
+    } catch (err) {
       status.className = 'upload-status err';
-      status.textContent = (TRANSLATIONS[currentLang] || TRANSLATIONS.EN).uploadFailed;
+      status.textContent = `Upload mislukt: ${err.message || err}`;
     } finally {
-      dropZone.classList.remove('uploading');
-      const _tf = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
-      dropZone.querySelector('.drop-title').textContent = _tf.dropTitle;
-      dropZone.querySelector('.drop-sub').textContent = _tf.dropSub;
+      const _dzf = document.getElementById('drop-zone');
+      if (_dzf) {
+        _dzf.classList.remove('uploading');
+        const _tf = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
+        _dzf.querySelector('.drop-title').textContent = _tf.dropTitle;
+        _dzf.querySelector('.drop-sub').textContent = _tf.dropSub;
+      }
     }
   }
 }
@@ -3281,17 +3577,22 @@ setInterval(checkOnline, 30000);
 // ── Copy answer ────────────────────────────────────────────────────────────
 function copyAnswer(uid) {
   const el = document.getElementById('ans-' + uid);
+  const btn = document.querySelector(`[onclick="copyAnswer('${uid}')"]`);
   if (!el) return;
   const text = el.innerText;
   navigator.clipboard.writeText(text).then(() => {
-    const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
-    toast(t.copied);
+    if (btn) {
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>';
+      setTimeout(() => {
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+      }, 1500);
+    }
   });
 }
 
 
 // ── Pomodoro ───────────────────────────────────────────────────────────────
-const _pom = { running: false, seconds: 25 * 60, mode: 'work', interval: null };
+const _pom = { running: false, seconds: 25 * 60, mode: 'work', interval: null, workMinutes: 25, breakMinutes: 5 };
 const POM_CIRCUMFERENCE = 2 * Math.PI * 35; // r=35 → ≈ 219.9
 
 function togglePomodoroPanel() {
@@ -3321,12 +3622,24 @@ function pomodoroReset() {
   clearInterval(_pom.interval);
   _pom.running = false;
   _pom.mode = 'work';
-  _pom.seconds = 25 * 60;
+  _pom.seconds = _pom.workMinutes * 60;
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
   document.getElementById('pomodoro-playpause').textContent = t.startTimer;
   document.getElementById('pomodoro-playpause').classList.add('primary');
   document.getElementById('pomodoro-mode').textContent = t.pomodoroWork;
   document.getElementById('pomodoro-ring').classList.remove('pulse');
+  _pomUpdateDisplay();
+}
+
+function pomodoroAdjust(delta) {
+  if (_pom.running) return;
+  if (_pom.mode === 'work') {
+    _pom.workMinutes = Math.max(1, Math.min(90, _pom.workMinutes + delta));
+    _pom.seconds = _pom.workMinutes * 60;
+  } else {
+    _pom.breakMinutes = Math.max(1, Math.min(30, _pom.breakMinutes + delta));
+    _pom.seconds = _pom.breakMinutes * 60;
+  }
   _pomUpdateDisplay();
 }
 
@@ -3341,11 +3654,11 @@ function pomodoroTick() {
     const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
     if (_pom.mode === 'work') {
       _pom.mode = 'break';
-      _pom.seconds = 5 * 60;
+      _pom.seconds = _pom.breakMinutes * 60;
       document.getElementById('pomodoro-mode').textContent = t.pomodoroBreak;
     } else {
       _pom.mode = 'work';
-      _pom.seconds = 25 * 60;
+      _pom.seconds = _pom.workMinutes * 60;
       document.getElementById('pomodoro-mode').textContent = t.pomodoroWork;
     }
     document.getElementById('pomodoro-ring').classList.add('pulse');
@@ -3357,13 +3670,16 @@ function pomodoroTick() {
 }
 
 function _pomUpdateDisplay() {
-  const total = _pom.mode === 'work' ? 25 * 60 : 5 * 60;
+  const total = _pom.mode === 'work' ? _pom.workMinutes * 60 : _pom.breakMinutes * 60;
   const fraction = _pom.seconds / total;
   const offset = POM_CIRCUMFERENCE * (1 - fraction);
   document.getElementById('pomodoro-prog').style.strokeDashoffset = offset;
   const m = Math.floor(_pom.seconds / 60).toString().padStart(2, '0');
   const s = (_pom.seconds % 60).toString().padStart(2, '0');
   document.getElementById('pomodoro-time').textContent = `${m}:${s}`;
+  const dur = document.getElementById('pomodoro-duration');
+  if (dur) dur.textContent = _pom.mode === 'work' ? `${_pom.workMinutes} min` : `${_pom.breakMinutes} min`;
+  document.querySelectorAll('.pomodoro-adjust button').forEach(b => { b.disabled = _pom.running; });
 }
 
 // ── File preview ───────────────────────────────────────────────────────────

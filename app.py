@@ -317,6 +317,8 @@ def login():
             elif "uantwerpen" not in email:
                 error = "Gebruik je UAntwerpen e-mailadres (@uantwerpen.be)."
             elif mode == "register":
+                remember = request.form.get("remember") == "1"
+                cookie_age = 60 * 60 * 24 * 30 if remember else None
                 confirm = request.form.get("confirm_password", "")
                 if password != confirm:
                     error = "Wachtwoorden komen niet overeen."
@@ -355,13 +357,13 @@ def login():
                                 resp = make_response(redirect(target))
                                 resp.set_cookie("auth", _make_user_token(email), httponly=True,
                                                 samesite="Lax", secure=_IS_PRODUCTION,
-                                                max_age=60 * 60 * 24 * 30)
+                                                max_age=cookie_age)
                                 resp.set_cookie("user_email", email, httponly=True,
                                                 samesite="Lax", secure=_IS_PRODUCTION,
-                                                max_age=60 * 60 * 24 * 30)
+                                                max_age=cookie_age)
                                 resp.set_cookie("csrf_token", csrf, httponly=False,
                                                 samesite="Lax", secure=_IS_PRODUCTION,
-                                                max_age=60 * 60 * 24 * 30)
+                                                max_age=cookie_age)
                                 return resp
                             else:
                                 error = "Account aangemaakt maar aanmelden mislukt. Probeer opnieuw aan te melden."
@@ -957,7 +959,13 @@ def upload_url():
     try:
         storage_path = f"{course_name}/{filename}"
         result = _sb_admin.storage.from_("course-files").create_signed_upload_url(storage_path)
-        return jsonify({"signed_url": result["signedUrl"], "path": storage_path})
+        if isinstance(result, dict):
+            url = result.get("signed_url") or result.get("signedUrl") or result.get("signedURL")
+        else:
+            url = getattr(result, "signed_url", None) or getattr(result, "signedURL", None)
+        if not url:
+            return jsonify({"error": f"Geen upload-URL ontvangen (ruwe response: {result!r})"}), 500
+        return jsonify({"signed_url": url, "path": storage_path})
     except Exception as e:
         log.exception("upload-url failed")
         return jsonify({"error": f"Kon geen upload-URL aanmaken: {type(e).__name__}: {e}"}), 500

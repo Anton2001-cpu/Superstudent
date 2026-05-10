@@ -173,7 +173,8 @@
       margin-bottom: 6px;
     }
     input[type="email"],
-    input[type="password"] {
+    input[type="password"],
+    .pw-wrap input[type="text"] {
       width: 100%;
       background: var(--bg);
       border: 1px solid rgba(0,132,255,0.5);
@@ -187,10 +188,26 @@
       margin-bottom: 10px;
     }
     input[type="email"]:focus,
-    input[type="password"]:focus {
+    input[type="password"]:focus,
+    .pw-wrap input[type="text"]:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 3px var(--accent-dim);
     }
+    .pw-wrap { position: relative; margin-bottom: 10px; }
+    .pw-wrap input { margin-bottom: 0 !important; padding-right: 40px; }
+    .pw-eye {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-3);
+      padding: 4px;
+      line-height: 0;
+    }
+    .pw-eye:hover { color: var(--text-2); }
     .error { font-size: 11px; color: #d63030; min-height: 16px; margin-bottom: 10px; }
 
     /* ── Buttons ── */
@@ -338,7 +355,7 @@
     {% endif %}
 
     <!-- Role tabs (informational, update based on email) -->
-    <div class="tab-group" id="tab-group">
+    <div class="tab-group" id="tab-group" style="opacity:0.35;pointer-events:none;">
       <button class="tab active" id="tab-student" tabindex="-1">Student</button>
       <button class="tab" id="tab-teacher" tabindex="-1">Leerkracht</button>
     </div>
@@ -359,17 +376,30 @@
     <!-- ── Stap 2a: Nieuw account (registratie) ── -->
     <div id="step-register" class="step-hidden">
       <span class="step-badge badge-new">Nieuw account</span>
-      <div class="step-info">Kies een wachtwoord voor je account. Je ontvangt een bevestigingsmail om je adres te verifiëren.</div>
+      <div class="step-info">Kies een wachtwoord voor je account. Je wordt direct aangemeld na registratie.</div>
       <form method="POST" id="form-register">
         <input type="hidden" name="email" id="reg-email-h">
         <input type="hidden" name="mode" value="register">
         <div class="pw-label">Wachtwoord</div>
-        <input type="password" name="password" id="reg-password"
-               placeholder="Minimaal 8 tekens" autocomplete="new-password">
+        <div class="pw-wrap">
+          <input type="password" name="password" id="reg-password"
+                 placeholder="Minimaal 8 tekens" autocomplete="new-password">
+          <button type="button" class="pw-eye" onclick="togglePw(this)" aria-label="Wachtwoord tonen">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
         <div class="pw-label">Bevestig wachtwoord</div>
-        <input type="password" name="confirm_password"
-               placeholder="Herhaal wachtwoord" autocomplete="new-password">
+        <div class="pw-wrap">
+          <input type="password" name="confirm_password"
+                 placeholder="Herhaal wachtwoord" autocomplete="new-password">
+          <button type="button" class="pw-eye" onclick="togglePw(this)" aria-label="Wachtwoord tonen">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
         <div class="error" id="reg-error"></div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2);margin-bottom:10px;cursor:pointer;">
+          <input type="checkbox" name="remember" value="1" checked style="accent-color:var(--accent);"> Aangemeld blijven
+        </label>
         <button class="btn-primary" type="submit">Account aanmaken</button>
       </form>
       <button class="btn-back" type="button" onclick="goBack()">← Terug</button>
@@ -383,27 +413,23 @@
         <input type="hidden" name="email" id="login-email-h">
         <input type="hidden" name="mode" value="login">
         <div class="pw-label">Wachtwoord</div>
-        <input type="password" name="password" id="login-password"
-               placeholder="••••••••" autocomplete="current-password">
+        <div class="pw-wrap">
+          <input type="password" name="password" id="login-password"
+                 placeholder="••••••••" autocomplete="current-password">
+          <button type="button" class="pw-eye" onclick="togglePw(this)" aria-label="Wachtwoord tonen">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
         <div class="error" id="login-error"></div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2);margin-bottom:10px;cursor:pointer;">
+          <input type="checkbox" name="remember" value="1" checked style="accent-color:var(--accent);"> Aangemeld blijven
+        </label>
         <button class="btn-primary" type="submit">Aanmelden</button>
       </form>
       <button class="btn-back" type="button" onclick="goBack()">← Terug</button>
     </div>
 
-    <!-- ── Stap 3: Verificatie afwachten ── -->
-    <div id="step-verify" class="step-hidden">
-      <div class="verify-wrap">
-        <div class="verify-icon">✉</div>
-        <div class="verify-title">Controleer je inbox</div>
-        <div class="verify-body">
-          Een bevestigingsmail is verstuurd naar
-          <strong id="verify-email-display"></strong>.
-          Klik op de link om je account te activeren — daarna kan je aanmelden.
-        </div>
-        <button class="btn-back" type="button" onclick="goBack()">← Terug naar aanmelden</button>
-      </div>
-    </div>
+    <div id="step-verify" class="step-hidden"></div>
 
     {% else %}
     <!-- Fallback: wachtwoord-gebaseerde login (geen Supabase) -->
@@ -426,6 +452,16 @@
   const srvError  = {{ (error or '') | tojson }};
   const srvVerify = {{ 'true' if verify_pending else 'false' }};
 
+  const EYE_OPEN = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  const EYE_SHUT = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+
+  function togglePw(btn) {
+    const inp = btn.closest('.pw-wrap').querySelector('input');
+    const nowVisible = inp.type === 'text';
+    inp.type = nowVisible ? 'password' : 'text';
+    btn.innerHTML = nowVisible ? EYE_OPEN : EYE_SHUT;
+  }
+
   const STEPS = ['email', 'register', 'login', 'verify'];
 
   function showStep(name) {
@@ -437,6 +473,16 @@
   function updateTabs(email) {
     const tabS = document.getElementById('tab-student');
     const tabT = document.getElementById('tab-teacher');
+    const grp  = document.getElementById('tab-group');
+    if (!email || !email.trim()) {
+      grp.style.opacity = '0.35';
+      grp.style.pointerEvents = 'none';
+      tabS.classList.remove('active');
+      tabT.classList.remove('active', 'tab-disabled');
+      return;
+    }
+    grp.style.opacity = '';
+    grp.style.pointerEvents = '';
     if (email.includes('student')) {
       tabS.classList.add('active');
       tabT.classList.remove('active');
@@ -535,7 +581,6 @@
   // ── Initialisatie op basis van serverstate ──
   (function init() {
     if (srvVerify && srvEmail) {
-      document.getElementById('verify-email-display').textContent = srvEmail;
       updateTabs(srvEmail);
       showStep('verify');
     } else if (srvEmail && srvMode) {
