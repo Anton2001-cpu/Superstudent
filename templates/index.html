@@ -2209,7 +2209,6 @@ function switchView(name, btn) {
 let pendingBtn = null;
 
 function requirePassword(btn) {
-  btn.classList.remove('tab-loading');
   if (_serverIsStudent) {
     toast(currentLang === 'NL'
       ? 'Studentenaccounts hebben geen toegang tot het lerarenpaneel.'
@@ -2289,7 +2288,6 @@ function showTeacherSkeleton() {
 }
 
 function activateTeacher(btn) {
-  btn.classList.add('tab-loading');
   const shackle = document.getElementById('teacher-lock-shackle');
   if (shackle) shackle.setAttribute('d', 'M7 11V7a5 5 0 0 1 9.9-1');
   try {
@@ -2309,11 +2307,9 @@ function activateTeacher(btn) {
       .catch(() => {})
       .finally(() => {
         document.getElementById('teacher-loader').classList.remove('visible');
-        btn.classList.remove('tab-loading');
       });
   } catch(e) {
     document.getElementById('teacher-loader').classList.remove('visible');
-    btn.classList.remove('tab-loading');
   }
 }
 
