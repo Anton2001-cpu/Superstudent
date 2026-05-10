@@ -988,9 +988,10 @@ def process_upload():
     if access_err: return access_err
     file_path = UPLOAD_FOLDER / filename
     try:
-        # Download from Supabase Storage to /tmp for processing
+        # Download from Supabase Storage to /tmp for processing (use service key — anon key has no read access on private bucket)
+        _dl_client = _sb_admin if _sb_admin else _sb
         try:
-            file_bytes = _sb.storage.from_("course-files").download(storage_path)
+            file_bytes = _dl_client.storage.from_("course-files").download(storage_path)
         except Exception as e:
             return jsonify({"error": f"[Stap 1/4] Bestand ophalen uit opslag mislukt: {type(e).__name__}: {e}"}), 500
         try:
