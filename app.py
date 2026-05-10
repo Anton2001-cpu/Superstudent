@@ -26,12 +26,12 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 log = logging.getLogger(__name__)
 
-_IS_PRODUCTION = bool(os.getenv("RENDER") or os.getenv("VERCEL"))
+_IS_PRODUCTION = bool(os.getenv("VERCEL"))
 
 _SECRET = os.getenv("SECRET_KEY")
 if not _SECRET:
     raise RuntimeError(
-        "SECRET_KEY is not set. Add it to your .env file or Render environment variables."
+        "SECRET_KEY is not set. Add it to your .env file or Vercel environment variables."
     )
 
 # ── Supabase client (initialised early — needed for email auth check) ─────────
@@ -69,7 +69,7 @@ if not _EMAIL_AUTH:
         if _IS_PRODUCTION:
             raise RuntimeError(
                 "SITE_PASSWORD is still set to the default 'student'. "
-                "Set a strong password in your Vercel/Render environment variables."
+                "Set a strong password in your Vercel environment variables."
             )
         else:
             log.warning("WARNING: SITE_PASSWORD is the default 'student'. Set a strong password before deploying.")
