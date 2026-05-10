@@ -37,13 +37,29 @@ if not _SECRET:
 # ── Supabase client (initialised early — needed for email auth check) ─────────
 _SUPABASE_URL = os.getenv("SUPABASE_URL")
 _SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+_SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 _sb = None
+_sb_admin = None
 if _SUPABASE_URL and _SUPABASE_KEY:
     from supabase import create_client as _create_sb
     _sb = _create_sb(_SUPABASE_URL, _SUPABASE_KEY)
+    if _SUPABASE_SERVICE_KEY:
+        try:
+            _sb_admin = _create_sb(_SUPABASE_URL, _SUPABASE_SERVICE_KEY)
+        except Exception:
+            pass
 
 # Email-based auth is active when Supabase is configured
 _EMAIL_AUTH = bool(_sb)
+
+_supabase_img_src = ""
+if _SUPABASE_URL:
+    try:
+        from urllib.parse import urlparse as _urlparse
+        _p = _urlparse(_SUPABASE_URL)
+        _supabase_img_src = f" {_p.scheme}://{_p.netloc}"
+    except Exception:
+        pass
 
 SITE_PASSWORD = os.getenv("SITE_PASSWORD", "student").strip()
 TEACHER_PASSWORD = os.getenv("TEACHER_PASSWORD", "").strip()
@@ -136,7 +152,7 @@ def _check_course_ownership(course_name: str):
         if result.data:
             owner = result.data[0].get("teacher_id")
             if owner and owner != email:
-                return jsonify({"error": "Je kunt alleen je eigen cursussen bewerken."}), 403
+                return jsonify({"error": f"Je bent ingelogd als {email}. Meld je af en log opnieuw in als de eigenaar van deze cursus."}), 403
     except Exception:
         pass
     return None
@@ -157,12 +173,12 @@ def _is_authenticated():
 
 
 def _is_teacher():
+    if TEACHER_PASSWORD and hmac.compare_digest(request.cookies.get("teacher_auth", ""), _make_teacher_token()):
+        return True
     if _EMAIL_AUTH:
         email = _get_user_email()
         return bool(email and "uantwerpen" in email and "student" not in email)
-    if not TEACHER_PASSWORD:
-        return False
-    return hmac.compare_digest(request.cookies.get("teacher_auth", ""), _make_teacher_token())
+    return False
 
 
 def require_teacher():
@@ -198,8 +214,8 @@ def set_security_headers(response):
         "default-src 'self'; "
         "script-src 'self' 'unsafe-inline'; "
         "style-src 'self' 'unsafe-inline'; "
-        "img-src 'self' data:; "
-        "connect-src 'self'; "
+        f"img-src 'self' data:{_supabase_img_src}; "
+        f"connect-src 'self'{_supabase_img_src}; "
         "frame-ancestors 'none';"
     )
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
@@ -321,8 +337,17 @@ def login():
                                 ).execute()
                             except Exception:
                                 log.exception("user_registrations upsert failed (non-fatal)")
+                            if not result.session and _sb_admin:
+                                try:
+                                    _sb_admin.auth.admin.update_user_by_id(
+                                        result.user.id, {"email_confirm": True}
+                                    )
+                                    result = _sb.auth.sign_in_with_password(
+                                        {"email": email, "password": password}
+                                    )
+                                except Exception:
+                                    log.exception("auto-confirm on register failed")
                             if result.session:
-                                # Email confirmation disabled — immediately sign in
                                 _clear_failures(ip)
                                 csrf = _new_csrf_token()
                                 is_teacher = "student" not in email
@@ -339,9 +364,9 @@ def login():
                                                 max_age=60 * 60 * 24 * 30)
                                 return resp
                             else:
-                                # Confirmation email sent
-                                verify_pending = True
+                                error = "Account aangemaakt maar aanmelden mislukt. Probeer opnieuw aan te melden."
                                 prefill_email = email
+                                prefill_mode = "login"
                         else:
                             error = "Registratie mislukt. Probeer opnieuw."
                             prefill_email = email
@@ -357,6 +382,8 @@ def login():
                             prefill_mode = mode
                         prefill_email = email
             else:  # mode == "login"
+                remember = request.form.get("remember") == "1"
+                cookie_age = 60 * 60 * 24 * 30 if remember else None
                 try:
                     result = _sb.auth.sign_in_with_password({"email": email, "password": password})
                     if result and result.user:
@@ -367,19 +394,55 @@ def login():
                         resp = make_response(redirect(target))
                         resp.set_cookie("auth", _make_user_token(email), httponly=True,
                                         samesite="Lax", secure=_IS_PRODUCTION,
-                                        max_age=60 * 60 * 24 * 30)
+                                        max_age=cookie_age)
                         resp.set_cookie("user_email", email, httponly=True,
                                         samesite="Lax", secure=_IS_PRODUCTION,
-                                        max_age=60 * 60 * 24 * 30)
+                                        max_age=cookie_age)
                         resp.set_cookie("csrf_token", csrf, httponly=False,
                                         samesite="Lax", secure=_IS_PRODUCTION,
-                                        max_age=60 * 60 * 24 * 30)
+                                        max_age=cookie_age)
                         return resp
                 except Exception as exc:
                     err_str = str(exc).lower()
                     if "email not confirmed" in err_str or "not confirmed" in err_str:
-                        verify_pending = True
+                        if _sb_admin:
+                            try:
+                                all_users = _sb_admin.auth.admin.list_users()
+                                user_obj = next(
+                                    (u for u in (all_users or []) if u.email and u.email.lower() == email),
+                                    None,
+                                )
+                                if user_obj:
+                                    _sb_admin.auth.admin.update_user_by_id(
+                                        user_obj.id, {"email_confirm": True}
+                                    )
+                                    result2 = _sb.auth.sign_in_with_password(
+                                        {"email": email, "password": password}
+                                    )
+                                    if result2 and result2.user:
+                                        _clear_failures(ip)
+                                        is_teacher = "student" not in email
+                                        csrf = _new_csrf_token()
+                                        target = url_for("index") + ("?teacher=1" if is_teacher else "")
+                                        resp = make_response(redirect(target))
+                                        resp.set_cookie("auth", _make_user_token(email), httponly=True,
+                                                        samesite="Lax", secure=_IS_PRODUCTION,
+                                                        max_age=60 * 60 * 24 * 30)
+                                        resp.set_cookie("user_email", email, httponly=True,
+                                                        samesite="Lax", secure=_IS_PRODUCTION,
+                                                        max_age=60 * 60 * 24 * 30)
+                                        resp.set_cookie("csrf_token", csrf, httponly=False,
+                                                        samesite="Lax", secure=_IS_PRODUCTION,
+                                                        max_age=60 * 60 * 24 * 30)
+                                        return resp
+                                error = "Activatie mislukt. Neem contact op met de beheerder."
+                            except Exception:
+                                log.exception("auto-confirm on login failed")
+                                error = "Je e-mailadres is nog niet bevestigd. Neem contact op met de beheerder."
+                        else:
+                            error = "Je e-mailadres is nog niet bevestigd. Neem contact op met de beheerder."
                         prefill_email = email
+                        prefill_mode = mode
                     else:
                         _record_failure(ip)
                         error = "Onjuist wachtwoord."
@@ -435,10 +498,8 @@ def logout():
 
 @app.route("/api/teacher-login", methods=["POST"])
 def teacher_login():
-    if _EMAIL_AUTH:
-        if _is_teacher():
-            return jsonify({"success": True})
-        return jsonify({"error": "Geen leerkrachtaccount. Studentmailadressen hebben geen leerkrachttoegang."}), 403
+    if _EMAIL_AUTH and _is_teacher():
+        return jsonify({"success": True})
     if not TEACHER_PASSWORD:
         return jsonify({"error": "Teacher access not configured"}), 403
     ip = _client_ip()
@@ -472,7 +533,7 @@ COURSES_FILE = DATA_FOLDER / "courses.json"
 FILE_META_FILE = DATA_FOLDER / "file_meta.json"
 STATS_FILE     = DATA_FOLDER / "stats.json"
 FEEDBACK_FILE  = DATA_FOLDER / "feedback.json"
-ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt"}
+ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt", ".pptx"}
 
 MAX_QUESTION_LENGTH = 1000
 MAX_COURSE_NAME_LENGTH = 100
@@ -651,7 +712,10 @@ def index():
     is_student = bool(user_email) and "student" in user_email.lower()
     return render_template("index.html",
                            is_teacher="true" if _is_teacher() else "false",
-                           is_student="true" if is_student else "false")
+                           is_student="true" if is_student else "false",
+                           current_user_email=user_email,
+                           supabase_url=_SUPABASE_URL or "",
+                           supabase_key=_SUPABASE_KEY or "")
 
 
 @app.route("/api/ping")
@@ -805,39 +869,151 @@ def upload():
 
     filename = secure_filename(file.filename)
     file_path = UPLOAD_FOLDER / filename
-    file.save(str(file_path))
+
+    # Stap 1: bestand tijdelijk opslaan
+    try:
+        file.save(str(file_path))
+    except OSError as e:
+        return jsonify({"error": f"[Stap 1/5] Bestand kon niet worden opgeslagen op de server: {type(e).__name__}: {e}"}), 500
 
     try:
-        engine = get_rag()
-        chunks = engine.add_document(str(file_path), course_name, filename)
-        save_course_name(course_name)
-        file_size = file_path.stat().st_size if file_path.exists() else 0
-        # Upload original file to Supabase Storage for preview
+        file_size = file_path.stat().st_size
+        if file_size == 0:
+            return jsonify({"error": "[Stap 1/5] Het geüploade bestand is leeg (0 bytes)."}), 400
+        if file_size > 20 * 1024 * 1024:
+            return jsonify({"error": f"[Stap 1/5] Bestand is te groot ({file_size // 1024 // 1024} MB). Maximum is 20 MB."}), 400
+
+        # Stap 2: RAG-engine initialiseren
+        try:
+            engine = get_rag()
+        except Exception as e:
+            return jsonify({"error": f"[Stap 2/5] AI-engine kon niet worden gestart: {type(e).__name__}: {e}"}), 500
+
+        # Stap 3: document verwerken en chunks opslaan in Supabase
+        try:
+            chunks = engine.add_document(str(file_path), course_name, filename)
+        except Exception as e:
+            return jsonify({"error": f"[Stap 3/5] Bestand kon niet worden verwerkt (lezen/AI): {type(e).__name__}: {e}"}), 500
+
+        # Stap 4: origineel bestand uploaden naar Supabase Storage
+        storage_warning = None
         if _sb and file_path.exists():
             try:
                 storage_path = f"{course_name}/{filename}"
                 with open(str(file_path), "rb") as fh:
                     file_bytes = fh.read()
                 ext = Path(filename).suffix.lower()
-                mime = {"pdf": "application/pdf", "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "txt": "text/plain"}.get(ext.lstrip("."), "application/octet-stream")
+                mime = {"pdf": "application/pdf", "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation", "txt": "text/plain"}.get(ext.lstrip("."), "application/octet-stream")
                 _sb.storage.from_("course-files").upload(storage_path, file_bytes, {"content-type": mime, "upsert": "true"})
-            except Exception:
+            except Exception as e:
                 log.exception("storage upload failed (non-fatal)")
-        file_meta = load_file_meta()
-        file_meta.setdefault(course_name, {})[filename] = {
-            "display_name": filename,
-            "upload_date": datetime.utcnow().isoformat(),
-            "file_size": file_size,
-        }
-        save_file_meta(file_meta)
+                storage_warning = f"[Stap 4/5] Bestand opgeslagen in AI maar preview-opslag mislukte: {type(e).__name__}: {e}"
+
+        # Stap 5: metadata opslaan
+        try:
+            save_course_name(course_name)
+            file_meta = load_file_meta()
+            file_meta.setdefault(course_name, {})[filename] = {
+                "display_name": filename,
+                "upload_date": datetime.utcnow().isoformat(),
+                "file_size": file_size,
+            }
+            save_file_meta(file_meta)
+        except Exception as e:
+            return jsonify({"error": f"[Stap 5/5] Bestandsinfo kon niet worden opgeslagen: {type(e).__name__}: {e}"}), 500
+
+        result_msg = f'"{filename}" toegevoegd aan {course_name} ({chunks} secties)'
+        if storage_warning:
+            result_msg += f" — waarschuwing: {storage_warning}"
         return jsonify({
             "success": True,
             "chunks": chunks,
-            "message": f'Added {chunks} sections from "{filename}" to {course_name}',
+            "message": result_msg,
         })
-    except Exception:
-        log.exception("upload failed")
-        return jsonify({"error": "Something went wrong processing the file."}), 500
+    finally:
+        try:
+            file_path.unlink(missing_ok=True)
+        except Exception:
+            pass
+
+
+# Signed URL for large-file direct upload (bypasses Vercel 4.5 MB body limit)
+
+@app.route("/api/upload-url", methods=["POST"])
+def upload_url():
+    err = require_teacher()
+    if err: return err
+    if not _sb_admin:
+        return jsonify({"error": "Directe upload niet beschikbaar (service key niet geconfigureerd)."}), 503
+    data = request.get_json(silent=True) or {}
+    filename = secure_filename(data.get("filename", ""))
+    course_name = (data.get("course") or "").strip()[:MAX_COURSE_NAME_LENGTH]
+    if not filename or not course_name:
+        return jsonify({"error": "Bestandsnaam en cursusnaam zijn verplicht."}), 400
+    if not allowed(filename):
+        return jsonify({"error": "Alleen PDF, Word (.docx) en .txt bestanden zijn toegestaan."}), 400
+    access_err = _check_course_ownership(course_name)
+    if access_err: return access_err
+    try:
+        storage_path = f"{course_name}/{filename}"
+        result = _sb_admin.storage.from_("course-files").create_signed_upload_url(storage_path)
+        return jsonify({"signed_url": result["signedUrl"], "path": storage_path})
+    except Exception as e:
+        log.exception("upload-url failed")
+        return jsonify({"error": f"Kon geen upload-URL aanmaken: {type(e).__name__}: {e}"}), 500
+
+
+@app.route("/api/process-upload", methods=["POST"])
+def process_upload():
+    err = require_teacher()
+    if err: return err
+    if not _sb:
+        return jsonify({"error": "Supabase niet geconfigureerd."}), 503
+    data = request.get_json(silent=True) or {}
+    storage_path = (data.get("path") or "").strip()
+    filename = secure_filename(data.get("filename", ""))
+    course_name = (data.get("course") or "").strip()[:MAX_COURSE_NAME_LENGTH]
+    file_size = int(data.get("size", 0))
+    if not storage_path or not filename or not course_name:
+        return jsonify({"error": "Ontbrekende velden: path, filename, course."}), 400
+    access_err = _check_course_ownership(course_name)
+    if access_err: return access_err
+    file_path = UPLOAD_FOLDER / filename
+    try:
+        # Download from Supabase Storage to /tmp for processing
+        try:
+            file_bytes = _sb.storage.from_("course-files").download(storage_path)
+        except Exception as e:
+            return jsonify({"error": f"[Stap 1/4] Bestand ophalen uit opslag mislukt: {type(e).__name__}: {e}"}), 500
+        try:
+            with open(str(file_path), "wb") as fh:
+                fh.write(file_bytes)
+        except OSError as e:
+            return jsonify({"error": f"[Stap 1/4] Bestand opslaan mislukt: {type(e).__name__}: {e}"}), 500
+        try:
+            engine = get_rag()
+        except Exception as e:
+            return jsonify({"error": f"[Stap 2/4] AI-engine kon niet worden gestart: {type(e).__name__}: {e}"}), 500
+        try:
+            chunks = engine.add_document(str(file_path), course_name, filename)
+        except Exception as e:
+            return jsonify({"error": f"[Stap 3/4] Bestand verwerken mislukt: {type(e).__name__}: {e}"}), 500
+        try:
+            save_course_name(course_name)
+            file_meta = load_file_meta()
+            file_meta.setdefault(course_name, {})[filename] = {
+                "display_name": filename,
+                "upload_date": datetime.utcnow().isoformat(),
+                "file_size": file_size or (file_path.stat().st_size if file_path.exists() else 0),
+            }
+            save_file_meta(file_meta)
+        except Exception as e:
+            return jsonify({"error": f"[Stap 4/4] Metadata opslaan mislukt: {type(e).__name__}: {e}"}), 500
+        return jsonify({
+            "success": True,
+            "chunks": chunks,
+            "message": f'"{filename}" toegevoegd aan {course_name} ({chunks} secties)',
+        })
     finally:
         try:
             file_path.unlink(missing_ok=True)
