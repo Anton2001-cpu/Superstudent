@@ -958,7 +958,7 @@ def upload_url():
     if access_err: return access_err
     try:
         storage_path = f"{course_name}/{filename}"
-        result = _sb_admin.storage.from_("course-files").create_signed_upload_url(storage_path)
+        result = _sb_admin.storage.from_("course-files").create_signed_upload_url(storage_path, upsert=True)
         if isinstance(result, dict):
             url = result.get("signed_url") or result.get("signedUrl") or result.get("signedURL")
         else:
