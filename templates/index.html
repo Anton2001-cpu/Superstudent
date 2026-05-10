@@ -3398,15 +3398,25 @@ async function createCourse() {
 
 async function deleteActiveCourse() {
   if (!activeCourse) return;
+  const courseName = activeCourse;
   const _confirmMsg = currentLang === 'NL'
-    ? `Cursus "${activeCourse}" en al het materiaal verwijderen?`
-    : `Delete course "${activeCourse}" and all its materials?`;
+    ? `Cursus "${courseName}" en al het materiaal verwijderen?`
+    : `Delete course "${courseName}" and all its materials?`;
   if (!confirm(_confirmMsg)) return;
-  await apiFetch(`/api/courses/${encodeURIComponent(activeCourse)}`, { method: 'DELETE' });
-  toast((TRANSLATIONS[currentLang] || TRANSLATIONS.EN).courseDeleted);
+
+  // Optimistic update: remove from UI immediately so it feels instant
+  teacherCourses = teacherCourses.filter(c => c.name !== courseName);
   hideCourseDetail();
-  loadTeacherCourses();
-  loadBooks();
+  renderTeacherList();
+
+  const res = await apiFetch(`/api/courses/${encodeURIComponent(courseName)}`, { method: 'DELETE' });
+  if (res) {
+    toast((TRANSLATIONS[currentLang] || TRANSLATIONS.EN).courseDeleted);
+    loadBooks();
+  } else {
+    // API failed — restore actual state from server
+    loadTeacherCourses();
+  }
 }
 
 async function deleteFile(course, filename) {
