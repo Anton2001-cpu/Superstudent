@@ -174,6 +174,7 @@
     }
     input[type="email"],
     input[type="password"],
+    input[type="text"],
     .pw-wrap input[type="text"] {
       width: 100%;
       background: var(--bg);
@@ -189,6 +190,7 @@
     }
     input[type="email"]:focus,
     input[type="password"]:focus,
+    input[type="text"]:focus,
     .pw-wrap input[type="text"]:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 3px var(--accent-dim);
@@ -429,7 +431,28 @@
       <button class="btn-back" type="button" onclick="goBack()">← Terug</button>
     </div>
 
-    <div id="step-verify" class="step-hidden"></div>
+    <div id="step-verify" class="step-hidden">
+      <div class="verify-wrap">
+        <div class="verify-icon" style="font-size:32px;margin-bottom:10px;">&#9993;</div>
+        <div class="verify-title">Controleer je e-mail</div>
+        <div class="verify-body">
+          We hebben een bevestigingscode gestuurd naar <strong id="verify-email-display"></strong>.<br>
+          Voer de code uit de e-mail hieronder in.
+        </div>
+        <form method="POST" id="form-verify">
+          <input type="hidden" name="email" id="verify-email-h">
+          <input type="hidden" name="mode" value="verify_code">
+          <div class="pw-label">Code uit e-mail</div>
+          <input type="text" name="code" id="verify-code-input"
+                 placeholder="000000" maxlength="8"
+                 autocomplete="one-time-code" inputmode="numeric"
+                 style="text-align:center;letter-spacing:6px;font-size:20px;font-weight:700;">
+          <div class="error" id="verify-error"></div>
+          <button class="btn-primary" type="submit">Bevestigen</button>
+        </form>
+        <button class="btn-back" type="button" onclick="goBack()">← Terug</button>
+      </div>
+    </div>
 
     {% else %}
     <!-- Fallback: wachtwoord-gebaseerde login (geen Supabase) -->
@@ -582,7 +605,11 @@
   (function init() {
     if (srvVerify && srvEmail) {
       updateTabs(srvEmail);
+      document.getElementById('verify-email-h').value = srvEmail;
+      document.getElementById('verify-email-display').textContent = srvEmail;
       showStep('verify');
+      if (srvError) document.getElementById('verify-error').textContent = srvError;
+      setTimeout(() => document.getElementById('verify-code-input').focus(), 80);
     } else if (srvEmail && srvMode) {
       document.getElementById('email-input').value = srvEmail;
       updateTabs(srvEmail);

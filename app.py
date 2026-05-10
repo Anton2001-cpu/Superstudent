@@ -366,9 +366,9 @@ def login():
                                                 max_age=cookie_age)
                                 return resp
                             else:
-                                error = "Account aangemaakt maar aanmelden mislukt. Probeer opnieuw aan te melden."
+                                # Auto-confirm failed — Supabase sent a confirmation e-mail; show OTP step
+                                verify_pending = True
                                 prefill_email = email
-                                prefill_mode = "login"
                         else:
                             error = "Registratie mislukt. Probeer opnieuw."
                             prefill_email = email
@@ -382,6 +382,40 @@ def login():
                             error = "Registratie mislukt. Probeer opnieuw."
                             _record_failure(ip)
                             prefill_mode = mode
+                        prefill_email = email
+            elif mode == "verify_code":
+                code = request.form.get("code", "").strip()
+                if not code:
+                    error = "Voer de verificatiecode in uit je e-mail."
+                    verify_pending = True
+                    prefill_email = email
+                else:
+                    try:
+                        result = _sb.auth.verify_otp({"email": email, "token": code, "type": "signup"})
+                        if result and result.session:
+                            _clear_failures(ip)
+                            csrf = _new_csrf_token()
+                            is_teacher = "student" not in email
+                            target = url_for("index") + ("?teacher=1" if is_teacher else "")
+                            resp = make_response(redirect(target))
+                            resp.set_cookie("auth", _make_user_token(email), httponly=True,
+                                            samesite="Lax", secure=_IS_PRODUCTION,
+                                            max_age=60 * 60 * 24 * 30)
+                            resp.set_cookie("user_email", email, httponly=True,
+                                            samesite="Lax", secure=_IS_PRODUCTION,
+                                            max_age=60 * 60 * 24 * 30)
+                            resp.set_cookie("csrf_token", csrf, httponly=False,
+                                            samesite="Lax", secure=_IS_PRODUCTION,
+                                            max_age=60 * 60 * 24 * 30)
+                            return resp
+                        else:
+                            error = "Ongeldige of verlopen code. Controleer de e-mail en probeer opnieuw."
+                            verify_pending = True
+                            prefill_email = email
+                    except Exception as exc:
+                        err_str = str(exc).lower()
+                        error = "Ongeldige code." if "invalid" in err_str or "expired" in err_str else f"Verificatie mislukt: {exc}"
+                        verify_pending = True
                         prefill_email = email
             else:  # mode == "login"
                 remember = request.form.get("remember") == "1"
