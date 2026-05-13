@@ -1161,6 +1161,31 @@
     }
     .lang-btn:hover { background: var(--bg); color: var(--text); }
 
+    .btn-tts {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 26px; height: 26px; border-radius: 6px;
+      border: 1px solid var(--border-2); background: transparent;
+      color: var(--text-3); cursor: pointer; transition: all 0.15s;
+    }
+    .btn-tts:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-tts.playing { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    .btn-tts.loading { opacity: 0.5; cursor: wait; }
+    .tts-wave {
+      display: inline-flex; align-items: center; gap: 2px;
+      margin-left: 6px; height: 14px;
+    }
+    .tts-wave span {
+      display: inline-block; width: 2px; background: var(--accent);
+      border-radius: 1px; animation: tts-bar 0.8s ease-in-out infinite;
+    }
+    .tts-wave span:nth-child(2) { animation-delay: 0.1s; }
+    .tts-wave span:nth-child(3) { animation-delay: 0.2s; }
+    .tts-wave span:nth-child(4) { animation-delay: 0.3s; }
+    @keyframes tts-bar {
+      0%, 100% { height: 4px; }
+      50% { height: 14px; }
+    }
+
     .teacher-mode-btn {
       width: 28px; height: 28px; padding: 0;
       border-radius: 8px;
@@ -1887,6 +1912,9 @@
           <!-- Welcome editor card -->
           <div id="welcome-editor-card"></div>
 
+          <!-- Voice clone card -->
+          <div id="voice-clone-card"></div>
+
           <!-- Statistics card -->
           <div class="t-card" id="stats-card" style="display:none">
             <div class="t-card-head">
@@ -2501,7 +2529,7 @@ function renderBookList() {
         const label = f.display_name || filename;
         return `
         <label class="book-item">
-          <input type="checkbox" class="book-cb" data-ci="${ci}" data-filename="${esc(filename)}" ${ci === 0 ? 'checked' : ''}>
+          <input type="checkbox" class="book-cb" data-ci="${ci}" data-filename="${esc(filename)}" data-course="${esc(c.name)}" ${ci === 0 ? 'checked' : ''}>
           <div class="toggle"></div>
           <span class="book-label" title="${esc(label)}">${trunc(label)}</span>
         </label>`;
@@ -2562,10 +2590,72 @@ function toggleTeacherStyle() {
   teacherStyleActive = !teacherStyleActive;
   const btn = document.getElementById('teacher-mode-btn');
   if (btn) btn.classList.toggle('active', teacherStyleActive);
-  const lbl = currentLang === 'NL' ? 'Leerkrachtstijl' : 'Teacher style';
   toast(teacherStyleActive
     ? (currentLang === 'NL' ? 'Leerkrachtstijl ingeschakeld' : 'Teacher style on')
     : (currentLang === 'NL' ? 'Leerkrachtstijl uitgeschakeld' : 'Teacher style off'), 1500);
+}
+
+// ── TTS ────────────────────────────────────────────────────────────────────
+let _currentAudio = null;
+const _ttsCache = {};
+
+function _stripMarkdown(text) {
+  return text.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1')
+             .replace(/^#{1,6}\s+/gm, '').replace(/`{1,3}[^`]*`{1,3}/g, '')
+             .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').trim();
+}
+
+async function playTTS(text, course, blockEl) {
+  const uid = blockEl?.querySelector('.btn-tts')?.id?.replace('tts-', '');
+  const btn = uid ? document.getElementById('tts-' + uid) : null;
+
+  // Stop current audio
+  if (_currentAudio) { _currentAudio.pause(); _currentAudio = null; }
+  document.querySelectorAll('.btn-tts.playing').forEach(b => b.classList.remove('playing'));
+
+  const plain = _stripMarkdown(text).slice(0, 1500);
+  if (!plain) return;
+
+  if (btn) { btn.style.display = 'inline-flex'; btn.classList.add('loading'); }
+
+  const csrf = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('csrf_token='))?.split('=')[1] || '';
+  try {
+    const res = await fetch('/api/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+      body: JSON.stringify({ text: plain, course }),
+    });
+    if (!res.ok) throw new Error('TTS failed');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    _currentAudio = audio;
+    if (btn) { btn.classList.remove('loading'); btn.classList.add('playing'); }
+    audio.onended = () => {
+      if (btn) btn.classList.remove('playing');
+      URL.revokeObjectURL(url);
+      _currentAudio = null;
+    };
+    audio.play();
+    // Store for replay
+    if (uid) _ttsCache[uid] = { text: plain, course };
+  } catch (e) {
+    if (btn) { btn.classList.remove('loading'); btn.style.display = 'inline-flex'; }
+  }
+}
+
+async function replayTTS(uid) {
+  const btn = document.getElementById('tts-' + uid);
+  // If playing, stop
+  if (btn?.classList.contains('playing') && _currentAudio) {
+    _currentAudio.pause(); _currentAudio = null;
+    btn.classList.remove('playing');
+    return;
+  }
+  const cached = _ttsCache[uid];
+  if (!cached) return;
+  const blockEl = btn?.closest('.result-block');
+  await playTTS(cached.text, cached.course, blockEl);
 }
 
 async function askQuestion() {
@@ -2674,6 +2764,9 @@ async function askQuestion() {
         <button class="btn-copy" onclick="copyAnswer('${uid}')" title="Copy">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         </button>
+        <button class="btn-tts" id="tts-${uid}" onclick="replayTTS('${uid}')" title="${currentLang==='NL'?'Afspelen':'Play audio'}" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        </button>
       </div>
       ${buildImagesHtml(images)}
       ${buildExtraHtml(q)}
@@ -2683,6 +2776,12 @@ async function askQuestion() {
     chatHistory.push({ role: 'user', content: q });
     chatHistory.push({ role: 'assistant', content: fullText });
     if (chatHistory.length > 10) chatHistory.splice(0, 2);
+
+    // Auto-play TTS when leerkrachtstijl is active
+    if (teacherStyleActive && fullText && !noAnswer) {
+      const course = document.querySelector('.book-cb:checked')?.dataset?.course || '';
+      playTTS(fullText, course, el);
+    }
 
     // If no answer found, auto-fetch online info
     if (noAnswer) {
@@ -3073,6 +3172,7 @@ function showCourseDetail(name) {
   if (dropZoneEl) dropZoneEl.style.display = isMine ? '' : 'none';
   renderFileList(course.files, isMine);
   renderWelcomeEditor(name, course.welcome || '', isMine);
+  renderVoiceCloneCard(name, isMine);
   if (!isMine) {
     const readonlyBanner = document.getElementById('readonly-banner');
     if (!readonlyBanner) {
@@ -3087,6 +3187,73 @@ function showCourseDetail(name) {
     if (b) b.remove();
   }
   showStats();
+}
+
+async function renderVoiceCloneCard(courseName, isMine = true) {
+  const el = document.getElementById('voice-clone-card');
+  if (!el || !isMine) { if (el) el.innerHTML = ''; return; }
+  // Check current voice status
+  let hasVoice = false;
+  try {
+    const r = await apiFetch(`/api/voice-status?course=${encodeURIComponent(courseName)}`);
+    if (r) { const d = await r.json(); hasVoice = !!d.voice_id; }
+  } catch {}
+  el.innerHTML = `
+    <div class="t-card" style="margin-top:0">
+      <div class="t-card-head">
+        <div class="t-card-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:middle"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          Stem van de leerkracht
+        </div>
+      </div>
+      <div style="padding:12px 16px;font-size:12px;color:var(--text-2);line-height:1.6">
+        ${hasVoice
+          ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+               <span style="color:#22c55e;font-weight:600">Stem actief</span>
+               <span style="color:var(--text-3)">— antwoorden worden afgespeeld in de stem van de leerkracht</span>
+             </div>
+             <button class="btn-confirm" onclick="deleteVoiceClone('${escAttr(courseName)}')" style="font-size:11px;padding:4px 10px">Stem verwijderen</button>`
+          : `<p style="margin:0 0 10px">Upload een MP3-opname van jezelf en klik op "Stem klonen" om antwoorden in jouw eigen stem af te spelen.</p>
+             <button class="btn-confirm" id="btn-clone-voice" onclick="cloneVoice('${escAttr(courseName)}')" style="font-size:11px;padding:4px 10px">
+               Stem klonen van geüploade MP3
+             </button>
+             <div id="clone-status" style="margin-top:8px;font-size:11px;color:var(--text-3)"></div>`
+        }
+      </div>
+    </div>`;
+}
+
+async function cloneVoice(courseName) {
+  const btn = document.getElementById('btn-clone-voice');
+  const status = document.getElementById('clone-status');
+  if (btn) { btn.disabled = true; btn.textContent = 'Bezig met klonen…'; }
+  if (status) status.textContent = 'Audio verwerken en naar ElevenLabs sturen…';
+  const csrf = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('csrf_token='))?.split('=')[1] || '';
+  try {
+    const r = await fetch('/api/voice-clone', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+      body: JSON.stringify({ course: courseName }),
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    toast('Stem succesvol gekloond!', 3000);
+    renderVoiceCloneCard(courseName, true);
+  } catch (e) {
+    if (status) status.textContent = 'Fout: ' + e.message;
+    if (btn) { btn.disabled = false; btn.textContent = 'Stem klonen van geüploade MP3'; }
+  }
+}
+
+async function deleteVoiceClone(courseName) {
+  if (!confirm('Stem verwijderen?')) return;
+  const csrf = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('csrf_token='))?.split('=')[1] || '';
+  try {
+    await fetch(`/api/voice-clone?course=${encodeURIComponent(courseName)}`, {
+      method: 'DELETE', headers: { 'X-CSRF-Token': csrf },
+    });
+    renderVoiceCloneCard(courseName, true);
+  } catch {}
 }
 
 function renderWelcomeEditor(courseName, currentText, isMine = true) {

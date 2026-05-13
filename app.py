@@ -1204,6 +1204,150 @@ def chat_stream():
                          headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
+# ── TTS / Voice cloning ──────────────────────────────────────────────────────
+
+def _get_voice_id(course_name: str) -> str | None:
+    if not _sb or not course_name:
+        return None
+    try:
+        rows = _sb.table("voice_settings").select("voice_id").eq("course", course_name).execute().data
+        return rows[0]["voice_id"] if rows else None
+    except Exception:
+        return None
+
+
+def _tts_generate(text: str, voice_id: str = None) -> bytes:
+    elevenlabs_key = os.getenv("ELEVENLABS_API_KEY")
+    if voice_id and elevenlabs_key:
+        import requests as _req
+        r = _req.post(
+            f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}",
+            headers={"xi-api-key": elevenlabs_key, "Content-Type": "application/json"},
+            json={
+                "text": text,
+                "model_id": "eleven_multilingual_v2",
+                "voice_settings": {"stability": 0.5, "similarity_boost": 0.8},
+            },
+            timeout=30,
+        )
+        if r.status_code == 200:
+            return r.content
+    # Fallback: OpenAI TTS
+    from openai import OpenAI as _OAI
+    resp = _OAI(api_key=os.getenv("OPENAI_API_KEY")).audio.speech.create(
+        model="tts-1", voice="onyx", input=text
+    )
+    return resp.content
+
+
+@app.route("/api/tts", methods=["POST"])
+def tts():
+    if not _is_authenticated():
+        return jsonify({"error": "Not authenticated"}), 401
+    from flask import Response as FlaskResponse
+    import io
+    data = request.get_json(silent=True) or {}
+    text = (data.get("text") or "").strip()[:1500]
+    course = (data.get("course") or "").strip()
+    if not text:
+        return jsonify({"error": "No text"}), 400
+    try:
+        voice_id = _get_voice_id(course)
+        audio = _tts_generate(text, voice_id=voice_id)
+        return FlaskResponse(io.BytesIO(audio), mimetype="audio/mpeg",
+                             headers={"Content-Disposition": "inline"})
+    except Exception as e:
+        log.exception("TTS failed")
+        return jsonify({"error": f"TTS mislukt: {e}"}), 500
+
+
+@app.route("/api/voice-status", methods=["GET"])
+def voice_status():
+    err = require_teacher()
+    if err: return err
+    course_name = (request.args.get("course") or "").strip()
+    voice_id = _get_voice_id(course_name) if course_name else None
+    return jsonify({"voice_id": voice_id})
+
+
+@app.route("/api/voice-clone", methods=["POST"])
+def voice_clone_create():
+    err = require_teacher()
+    if err: return err
+    if not _sb:
+        return jsonify({"error": "Database niet beschikbaar"}), 503
+    elevenlabs_key = os.getenv("ELEVENLABS_API_KEY")
+    if not elevenlabs_key:
+        return jsonify({"error": "ELEVENLABS_API_KEY niet geconfigureerd. Voeg toe via Vercel > Settings > Environment Variables."}), 400
+    data = request.get_json(silent=True) or {}
+    course_name = (data.get("course") or "").strip()
+    if not course_name:
+        return jsonify({"error": "Cursusnaam verplicht"}), 400
+    access_err = _check_course_ownership(course_name)
+    if access_err: return access_err
+    # Find uploaded audio files for this course
+    file_meta = load_file_meta()
+    course_files = file_meta.get(course_name, {})
+    audio_filenames = [f for f in course_files if Path(f).suffix.lower() in (".mp3", ".m4a", ".mp4")]
+    if not audio_filenames:
+        return jsonify({"error": "Geen audiobestanden gevonden voor deze cursus. Upload eerst een MP3 of MP4."}), 400
+    # Download audio files from Supabase Storage
+    import requests as _req
+    dl = _sb_admin if _sb_admin else _sb
+    samples = []
+    for fname in audio_filenames[:3]:
+        try:
+            audio_bytes = dl.storage.from_("course-files").download(f"{course_name}/{fname}")
+            samples.append((fname, audio_bytes))
+        except Exception:
+            continue
+    if not samples:
+        return jsonify({"error": "Kon audiobestanden niet ophalen uit opslag"}), 500
+    # Create ElevenLabs voice clone
+    try:
+        files = [("files", (name, data_bytes, "audio/mpeg")) for name, data_bytes in samples]
+        r = _req.post(
+            "https://api.elevenlabs.io/v1/voices/add",
+            headers={"xi-api-key": elevenlabs_key},
+            files=files,
+            data={"name": f"SuperStudent_{course_name}"},
+            timeout=60,
+        )
+        if r.status_code != 200:
+            return jsonify({"error": f"ElevenLabs fout {r.status_code}: {r.text[:300]}"}), 500
+        voice_id = r.json().get("voice_id")
+    except Exception as e:
+        return jsonify({"error": f"Voice cloning mislukt: {e}"}), 500
+    # Persist voice_id
+    try:
+        (_sb_admin or _sb).table("voice_settings").upsert({"course": course_name, "voice_id": voice_id}).execute()
+    except Exception as e:
+        return jsonify({"error": f"Kon stem niet opslaan: {e}"}), 500
+    return jsonify({"success": True, "voice_id": voice_id})
+
+
+@app.route("/api/voice-clone", methods=["DELETE"])
+def voice_clone_delete():
+    err = require_teacher()
+    if err: return err
+    course_name = (request.args.get("course") or "").strip()
+    if not course_name or not _sb:
+        return jsonify({"error": "Cursusnaam verplicht"}), 400
+    try:
+        rows = _sb.table("voice_settings").select("voice_id").eq("course", course_name).execute().data
+        voice_id = rows[0]["voice_id"] if rows else None
+        _sb.table("voice_settings").delete().eq("course", course_name).execute()
+        if voice_id:
+            elevenlabs_key = os.getenv("ELEVENLABS_API_KEY")
+            if elevenlabs_key:
+                import requests as _req
+                _req.delete(f"https://api.elevenlabs.io/v1/voices/{voice_id}",
+                            headers={"xi-api-key": elevenlabs_key}, timeout=10)
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/extra", methods=["POST"])
 def extra_info():
     if not _is_authenticated():
