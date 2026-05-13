@@ -211,8 +211,30 @@ class RAGEngine:
             return self._extract_docx(file_path)
         elif ext == ".txt":
             return self._extract_txt(file_path)
+        elif ext in (".pptx", ".ppsx"):
+            return self._extract_pptx(file_path)
+        elif ext in (".mp4", ".mp3", ".m4a"):
+            return self._extract_mp4(file_path)
         else:
             raise ValueError(f"Unsupported file type: {ext}")
+
+    def _extract_mp4(self, file_path: str) -> list:
+        import io
+        with open(file_path, "rb") as f:
+            audio_bytes = f.read()
+        if len(audio_bytes) > 25 * 1024 * 1024:
+            raise ValueError("Videobestand is te groot voor transcriptie (max 25 MB). Knip het bestand eerst bij.")
+        bio = io.BytesIO(audio_bytes)
+        bio.name = Path(file_path).name
+        transcript = self.client.audio.transcriptions.create(
+            model="whisper-1",
+            file=bio,
+            response_format="text",
+        )
+        text = transcript.strip() if isinstance(transcript, str) else str(transcript).strip()
+        if not text:
+            raise ValueError("Geen spraak gevonden in het videobestand.")
+        return [{"text": text, "location": "Transcriptie"}]
 
     def _is_title_page(self, text: str, page_index: int) -> bool:
         if page_index != 0:
@@ -285,6 +307,20 @@ class RAGEngine:
 
         return sections
 
+    def _extract_pptx(self, path: str) -> list:
+        from pptx import Presentation
+        prs = Presentation(path)
+        slides = []
+        for i, slide in enumerate(prs.slides):
+            texts = []
+            for shape in slide.shapes:
+                if hasattr(shape, "text") and shape.text.strip():
+                    texts.append(shape.text.strip())
+            text = "\n".join(texts).strip()
+            if text:
+                slides.append({"text": text, "location": f"Slide {i + 1}"})
+        return slides
+
     def _extract_txt(self, path: str) -> list:
         with open(path, "r", encoding="utf-8", errors="ignore") as f:
             text = f.read()
@@ -353,7 +389,155 @@ class RAGEngine:
         ]
 
         self.collection.upsert(ids=ids, embeddings=all_embeddings, documents=texts, metadatas=metadatas)
+
+        ext = Path(file_path).suffix.lower()
+        if self._sb:
+            if ext in (".pptx", ".ppsx"):
+                self._store_pptx_images(file_path, course_name, filename)
+            elif ext == ".pdf":
+                self._store_pdf_images(file_path, course_name, filename)
+
         return len(all_chunks)
+
+    def _store_pptx_images(self, file_path: str, course_name: str, filename: str):
+        try:
+            from pptx import Presentation
+            from pptx.enum.shapes import MSO_SHAPE_TYPE
+        except ImportError:
+            return
+        try:
+            prs = Presentation(file_path)
+        except Exception:
+            return
+        try:
+            self._sb.table("slide_images").delete().eq("course", course_name).eq("filename", filename).execute()
+        except Exception:
+            pass
+        rows = []
+        for slide_num, slide in enumerate(prs.slides, start=1):
+            img_idx = 0
+            for shape in slide.shapes:
+                try:
+                    if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
+                        image = shape.image
+                        if len(image.blob) < 5000:
+                            continue
+                        ext = (image.ext or "png").lstrip(".")
+                        storage_path = f"{course_name}/{filename}/slide_{slide_num}_img_{img_idx}.{ext}"
+                        self._sb.storage.from_("course-files").upload(
+                            storage_path, image.blob,
+                            {"content-type": image.content_type or "image/png", "upsert": "true"},
+                        )
+                        rows.append({
+                            "course": course_name,
+                            "filename": filename,
+                            "slide": f"Slide {slide_num}",
+                            "storage_path": storage_path,
+                            "image_index": img_idx,
+                        })
+                        img_idx += 1
+                except Exception:
+                    pass
+        if rows:
+            try:
+                self._sb.table("slide_images").insert(rows).execute()
+            except Exception:
+                pass
+
+    def _store_pdf_images(self, file_path: str, course_name: str, filename: str):
+        try:
+            reader = pypdf.PdfReader(file_path)
+        except Exception:
+            return
+        try:
+            self._sb.table("slide_images").delete().eq("course", course_name).eq("filename", filename).execute()
+        except Exception:
+            pass
+        rows = []
+        seen_hashes = set()
+        for page_num, page in enumerate(reader.pages, start=1):
+            img_idx = 0
+            try:
+                page_images = list(page.images)
+            except Exception:
+                continue
+            for image in page_images:
+                if img_idx >= 3:
+                    break
+                try:
+                    data = image.data
+                    if not data or len(data) < 5000:
+                        continue
+                    img_hash = hashlib.md5(data).hexdigest()
+                    if img_hash in seen_hashes:
+                        continue
+                    seen_hashes.add(img_hash)
+                    name = image.name or ""
+                    ext = name.rsplit(".", 1)[-1].lower() if "." in name else "png"
+                    if ext not in ("jpg", "jpeg", "png", "gif", "webp"):
+                        ext = "png"
+                    mime = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png",
+                            "gif": "image/gif", "webp": "image/webp"}.get(ext, "image/png")
+                    storage_path = f"{course_name}/{filename}/page_{page_num}_img_{img_idx}.{ext}"
+                    self._sb.storage.from_("course-files").upload(
+                        storage_path, data,
+                        {"content-type": mime, "upsert": "true"},
+                    )
+                    rows.append({
+                        "course": course_name,
+                        "filename": filename,
+                        "slide": f"Page {page_num}",
+                        "storage_path": storage_path,
+                        "image_index": img_idx,
+                    })
+                    img_idx += 1
+                except Exception:
+                    pass
+        if rows:
+            try:
+                self._sb.table("slide_images").insert(rows).execute()
+            except Exception:
+                pass
+
+    def get_slide_images(self, metas: list) -> list:
+        if not self._sb:
+            return []
+        source_locs = set()
+        for meta in metas:
+            fname = meta.get("filename", "").lower()
+            if fname.endswith(".pptx") or fname.endswith(".ppsx") or fname.endswith(".pdf"):
+                location = meta.get("location", "")
+                base_loc = location.split(",")[0].strip()
+                source_locs.add((meta.get("course", ""), meta.get("filename", ""), base_loc))
+        if not source_locs:
+            return []
+        urls = []
+        for course, filename, slide in source_locs:
+            try:
+                rows = (
+                    self._sb.table("slide_images")
+                    .select("storage_path")
+                    .eq("course", course)
+                    .eq("filename", filename)
+                    .eq("slide", slide)
+                    .execute()
+                    .data or []
+                )
+                for row in rows:
+                    try:
+                        signed = self._sb.storage.from_("course-files").create_signed_url(row["storage_path"], 3600)
+                        if isinstance(signed, dict):
+                            url = (signed.get("signedURL") or signed.get("signedUrl")
+                                   or (signed.get("data") or {}).get("signedUrl"))
+                        else:
+                            url = getattr(signed, "signed_url", None)
+                        if url:
+                            urls.append(url)
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+        return urls
 
     # ── Query (student) ───────────────────────────────────────────────────
 
@@ -461,10 +645,12 @@ class RAGEngine:
             except Exception:
                 extra = ""
 
+        images = [] if no_answer else self.get_slide_images(metas)
         return {
             "answer": answer,
             "extra": extra,
             "sources": [] if no_answer else sources,
+            "images": images,
         }
 
     def search_online(self, question: str, lang: str = "EN") -> str:
@@ -475,9 +661,9 @@ class RAGEngine:
                 tools=[{"type": "web_search_preview"}],
                 input=(
                     f"The student asked: \"{question}\". "
-                    "Search online and give a short, helpful answer (2-4 sentences) about this topic. "
-                    f"You MUST respond entirely in {reply_lang}, regardless of the language of the sources you find. "
-                    "Be informative — give real content, not just a list of links."
+                    "Search online and give a concise answer (1-2 sentences max) about this topic. "
+                    f"You MUST respond entirely in {reply_lang}. "
+                    "Be direct and informative — no links, no lists."
                 ),
             )
             return resp.output_text.strip()
@@ -506,7 +692,7 @@ class RAGEngine:
                     return msg["content"]
         return question
 
-    def stream_query(self, question: str, books: list = None, history: list = None, lang: str = "EN"):
+    def stream_query(self, question: str, books: list = None, history: list = None, lang: str = "EN", teacher_style: bool = False):
         total = self.collection.count()
         if total == 0:
             yield {"type": "token", "text": "I couldn't find anything — no course materials have been uploaded yet. Please ask your teacher."}
@@ -552,12 +738,23 @@ class RAGEngine:
             if lang == "NL" else
             "I couldn't find this in your course material, click below to check relevant information online."
         )
-        system_prompt = (
-            f"You are a study assistant. {lang_instruction} "
-            "Answer using ONLY the course material below. No emojis, no links, no outside knowledge. "
-            "Use bullet points for lists. Bold key terms with **term**. Be concise. "
-            f"If not found, say exactly: \"{fallback_phrase}\""
-        )
+        if teacher_style:
+            system_prompt = (
+                f"Je bent de leerkracht van dit vak en geeft mondeling uitleg aan een student. {lang_instruction} "
+                "Spreek in de EXACTE stijl zoals de leerkracht praat in de cursustranscripties hieronder. "
+                "Gebruik dezelfde woordkeuze, zinsstructuur en toon als in de transcripties. "
+                "Spreek informeel, direct en enthousiast. Gebruik 'je' en 'jij'. "
+                "Geen droge opsommingen — vertel het verhaal achter de stof. "
+                "Geen emoji's, geen links, geen externe kennis. "
+                f"Als het antwoord er niet in staat, zeg dan exact: \"{fallback_phrase}\""
+            )
+        else:
+            system_prompt = (
+                f"You are a study assistant. {lang_instruction} "
+                "Answer using ONLY the course material below. No emojis, no links, no outside knowledge. "
+                "Use bullet points for lists. Bold key terms with **term**. Be concise. "
+                f"If not found, say exactly: \"{fallback_phrase}\""
+            )
 
         messages = [{"role": "system", "content": system_prompt}]
         if history:
@@ -580,7 +777,8 @@ class RAGEngine:
                 yield {"type": "token", "text": token}
 
         no_answer = "couldn't find" in full_answer.lower() or "kon dit niet vinden" in full_answer.lower()
-        yield {"type": "done", "sources": [] if no_answer else sources}
+        images = [] if no_answer else self.get_slide_images(metas)
+        yield {"type": "done", "sources": [] if no_answer else sources, "images": images}
 
     # ── Search (teacher) ──────────────────────────────────────────────────
 
@@ -648,3 +846,21 @@ class RAGEngine:
         )
         if results["ids"]:
             self.collection.delete(ids=results["ids"])
+        if filename.lower().endswith((".pptx", ".ppsx", ".pdf")) and self._sb:
+            try:
+                rows = (
+                    self._sb.table("slide_images")
+                    .select("storage_path")
+                    .eq("course", course_name)
+                    .eq("filename", filename)
+                    .execute()
+                    .data or []
+                )
+                for row in rows:
+                    try:
+                        self._sb.storage.from_("course-files").remove([row["storage_path"]])
+                    except Exception:
+                        pass
+                self._sb.table("slide_images").delete().eq("course", course_name).eq("filename", filename).execute()
+            except Exception:
+                pass

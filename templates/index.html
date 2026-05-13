@@ -694,6 +694,35 @@
     }
     .btn-ask:disabled { opacity: 0.35; cursor: default; }
 
+    .qa-options-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .style-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px 3px 8px;
+      border-radius: 20px;
+      border: 1px solid var(--border-2);
+      background: transparent;
+      font-size: 11px;
+      font-family: inherit;
+      color: var(--text-3);
+      cursor: pointer;
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .style-chip:hover { border-color: var(--accent); color: var(--accent); }
+    .style-chip.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
     /* ── Teacher: top course tabs ── */
     .t-topbar {
       padding: 10px 64px;
@@ -1131,6 +1160,24 @@
       outline: none;
     }
     .lang-btn:hover { background: var(--bg); color: var(--text); }
+
+    .teacher-mode-btn {
+      width: 28px; height: 28px; padding: 0;
+      border-radius: 8px;
+      border: 1px solid var(--border-2);
+      background: transparent;
+      color: var(--text-3);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+      outline: none;
+    }
+    .teacher-mode-btn:hover { background: var(--bg); color: var(--text); }
+    .teacher-mode-btn.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
 
     /* File item extended */
     .f-meta { font-size: 10px; color: var(--text-3); white-space: nowrap; flex-shrink: 0; }
@@ -1709,6 +1756,9 @@
     <button class="tab" id="tab-teacher" onclick="requirePassword(this)"><span data-i18n="tabTeacher">Teacher</span> <svg id="teacher-lock" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5;vertical-align:middle;margin-left:1px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path id="teacher-lock-shackle" d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></button>
   </div>
   <button class="lang-btn" id="lang-btn" onclick="toggleLang()" title="Switch language">EN</button>
+  <button class="teacher-mode-btn" id="teacher-mode-btn" onclick="toggleTeacherStyle()" title="Leerkrachtstijl: antwoord zoals de leerkracht spreekt">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+  </button>
   <button class="pomodoro-btn" id="pomodoro-btn" onclick="togglePomodoroPanel()" title="Pomodoro timer">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
   </button>
@@ -2506,6 +2556,17 @@ function checkSessionDuration() {
 }
 
 const chatHistory = [];
+let teacherStyleActive = false;
+
+function toggleTeacherStyle() {
+  teacherStyleActive = !teacherStyleActive;
+  const btn = document.getElementById('teacher-mode-btn');
+  if (btn) btn.classList.toggle('active', teacherStyleActive);
+  const lbl = currentLang === 'NL' ? 'Leerkrachtstijl' : 'Teacher style';
+  toast(teacherStyleActive
+    ? (currentLang === 'NL' ? 'Leerkrachtstijl ingeschakeld' : 'Teacher style on')
+    : (currentLang === 'NL' ? 'Leerkrachtstijl uitgeschakeld' : 'Teacher style off'), 1500);
+}
 
 async function askQuestion() {
   if (busy) return;
@@ -2535,7 +2596,7 @@ async function askQuestion() {
     const res = await fetch('/api/chat/stream', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
-      body: JSON.stringify({ question: q, books, history: chatHistory, lang: currentLang }),
+      body: JSON.stringify({ question: q, books, history: chatHistory, lang: currentLang, teacher_style: teacherStyleActive }),
     });
 
     if (res.status === 401) { window.location.href = '/login'; return; }

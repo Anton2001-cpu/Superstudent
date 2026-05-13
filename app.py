@@ -128,6 +128,11 @@ def _clear_failures(ip: str):
 
 # ── Auth helpers ────────────────────────────────────────────────────────────
 
+def _auth_callback_url() -> str:
+    """Returns the absolute URL for /auth/callback, using the current request host."""
+    return request.url_root.rstrip("/") + "/auth/callback"
+
+
 def _make_token():
     return hmac.new(_SECRET.encode(), SITE_PASSWORD.encode(), hashlib.sha256).hexdigest()
 
@@ -330,7 +335,11 @@ def login():
                     prefill_mode = mode
                 else:
                     try:
-                        result = _sb.auth.sign_up({"email": email, "password": password})
+                        result = _sb.auth.sign_up({
+                            "email": email,
+                            "password": password,
+                            "options": {"email_redirect_to": _auth_callback_url()},
+                        })
                         if result and result.user:
                             role = "teacher" if "student" not in email else "student"
                             try:
@@ -476,7 +485,17 @@ def login():
                                 log.exception("auto-confirm on login failed")
                                 error = "Je e-mailadres is nog niet bevestigd. Neem contact op met de beheerder."
                         else:
-                            error = "Je e-mailadres is nog niet bevestigd. Neem contact op met de beheerder."
+                            # No admin client — resend confirmation link with correct redirect URL
+                            try:
+                                _sb.auth.resend({
+                                    "type": "signup",
+                                    "email": email,
+                                    "options": {"email_redirect_to": _auth_callback_url()},
+                                })
+                                error = "Je account is nog niet bevestigd. We stuurden je een nieuwe bevestigingsmail — klik op de link daarin."
+                            except Exception:
+                                error = "Je account is nog niet bevestigd. Probeer je opnieuw te registreren."
+                            verify_pending = True
                         prefill_email = email
                         prefill_mode = mode
                     else:
@@ -569,7 +588,7 @@ COURSES_FILE = DATA_FOLDER / "courses.json"
 FILE_META_FILE = DATA_FOLDER / "file_meta.json"
 STATS_FILE     = DATA_FOLDER / "stats.json"
 FEEDBACK_FILE  = DATA_FOLDER / "feedback.json"
-ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt", ".pptx"}
+ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt", ".pptx", ".ppsx", ".mp4", ".mp3", ".m4a"}
 
 MAX_QUESTION_LENGTH = 1000
 MAX_COURSE_NAME_LENGTH = 100
@@ -901,7 +920,7 @@ def upload():
     access_err = _check_course_ownership(course_name)
     if access_err: return access_err
     if not allowed(file.filename):
-        return jsonify({"error": "Only PDF, Word (.docx), and .txt files are supported"}), 400
+        return jsonify({"error": "Alleen PDF, Word (.docx), PowerPoint (.pptx/.ppsx), video (.mp4) en audio (.mp3/.m4a) bestanden zijn toegestaan"}), 400
 
     filename = secure_filename(file.filename)
     file_path = UPLOAD_FOLDER / filename
@@ -939,7 +958,7 @@ def upload():
                 with open(str(file_path), "rb") as fh:
                     file_bytes = fh.read()
                 ext = Path(filename).suffix.lower()
-                mime = {"pdf": "application/pdf", "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation", "txt": "text/plain"}.get(ext.lstrip("."), "application/octet-stream")
+                mime = {"pdf": "application/pdf", "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation", "ppsx": "application/vnd.openxmlformats-officedocument.presentationml.slideshow", "txt": "text/plain", "mp4": "video/mp4", "mp3": "audio/mpeg", "m4a": "audio/mp4"}.get(ext.lstrip("."), "application/octet-stream")
                 _sb.storage.from_("course-files").upload(storage_path, file_bytes, {"content-type": mime, "upsert": "true"})
             except Exception as e:
                 log.exception("storage upload failed (non-fatal)")
@@ -987,7 +1006,7 @@ def upload_url():
     if not filename or not course_name:
         return jsonify({"error": "Bestandsnaam en cursusnaam zijn verplicht."}), 400
     if not allowed(filename):
-        return jsonify({"error": "Alleen PDF, Word (.docx) en .txt bestanden zijn toegestaan."}), 400
+        return jsonify({"error": "Alleen PDF, Word (.docx), PowerPoint (.pptx/.ppsx), video (.mp4) en audio (.mp3/.m4a) bestanden zijn toegestaan."}), 400
     access_err = _check_course_ownership(course_name)
     if access_err: return access_err
     try:
@@ -1147,6 +1166,7 @@ def chat_stream():
     lang = data.get("lang", "EN")
     if lang not in ("NL", "EN"):
         lang = "EN"
+    teacher_style = bool(data.get("teacher_style", False))
     if not question:
         return jsonify({"error": "Question cannot be empty"}), 400
 
@@ -1154,7 +1174,7 @@ def chat_stream():
         try:
             full_answer = ""
             sources = []
-            for chunk in get_rag().stream_query(question, books, history, lang=lang):
+            for chunk in get_rag().stream_query(question, books, history, lang=lang, teacher_style=teacher_style):
                 if chunk.get("type") == "token":
                     full_answer += chunk["text"]
                 elif chunk.get("type") == "done":
