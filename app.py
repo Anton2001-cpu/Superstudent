@@ -41,13 +41,16 @@ _SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 _sb = None
 _sb_admin = None
 if _SUPABASE_URL and _SUPABASE_KEY:
-    from supabase import create_client as _create_sb
-    _sb = _create_sb(_SUPABASE_URL, _SUPABASE_KEY)
-    if _SUPABASE_SERVICE_KEY:
-        try:
-            _sb_admin = _create_sb(_SUPABASE_URL, _SUPABASE_SERVICE_KEY)
-        except Exception:
-            pass
+    try:
+        from supabase import create_client as _create_sb
+        _sb = _create_sb(_SUPABASE_URL.strip(), _SUPABASE_KEY.strip())
+        if _SUPABASE_SERVICE_KEY:
+            try:
+                _sb_admin = _create_sb(_SUPABASE_URL.strip(), _SUPABASE_SERVICE_KEY.strip())
+            except Exception:
+                pass
+    except Exception as _e:
+        log.warning("Supabase init failed: %s", _e)
 
 # Email-based auth is active when Supabase is configured
 _EMAIL_AUTH = bool(_sb)
