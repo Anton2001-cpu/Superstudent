@@ -482,6 +482,15 @@
       margin-bottom: 8px;
       font-style: italic;
     }
+    .extra-wiki-img {
+      max-width: 160px;
+      max-height: 130px;
+      border-radius: 8px;
+      float: right;
+      margin: 0 0 8px 14px;
+      object-fit: cover;
+      border: 1px solid var(--border);
+    }
 
     /* Slide images */
     .slide-images-section {
@@ -1186,23 +1195,6 @@
       50% { height: 14px; }
     }
 
-    .teacher-mode-btn {
-      width: 28px; height: 28px; padding: 0;
-      border-radius: 8px;
-      border: 1px solid var(--border-2);
-      background: transparent;
-      color: var(--text-3);
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer;
-      transition: all 0.15s;
-      outline: none;
-    }
-    .teacher-mode-btn:hover { background: var(--bg); color: var(--text); }
-    .teacher-mode-btn.active {
-      background: var(--accent-dim);
-      border-color: var(--accent);
-      color: var(--accent);
-    }
 
     /* File item extended */
     .f-meta { font-size: 10px; color: var(--text-3); white-space: nowrap; flex-shrink: 0; }
@@ -1383,6 +1375,20 @@
       line-height: 1.5;
       white-space: pre-wrap;
     }
+
+    .teacher-mode-btn {
+      width: 28px; height: 28px; padding: 0;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--text-2);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+      outline: none;
+    }
+    .teacher-mode-btn:hover { background: var(--bg); color: var(--text-2); }
+    .teacher-mode-btn.active { color: var(--gb-mid); background: var(--blue-dim); }
 
     /* ── Pomodoro ── */
     .pomodoro-btn {
@@ -1774,20 +1780,21 @@
 </head>
 <body>
 
+
 <!-- Top-right bar: tab toggle + utility buttons -->
 <div class="top-right-bar">
+  <div class="status-dot" id="status-dot" title="Online"></div>
   <div class="tab-group">
     <button class="tab active" id="tab-student" onclick="switchView('student', this)" data-i18n="tabStudent">Student</button>
     <button class="tab" id="tab-teacher" onclick="requirePassword(this)"><span data-i18n="tabTeacher">Teacher</span> <svg id="teacher-lock" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5;vertical-align:middle;margin-left:1px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path id="teacher-lock-shackle" d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></button>
   </div>
   <button class="lang-btn" id="lang-btn" onclick="toggleLang()" title="Switch language">EN</button>
-  <button class="teacher-mode-btn" id="teacher-mode-btn" onclick="toggleTeacherStyle()" title="Leerkrachtstijl: antwoord zoals de leerkracht spreekt">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+  <button class="teacher-mode-btn" id="teacher-mode-btn" onclick="toggleTeacherStyle()" title="Leerkrachtstijl">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
   </button>
   <button class="pomodoro-btn" id="pomodoro-btn" onclick="togglePomodoroPanel()" title="Pomodoro timer">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
   </button>
-  <div class="status-dot" id="status-dot" title="Online"></div>
   <div class="divider"></div>
   <a href="/logout" class="logout-btn" title="Afmelden">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -2033,6 +2040,7 @@ const TRANSLATIONS = {
     thumbsDown: 'Duim omlaag',
     tabStudent: 'Student',
     tabTeacher: 'Leraar',
+    teacherStyle: 'Leerkrachtstijl',
     teacherAccess: 'Leraartoegang',
     passwordPlaceholder: 'Wachtwoord',
     continue: 'Doorgaan',
@@ -2120,6 +2128,7 @@ const TRANSLATIONS = {
     thumbsDown: 'Thumbs down',
     tabStudent: 'Student',
     tabTeacher: 'Teacher',
+    teacherStyle: 'Teacher style',
     teacherAccess: 'Teacher access',
     passwordPlaceholder: 'Password',
     continue: 'Continue',
@@ -2797,7 +2806,12 @@ async function askQuestion() {
           });
           if (er) {
             const ed = await er.json();
-            extraEl.innerHTML = ed.extra ? md(ed.extra) : '';
+            let html = '';
+            if (ed.image) {
+              html += `<img src="${ed.image}" alt="" class="extra-wiki-img">`;
+            }
+            html += ed.extra ? md(ed.extra) : '';
+            extraEl.innerHTML = html;
           }
         } catch { extraEl.innerHTML = ''; }
       }
@@ -2996,7 +3010,12 @@ async function loadExtraInfo(uid, toggleEl) {
     });
     const data = res ? await res.json() : null;
     if (data && data.extra) {
-      body.innerHTML = '<div class="extra-disclaimer">' + t.extraDisclaimer + '</div>' + md(stripCitationLinks(data.extra));
+      let html = '<div class="extra-disclaimer">' + t.extraDisclaimer + '</div>';
+      if (data.image) {
+        html += `<img src="${data.image}" alt="" class="extra-wiki-img">`;
+      }
+      html += md(stripCitationLinks(data.extra));
+      body.innerHTML = html;
       body.dataset.loaded = 'true';
     } else {
       body.innerHTML = '<div class="extra-disclaimer" style="color:var(--text-3)">Geen online informatie gevonden.</div>';

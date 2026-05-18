@@ -605,7 +605,10 @@ class RAGEngine:
         answer_prompt = (
             f"You are a study assistant. {lang_instruction} "
             "Answer using ONLY the course material below. No emojis, no links, no outside knowledge. "
-            "Use bullet points for lists. Bold key terms with **term**. 4-8 sentences. "
+            "Give a comprehensive, well-structured answer. Use ## headings for main sections where relevant. "
+            "Use bullet points or numbered lists for enumerations. Bold key terms with **term**. "
+            "Write at least 8-12 sentences, or more if needed to fully cover the topic. "
+            "Explain concepts clearly and thoroughly, as if teaching a student who needs to understand the material deeply. "
             f"If not found, say exactly: \"{fallback_phrase}\""
         )
 
@@ -618,7 +621,7 @@ class RAGEngine:
             model="gpt-4o-mini",
             messages=messages,
             temperature=0,
-            max_tokens=400,
+            max_tokens=900,
         )
         answer = chat_response.choices[0].message.content.strip()
 
@@ -636,9 +639,11 @@ class RAGEngine:
                     tools=[{"type": "web_search_preview"}],
                     input=(
                         f"The student asked: \"{question}\". "
-                        "Search online and give a short, helpful answer (2-4 sentences) about this topic. "
+                        "Search online and give a clear, structured answer about this topic. "
+                        "Include the key explanation and most important facts. Use bullet points where helpful. Bold key terms with **term**. "
+                        "Aim for 4-6 sentences or a short bulleted list — informative but compact. "
                         f"You MUST respond entirely in {reply_lang}, regardless of the language of the sources you find. "
-                        "Be informative — give real content, not just a list of links."
+                        "Provide real educational content, not just links."
                     ),
                 )
                 extra = extra_response.output_text.strip()
@@ -653,22 +658,53 @@ class RAGEngine:
             "images": images,
         }
 
-    def search_online(self, question: str, lang: str = "EN") -> str:
+    def _get_wikipedia_image(self, question: str, lang: str) -> str:
+        import requests as _req
+        import urllib.parse
+        wiki_lang = "nl" if lang == "NL" else "en"
+        try:
+            search_resp = _req.get(
+                f"https://{wiki_lang}.wikipedia.org/w/api.php",
+                params={"action": "opensearch", "search": question[:100], "limit": 1, "format": "json"},
+                timeout=5,
+                headers={"User-Agent": "SuperStudent/1.0"},
+            )
+            search_data = search_resp.json()
+            if not search_data or not search_data[1]:
+                return ""
+            title = search_data[1][0]
+            encoded = urllib.parse.quote(title.replace(" ", "_"))
+            summary_resp = _req.get(
+                f"https://{wiki_lang}.wikipedia.org/api/rest_v1/page/summary/{encoded}",
+                timeout=5,
+                headers={"User-Agent": "SuperStudent/1.0"},
+            )
+            summary = summary_resp.json()
+            return summary.get("thumbnail", {}).get("source", "")
+        except Exception:
+            return ""
+
+    def search_online(self, question: str, lang: str = "EN") -> dict:
         reply_lang = "Dutch" if lang == "NL" else "English"
+        text = ""
         try:
             resp = self.client.responses.create(
                 model="gpt-4o-mini",
                 tools=[{"type": "web_search_preview"}],
                 input=(
                     f"The student asked: \"{question}\". "
-                    "Search online and give a concise answer (1-2 sentences max) about this topic. "
+                    "Search online and give a clear, structured answer about this topic. "
+                    "Include the key explanation and most important facts. Use bullet points where helpful. Bold key terms with **term**. "
+                    "Aim for 4-6 sentences or a short bulleted list — informative but compact. "
                     f"You MUST respond entirely in {reply_lang}. "
-                    "Be direct and informative — no links, no lists."
+                    "Provide real educational content, not just links."
                 ),
             )
-            return resp.output_text.strip()
+            text = resp.output_text.strip()
         except Exception:
-            return ""
+            pass
+        image = self._get_wikipedia_image(question, lang)
+        return {"text": text, "image": image}
 
     _FOLLOWUP_PHRASES = [
         "explain better", "explain more", "elaborate", "more detail", "more info",
@@ -743,7 +779,11 @@ class RAGEngine:
                 f"Je bent de leerkracht van dit vak en geeft mondeling uitleg aan een student. {lang_instruction} "
                 "Spreek in de EXACTE stijl zoals de leerkracht praat in de cursustranscripties hieronder. "
                 "Gebruik dezelfde woordkeuze, zinsstructuur en toon als in de transcripties. "
-                "Spreek informeel, direct en enthousiast. Gebruik 'je' en 'jij'. "
+                "Spreek Vlaams en informeel. Gebruik typisch Vlaamse tussenwerpsels en uitdrukkingen zoals "
+                "'awel', 'kijk', 'zeg', 'da's', 'ge', 'gij', 'ne keer', 'al eens', 'toch', 'hé', 'weet ge', "
+                "'eigenlijk', 'dus eigenlijk', 'ge moet weten'. "
+                "Begin antwoorden gerust met iets als 'Awel, da's een goede vraag' of 'Kijk, da's eigenlijk...' of 'Zeg, da hangt af van...'. "
+                "Spreek direct, enthousiast en menselijk — alsof ge aan het uitleggen zijt aan een vriend. "
                 "Geen droge opsommingen — vertel het verhaal achter de stof. "
                 "Geen emoji's, geen links, geen externe kennis. "
                 f"Als het antwoord er niet in staat, zeg dan exact: \"{fallback_phrase}\""

@@ -1360,8 +1360,8 @@ def extra_info():
     if not question:
         return jsonify({"error": "Question cannot be empty"}), 400
     try:
-        extra = get_rag().search_online(question, lang)
-        return jsonify({"extra": extra})
+        result = get_rag().search_online(question, lang)
+        return jsonify({"extra": result["text"], "image": result.get("image", "")})
     except Exception as e:
         log.exception("extra failed")
         return jsonify({"error": "Could not fetch online info", "detail": str(e)}), 500
